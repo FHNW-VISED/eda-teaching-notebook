@@ -90,7 +90,7 @@ Time = participant minutes (~110 total; Susanne may cut sections 1 and the 🔴 
 | 0 | sections/00_setup.py | Setup & the park | Run setup, meet the park, see the three outcomes | 🟢 | 5 | done |
 | 1 | sections/01_image_datasets.py | Image datasets | Know where datasets come from and what makes a good one | 🟢 | 5 | done |
 | 2 | sections/02_become_one.py | Become one with the data 🧾 | Look at many images before computing anything | 🟢 | 8 | done |
-| 3 | sections/03_image_inspection.py | Image inspection 🧾 | Measure sizes, aspect ratios, colour modes and colour statistics | 🟢🟡 | 8 | todo |
+| 3 | sections/03_image_inspection.py | Image inspection 🧾 | Measure sizes, aspect ratios, colour modes and colour statistics | 🟢🟡 | 8 | done |
 | 4 | sections/04_labels_distribution.py | Labels & class distribution 🧾 | Count classes and see why imbalance matters for the dog alert | 🟢🟡 | 8 | todo |
 | 5 | sections/05_errors_cleaning.py | Common dataset errors & cleaning 🧾 | Find duplicates, flipped/rotated copies, broken files and suspicious labels; produce a cleaned dataset | 🟡 | 15 | todo |
 | 6 | sections/06_splits_leakage.py | Splits & leakage | Choose a split that does not leak, and understand cross-validation | 🟡 | 12 | todo |
