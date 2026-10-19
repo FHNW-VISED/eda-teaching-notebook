@@ -1,5 +1,5 @@
 # %% [markdown]
-# # Exploring and Preparing an Image Dataset
+# # Know Your Data: Exploring and Preparing Image Datasets at the Wildwood Farm Park
 #
 # **Objective:** get the notebook running and know what you will be able to do at the end.
 #

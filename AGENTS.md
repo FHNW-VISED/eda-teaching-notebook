@@ -1,4 +1,4 @@
-# Exploring and Preparing an Image Dataset — agent instructions
+# Know Your Data: Exploring and Preparing Image Datasets at the Wildwood Farm Park — agent instructions
 
 This repo builds **one teaching notebook**, `eda-teaching-notebook.ipynb`. Learners open it in Google Colab.
 The `.ipynb` is a **build artifact**. The source is the small Jupytext files in `sections/`.

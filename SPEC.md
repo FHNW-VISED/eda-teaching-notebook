@@ -1,4 +1,4 @@
-# SPEC — Exploring and Preparing an Image Dataset
+# SPEC — Know Your Data: Exploring and Preparing Image Datasets at the Wildwood Farm Park
 
 The single source of truth for **what** this notebook is. `AGENTS.md` says how to work,
 `RULES.md` says what every notebook must respect, and this file says what *this* one must do.

@@ -30,3 +30,8 @@ Check: `lint` = scripts/lint_notebook.py · `test` = smoke test · `review` = re
 | N-022 | Parameter (control-panel) cells validate their values and fail with a plain message, not a deep stack trace. | review |
 | N-023 | When the notebook follows a known recipe or paper, say so near the top and link it. | review |
 | N-024 | Questions that end in a written answer get a hidden worked answer (`<details>`), unless the SPEC says the answers are shown openly. | review |
+| N-025 | Every kind of part sits in a Callout, and each kind keeps one colour and icon for the whole notebook. Theory Callouts name their topic. | review |
+| N-026 | Every place where a learner writes code or changes a value is unmistakable: an action Callout right above the cell, and stubs that run without errors before they are touched. Not foolproof: learners may write code. | review |
+| N-027 | Each notebook has its own Theme (palette, title banner, figure style), and a colour means the same thing everywhere in it (e.g. one colour per class across every plot and overlay). | review |
+| N-028 | The SPEC states the learner Freedom level (low / medium / high), and the mix of run-and-read, change-a-value and write-code cells follows it. | review |
+| N-029 | Learner-code cells never block a full run: the learner fills a stub with a given signature, a `use(fn, reference=…)` cell checks it against the reference solution on the Play Dataset ("✅ matches" / "❌ cat: 12 vs 14"), and the notebook continues with the reference either way. | review |

@@ -1,4 +1,4 @@
-# Exploring and Preparing an Image Dataset
+# Know Your Data: Exploring and Preparing Image Datasets at the Wildwood Farm Park
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/FHNW-VISED/eda-teaching-notebook/blob/main/eda-teaching-notebook.ipynb)
 
