@@ -35,3 +35,7 @@ Check: `lint` = scripts/lint_notebook.py · `test` = smoke test · `review` = re
 | N-027 | Each notebook has its own Theme (palette, title banner, figure style), and a colour means the same thing everywhere in it (e.g. one colour per class across every plot and overlay). | review |
 | N-028 | The SPEC states the learner Freedom level (low / medium / high), and the mix of run-and-read, change-a-value and write-code cells follows it. | review |
 | N-029 | Learner-code cells never block a full run: the learner fills a stub with a given signature, a `use(fn, reference=…)` cell checks it against the reference solution on the Play Dataset ("✅ matches" / "❌ cat: 12 vs 14"), and the notebook continues with the reference either way. | review |
+| N-030 | Workshop notebooks: everything heavy (models, data, packages) is downloaded and installed **before** the session by a setup-check notebook shared in advance. Nothing installs during the workshop. | review |
+| N-031 | Every code cell a participant runs is preceded by one sentence saying what it does and why. Understanding over execution. | review |
+| N-032 | The material (notebook, setup check, data) is shared before the session, and the required skills and prerequisites are stated at the top of the notebook. | review |
+| N-033 | Every notebook ships a facilitation guide (`FACILITATION.md`) for whoever presents it: per section, what to say, what learners do, minutes, where to pause, the show-of-hands or pair moments. It is generated from the SPEC. | review |

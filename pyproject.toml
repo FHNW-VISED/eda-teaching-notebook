@@ -6,8 +6,15 @@ requires-python = ">=3.12,<3.13"  # Colab's Python line; keep in step with SPEC.
 # Runtime deps = what the notebook imports. Prefer packages Colab preinstalls; pin to the Colab
 # version recorded in SPEC.md › Environment so the smoke run sees what students see.
 dependencies = [
-    "numpy",
-    "matplotlib",
+    "numpy==2.1.3",
+    "pandas==2.2.3",
+    "matplotlib==3.10.0",
+    "pillow==11.3.0",
+    "pycocotools==2.0.11",
+    "opencv-python-headless==5.0.0.93",
+    "scikit-image==0.25.2",
+    "scikit-learn==1.6.1",
+    "imagehash",  # not in Colab: %pip install in 00_setup
 ]
 
 [dependency-groups]

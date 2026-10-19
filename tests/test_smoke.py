@@ -21,11 +21,19 @@ NOTEBOOK = ROOT / "eda-teaching-notebook.ipynb"
 EXECUTED = ROOT / "build" / "smoke-executed.ipynb"
 CELL_TIMEOUT_S = int(os.environ.get("NB_CELL_TIMEOUT", "300"))
 TOTAL_BUDGET_S = int(os.environ.get("NB_SMOKE_BUDGET", "900"))
+DUMP_RESULTS = (
+    "import json, pathlib\n"
+    "if 'RESULTS' in globals():\n"
+    "    pathlib.Path('build').mkdir(exist_ok=True)\n"
+    "    pathlib.Path('build/smoke-results.json').write_text(json.dumps(RESULTS, default=str))\n"
+)
 
 
 def test_notebook_runs_in_smoke_mode():
     assert NOTEBOOK.exists(), "run `just build` first"
     nb = nbformat.read(NOTEBOOK, as_version=4)
+    # Test-only cell (never in the student notebook): dump RESULTS for tests/test_content.py.
+    nb.cells.append(nbformat.v4.new_code_cell(DUMP_RESULTS))
     os.environ["NB_SMOKE"] = "1"
     os.environ.setdefault("MPLBACKEND", "Agg")
     client = NotebookClient(
