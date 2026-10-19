@@ -87,7 +87,7 @@ Time = participant minutes (~110 total; Susanne may cut sections 1 and the 🔴 
 
 | # | File | Title | Objective (one line) | Level | Time | Status |
 |---|---|---|---|---|---|---|
-| 0 | sections/00_setup.py | Setup & the park | Run setup, meet the park, see the three outcomes | 🟢 | 5 | todo |
+| 0 | sections/00_setup.py | Setup & the park | Run setup, meet the park, see the three outcomes | 🟢 | 5 | done |
 | 1 | sections/01_image_datasets.py | Image datasets | Know where datasets come from and what makes a good one | 🟢 | 5 | todo |
 | 2 | sections/02_become_one.py | Become one with the data 🧾 | Look at many images before computing anything | 🟢 | 8 | todo |
 | 3 | sections/03_image_inspection.py | Image inspection 🧾 | Measure sizes, aspect ratios, colour modes and colour statistics | 🟢🟡 | 8 | todo |
