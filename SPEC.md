@@ -97,7 +97,7 @@ Time = participant minutes (~110 total; Susanne may cut sections 1 and the 🔴 
 | 7 | sections/07_metrics.py | Metrics for the park | Pick the metric that matches the use case | 🟡 | 7 | done |
 | 8 | sections/08_boxes.py | Same data, boxes | See what imbalance, size, position and label quality mean for detection | 🟡 | 10 | done |
 | 9 | sections/09_masks.py | Same data, masks | See what they mean for segmentation; find ugly masks | 🟡 | 10 | done |
-| 10 | sections/10_challenge.py | Data-centric AI in practice: the Challenge | Find the planted problems in a new batch with the tools learned | 🟡🔴 | 15 | todo |
+| 10 | sections/10_challenge.py | Data-centric AI in practice: the Challenge | Find the planted problems in a new batch with the tools learned | 🟡🔴 | 15 | done |
 | 11 | sections/11_your_dataset.py | Your project dataset | Run the checklist on your own folder-per-class dataset | 🟢 | 5 | todo |
 | 12 | sections/12_wrap_up.py | Wrap-up & next week | Takeaways and where to go next | 🟢 | 2 | todo |
 
