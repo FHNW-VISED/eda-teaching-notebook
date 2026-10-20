@@ -93,7 +93,7 @@ Time = participant minutes (~110 total; Susanne may cut sections 1 and the 🔴 
 | 3 | sections/03_image_inspection.py | Image inspection 🧾 | Measure sizes, aspect ratios, colour modes and colour statistics | 🟢🟡 | 8 | done |
 | 4 | sections/04_labels_distribution.py | Labels & class distribution 🧾 | Count classes and see why imbalance matters for the dog alert | 🟢🟡 | 8 | done |
 | 5 | sections/05_errors_cleaning.py | Common dataset errors & cleaning 🧾 | Find duplicates, flipped/rotated copies, broken files and suspicious labels; produce a cleaned dataset | 🟡 | 15 | done |
-| 6 | sections/06_splits_leakage.py | Splits & leakage | Choose a split that does not leak, and understand cross-validation | 🟡 | 12 | todo |
+| 6 | sections/06_splits_leakage.py | Splits & leakage | Choose a split that does not leak, and understand cross-validation | 🟡 | 12 | done |
 | 7 | sections/07_metrics.py | Metrics for the park | Pick the metric that matches the use case | 🟡 | 7 | todo |
 | 8 | sections/08_boxes.py | Same data, boxes | See what imbalance, size, position and label quality mean for detection | 🟡 | 10 | todo |
 | 9 | sections/09_masks.py | Same data, masks | See what they mean for segmentation; find ugly masks | 🟡 | 10 | todo |
