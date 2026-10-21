@@ -1,7 +1,7 @@
 # Revise progress — review pass 1 (2026-10-21)
 
 Checklist for `reviews/2026-10-21-pass-1.md`. Status: todo · in-progress · done · partly · skipped (+ one line why).
-Orchestrator: Fable (run 1), Opus (run 2). Subagents: sonnet/haiku, opus only where marked.
+Orchestrator: Fable (run 1), Opus (runs 2–3). Subagents: sonnet/haiku, opus only where marked.
 
 ## Phases
 
@@ -11,8 +11,8 @@ Orchestrator: Fable (run 1), Opus (run 2). Subagents: sonnet/haiku, opus only wh
 | 1 | R-01..R-29 on sections 0–5 (4 subagents: 00+01 · 02+03 · 04 · 05) | done | run 2: finished/audited by 3 agents; gate passed (14 tests) |
 | 2 | R-30: N-034..N-049 on sections 6–12 (3 subagents) | done | run 2: 06+07, 08+09 finished, 10–12 audited; gate passed |
 | 3 | Three read-only reviewers (professor · student · cuts[opus]) | done | reports/review-{professor,student,cuts}.md |
-| 4 | Apply non-removal suggestions; write reports/cut-proposals.md | in-progress | 6 sonnet agents (00+01 · 02+03 · 04+05 · 06+07 · 08+09 · 10–12), task lists = orchestrator's pick of safe items |
-| 5 | just check + reports/revise-2026-10-21.md | todo | |
+| 4 | Apply non-removal suggestions; write reports/cut-proposals.md | done | 6 sonnet agents (00+01 · 02+03 · 04+05 · 06+07 · 08+09 · 10–12); cut-proposals.md has 33 rows |
+| 5 | just check + reports/revise-2026-10-21.md | done | run 3: gate passed (35 Q, 14 tests), drift clean |
 
 ## R-items
 
@@ -45,13 +45,13 @@ Orchestrator: Fable (run 1), Opus (run 2). Subagents: sonnet/haiku, opus only wh
 | R-25 s04 collapse cell under Q9 | done | |
 | R-26 s05 perceptual hashing shown | done | |
 | R-27 s05 memory-card hunt as steps + visual | done | |
-| R-28 s05 remove Broken and odd files | partly | section done; FACILITATION row 5 still to fix (orchestrator) |
+| R-28 s05 remove Broken and odd files | done | section, banner, SPEC, FACILITATION, 10/11 wording |
 | R-29 s05 Q14 clear or propose cut | done | clear in two cells; also a cut proposal |
 | R-29b s05 rewrite "six cells" sentence | done | |
 | R-29c s05 rewrite Across tasks box | done | |
 | R-30 sections 6–12 | done | 09 N-042 mask-check visual not added (offered) |
-| R-31 shorter overall | todo | Phases 3–4 |
-| R-32 interaction proposals (≤3) | todo | Phase 3 |
+| R-31 shorter overall | partly | text tightened (~−27 min); removals wait in cut-proposals.md |
+| R-32 interaction proposals (≤3) | done | 3 slider proposals in the report, nothing built (G-12) |
 
 ## Log
 - 2026-10-21: fresh run started. Baseline `just check` passed (14 tests, 22 s).
@@ -75,3 +75,4 @@ Orchestrator: Fable (run 1), Opus (run 2). Subagents: sonnet/haiku, opus only wh
 - Phase 4 · 10–12 done (ruff+lint): ten kinds in one list (five steps, ten entries); tools list → recipe kind; Q32 one header per kind (only the worked unreadable check solved); 10 opening down to 3 cells; 🔴 Q33 heading; 11 numbers "about 130 cats, about 50 sheep" (raw data: 130 / 59) and "can halve the error" softened; Q34 think-only; 12 augmentation+tracking in one go-deeper; 10 `_reference` title renamed. Facil: 10 walk Q32 headers 1–3 together, run the reference cell.
 - Phase 4 · 04+05 done (ruff+lint): 💡+answer merged; 04 opener cut; Pitfall moved after Q9 and merged with its answer; Q9 split into Rule A (biggest class, Play Dataset) / Rule B (always sheep, paddock); DOG_SHARE/HASH_THRESHOLD say which cell to re-run (and reset to 8); "1 : 10 : 100 seconds" → clicks only; 05 DCT in plain words (Σ formula dropped, figure kept); orientation sentence moved after Q12; ✍️ flip detector now before the shoot-out; N_ATYPICAL 2; section-5 flags line matches 03; headings split; 🔴 Q14 heading `### 🔴 Optional · …`. Facil: 04 guess Rule A and B separately; 05 write the detector ~5 min before the shoot-out.
 - Phase 4 · 08+09 done (ruff+lint): 💡+answer merged; openers cut; Q25 spoiler fixed (toy figure after the answer, title neutral, step 3 vague); 08 theory callout 4 lines, hunt 3 steps; 🔀 jargon in `<details>` (kind kept); "about 9 %/22 %/85 %"; new collapsed "five checks drawn on one toy mask" figure (uses real `mask_shape()`); five checks, rubber band = convex hull; ✏️ thresholds: try IOU_MIN first + conclusion; polygon/RLE → go-deeper `<details>`; 3 sentences rewritten; 🔴 Q30 heading.
+- Run 3 (Opus, resumed after the 12:32 watchdog pause): tree clean at 6a0dfdc. The Phase 4 06+07 work is in the files (fold diagram, one name for LOGO, class × camera table) but was never logged. `just check` passed (lint 0 problems, 35 Q, 14 tests), `just drift` clean. reports/revise-2026-10-21.md was already complete and needed no change. Pass finished.
