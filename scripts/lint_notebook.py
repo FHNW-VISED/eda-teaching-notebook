@@ -13,6 +13,8 @@ from pathlib import Path
 
 import jupytext
 
+from build import CALLOUT_KINDS, MARKER_HINT, parse_marker  # same marker grammar as the build
+
 ROOT = Path(__file__).resolve().parent.parent
 SECTIONS = ROOT / "sections"
 SPEC = ROOT / "SPEC.md"
@@ -20,6 +22,9 @@ SPEC = ROOT / "SPEC.md"
 Q_RE = re.compile(r"\*\*Q(\d+)\.?\*\*")
 LEVELS = ("🟢", "🟡", "🔴")
 HELPER_MIN_LINES = 8
+# N-035: the only allowed first lines of a code cell (collapsed, a question's cell, or a cell to edit).
+CODE_START_RE = re.compile(r"^# (@title\b|Q\d+\b|✏️ YOUR TURN|✍️ YOUR CODE)")
+BOXPLOT_RE = re.compile(r"\bboxplot\(")
 
 problems: list[str] = []
 
@@ -41,6 +46,25 @@ def is_helper_cell(src: str) -> bool:
         and all(isinstance(n, defs) for n in body)
         and any(isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) for n in body)
     )
+
+
+def callout_kind(src: str) -> str | None:
+    """The kind of a markdown cell written as a callout marker cell, else None."""
+    parsed = parse_marker(src.lstrip("\n").partition("\n")[0])
+    return parsed[0] if parsed else None
+
+
+def check_callout(where: str, src: str) -> None:
+    """N-034: coloured boxes are callout marker cells, never markdown tables with bgcolor."""
+    if re.search(r"<table\b", src, re.I) and re.search(r"\bbgcolor\b", src, re.I):
+        fail(where, "coloured box as a markdown table: write a '<!-- callout: KIND | TITLE -->' cell (N-034)")
+    if MARKER_HINT not in src:
+        return
+    kind = callout_kind(src)
+    if kind is None or src.count(MARKER_HINT) > 1:
+        fail(where, "malformed callout marker: line 1 must be '<!-- callout: KIND | TITLE -->' (N-034)")
+    elif kind not in CALLOUT_KINDS:
+        fail(where, f"unknown callout kind '{kind}', known: {', '.join(CALLOUT_KINDS)} (N-034)")
 
 
 def spec_rows() -> dict[str, str]:
@@ -75,8 +99,12 @@ def main() -> int:
         cells = nb.cells
         if not cells or cells[0].cell_type != "markdown" or not cells[0].source.lstrip().startswith("#"):
             fail(rel, "first cell must be a markdown heading (N-003)")
-        elif "**Objective:**" not in cells[0].source:
-            fail(rel, "first markdown cell needs an '**Objective:**' line (N-003)")
+        elif "**Objective:**" not in cells[0].source and not (
+            len(cells) > 1
+            and cells[1].cell_type == "markdown"
+            and callout_kind(cells[1].source) == "objective"
+        ):  # the Objective may also be a 🎯 objective callout right under the heading (N-044)
+            fail(rel, "first markdown cell needs an '**Objective:**' line or an objective callout (N-003)")
 
         for i, cell in enumerate(cells):
             where = f"{rel} cell {i}"
@@ -86,6 +114,10 @@ def main() -> int:
                     smoke_defined = True
                 if src.lstrip().startswith("!pip"):
                     fail(where, "use %pip, not !pip (N-021)")
+                if not CODE_START_RE.match(src.lstrip()):
+                    fail(where, "run-only cell must be collapsed with '# @title <what it does>' (N-035)")
+                if BOXPLOT_RE.search(src):
+                    fail(where, "box plot: draw distributions as violin plots (N-040)")
                 n_lines = len(src.strip().splitlines())
                 if (
                     n_lines >= HELPER_MIN_LINES
@@ -97,8 +129,9 @@ def main() -> int:
                         f"helper-only cell ({n_lines} lines) needs '# @title ...' to collapse (N-008)",
                     )
                 continue
+            check_callout(where, src)
             if re.search(r"\bstyle\s*=", src):
-                fail(where, "markdown uses style= — Colab strips it; use a bgcolor table + <font> (N-025)")
+                fail(where, "markdown uses style= — Colab strips it; use a callout cell (N-025, N-034)")
             for line in src.splitlines():
                 for m in Q_RE.finditer(line):
                     q = int(m.group(1))
@@ -109,10 +142,11 @@ def main() -> int:
                         fail(where, f"Q{q} has no level marker 🟢/🟡/🔴 on its line (N-005)")
                     if "```python" in src:
                         nxt = next((c for c in cells[i + 1 :] if c.cell_type == "code"), None)
-                        if nxt is None or not nxt.source.lstrip().startswith(f"# Q{q}"):
+                        if nxt is None or not re.match(rf"# (@title )?Q{q}\b", nxt.source.lstrip()):
                             fail(
                                 where,
-                                f"Q{q} shows code: next code cell must start with '# Q{q}' (N-007)",
+                                f"Q{q} shows code: next code cell must start with '# Q{q}' "
+                                f"or '# @title Q{q} …' (N-007)",
                             )
 
     if files and not smoke_defined:

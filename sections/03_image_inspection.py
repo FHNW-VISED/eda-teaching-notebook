@@ -1,29 +1,49 @@
 # %% [markdown]
 # ## 3. Image inspection
-#
-# **Objective:** measure sizes, aspect ratios, colour modes and colour statistics, and learn to read a cluster
-# of odd values as a clue about where the photos came from.
-#
+
+# %% [markdown]
+# <!-- callout: objective | Objective -->
+# Measure sizes, aspect ratios, colour modes and colour statistics, and read a cluster of odd values as a clue
+# about where the photos came from.
+
+# %% [markdown]
 # Your eyes found patterns in section 2. Now the computer looks at every photo once and writes down a handful
-# of numbers per image: its size, its shape, how its colours are stored and how bright it is. None of these
-# numbers needs a label, so this is the first check you can run on *any* folder of images, including your own
-# project dataset in section 11. Karpathy's recipe says why this pays off:
-#
-# <table width="100%"><tr><td bgcolor="#E8F5E9"><font color="#1B5E20">
-# <b>🧾 Recipe · Step 1, continued: search, filter, sort</b><br>
-# <i>"Once you get a qualitative sense it is also a good idea to write some simple code to search/filter/sort
+# of numbers per image. None of them needs a label, so this is the first check you can run on *any* folder of
+# images, including your own project dataset in section 11. Karpathy's recipe says why this pays off:
+
+# %% [markdown]
+# <!-- callout: recipe | Recipe · Step 1, continued: search, filter, sort -->
+# *"Once you get a qualitative sense it is also a good idea to write some simple code to search/filter/sort
 # by whatever you can think of (e.g. type of label, size of annotations, number of annotations, etc.) and
 # visualize their distributions and the outliers along any axis. The outliers especially almost always uncover
-# some bugs in data quality or preprocessing."</i><br> Andrej Karpathy, <a
-# href="https://karpathy.github.io/2019/04/25/recipe/">A Recipe for Training Neural Networks</a> (2019).
-# </font></td></tr></table>
+# some bugs in data quality or preprocessing."*
 #
-# The next cell (collapsed) defines one function that measures a single photo. The cell after it runs that
-# function on every photo in the Play Dataset and collects the numbers in a table called `image_stats`.
+# Andrej Karpathy, [A Recipe for Training Neural
+# Networks](https://karpathy.github.io/2019/04/25/recipe/) (2019).
+
+# %% [markdown]
+# The numbers collected per photo, and how each is measured (brightness, contrast and colour are measured on a
+# small thumbnail of the photo):
+#
+# - **width, height:** the pixel columns and rows stored in the file.
+# - **aspect:** width ÷ height. 1 is square, above 1 landscape, below 1 portrait.
+# - **long_side:** the larger of width and height. **megapixels:** width × height ÷ 1,000,000.
+# - **mode:** how the file stores colour: `RGB` three channels, `L` one grey channel, `RGBA` RGB plus
+#   transparency, `CMYK` print inks.
+# - **brightness:** the mean grey level (R, G, B averaged per pixel, then over the photo), 0 black to 255 white.
+# - **contrast:** the standard deviation of that grey level: low is flat or foggy, high is deep shadow next to
+#   bright highlight.
+# - **colourfulness** (Hasler & Süsstrunk 2003): `sqrt(σ_rg² + σ_yb²) + 0.3 · sqrt(μ_rg² + μ_yb²)`, with
+#   `rg = R − G` and `yb = (R + G)/2 − B` per pixel, and σ, μ their standard deviation and mean.
+#   A grayscale picture scores exactly 0.
+# - **mean_r, mean_g, mean_b:** the average value of each colour channel.
+
+# %% [markdown]
+# One collapsed cell defines the function that measures a single photo; the next one runs it on every photo
+# of the Play Dataset and keeps the numbers in a table called `image_stats`.
 
 # %%
 # @title Measurement helpers { display-mode: "form" }
-from matplotlib.colors import LinearSegmentedColormap, ListedColormap
 from matplotlib.patches import Rectangle
 from PIL import ImageDraw
 
@@ -37,7 +57,7 @@ def measure_image(path, thumb: int) -> tuple[dict, np.ndarray]:
 
     stats: width, height, mode (as stored in the file), aspect (width / height), long_side, megapixels,
     brightness (mean grey level 0–255 on a thumbnail), contrast (its standard deviation), colourfulness
-    (mean distance of the RGB channels from grey: 0 for a grayscale picture), mean_r / mean_g / mean_b.
+    (Hasler & Süsstrunk 2003: 0 for a grayscale picture), mean_r / mean_g / mean_b.
     channel_hist: a (3, HIST_BINS) array, the density histogram of the R, G and B channels.
     """
     with Image.open(path) as im:
@@ -48,6 +68,8 @@ def measure_image(path, thumb: int) -> tuple[dict, np.ndarray]:
         arr = np.asarray(rgb, dtype=np.float32)
     grey = arr.mean(axis=2)
     channels = arr.reshape(-1, 3)
+    rg = channels[:, 0] - channels[:, 1]  # red minus green
+    yb = (channels[:, 0] + channels[:, 1]) / 2 - channels[:, 2]  # yellow (mean of R and G) minus blue
     hist = np.stack(
         [np.histogram(channels[:, k], bins=HIST_BINS, range=(0, 256), density=True)[0] for k in range(3)]
     )
@@ -60,7 +82,7 @@ def measure_image(path, thumb: int) -> tuple[dict, np.ndarray]:
         "megapixels": w * h / 1e6,
         "brightness": float(grey.mean()),
         "contrast": float(grey.std()),
-        "colourfulness": float(np.abs(channels - grey.reshape(-1, 1)).mean()),
+        "colourfulness": float(np.hypot(rg.std(), yb.std()) + 0.3 * np.hypot(rg.mean(), yb.mean())),
         "mean_r": float(channels[:, 0].mean()),
         "mean_g": float(channels[:, 1].mean()),
         "mean_b": float(channels[:, 2].mean()),
@@ -98,10 +120,30 @@ def show_rows(rows_df: pd.DataFrame, title: str, caption=None, cols: int = 6) ->
     plt.close(fig)
 
 
+def _fmt(value) -> str:
+    """A number for a caption: 640 stays 640, 1.33333 becomes 1.333."""
+    return f"{value:.4g}"
+
+
+def _closest_to_median(stat: str):
+    """The row of `image_stats` whose value of `stat` is closest to the median (the 'typical' photo)."""
+    col = image_stats[stat]
+    return image_stats.iloc[int((col - col.median()).abs().to_numpy().argmin())]
+
+
+def _photo(ax, row, caption: str) -> None:
+    """Draw one photo with a caption, framed in its class colour."""
+    ax.axis("on")
+    ax.imshow(load_thumb(row["path"]))
+    frame(ax, CLASS_COLORS[row["class"]])
+    ax.set_title(caption, fontsize=8)
+
+
 def show_extremes(stat: str, n: int = 4) -> None:
-    """Gallery of the `n` photos with the lowest and the `n` with the highest value of `stat`.
+    """The `n` photos with the lowest value of `stat`, the median ('average') photo, and the `n` highest.
 
     `stat` is a numeric column of `image_stats` (e.g. "brightness", "aspect", "megapixels", "colourfulness").
+    Three rows: lowest (the minimum first), the typical photo in the middle, highest (the maximum first).
     """
     numeric = [c for c in image_stats.columns if pd.api.types.is_numeric_dtype(image_stats[c]) and c != "id"]
     if stat not in numeric:
@@ -109,15 +151,59 @@ def show_extremes(stat: str, n: int = 4) -> None:
     ordered = image_stats.sort_values(stat)
     n = max(1, min(n, len(ordered) // 2))
 
-    def caption(row):
-        return f"{row['class']} · {stat} = {row[stat]:.2f}\n{row['width']}×{row['height']} {row['mode']}"
+    def caption(tag, row):
+        size = f"{row['width']}×{row['height']} {row['mode']}"
+        return f"{tag}: {stat} = {_fmt(row[stat])}\n{row['class']} · {size}"
 
-    show_rows(ordered.head(n), f"lowest {stat}", caption, cols=n)
-    show_rows(ordered.tail(n)[::-1], f"highest {stat}", caption, cols=n)
+    fig, axes = plt.subplots(3, n, figsize=(2.4 * n, 2.8 * 3), squeeze=False)
+    for ax in axes.ravel():
+        ax.axis("off")
+    for ax, (_, row) in zip(axes[0], ordered.head(n).iterrows(), strict=False):
+        _photo(ax, row, caption("lowest", row))
+    _photo(axes[1, n // 2], _closest_to_median(stat), caption("median", _closest_to_median(stat)))
+    for ax, (_, row) in zip(axes[2], ordered.tail(n)[::-1].iterrows(), strict=False):
+        _photo(ax, row, caption("highest", row))
+    fig.suptitle(f"{stat}: the {n} lowest, the typical (median) photo, the {n} highest", color=INK)
+    fig.tight_layout()
+    display(fig)
+    plt.close(fig)
+
+
+def show_min_median_max(stats: list[str]) -> None:
+    """One row per statistic: the photo with its minimum, a typical one (median) and the maximum.
+
+    Two extra rows show photos with an odd value: colourfulness close to 0, stored as `L` or as `RGB`.
+    """
+    spec = []
+    for stat in stats:
+        items = [
+            ("min", image_stats.loc[image_stats[stat].idxmin()]),
+            ("median", _closest_to_median(stat)),
+            ("max", image_stats.loc[image_stats[stat].idxmax()]),
+        ]
+        spec.append((stat, [(f"{tag} = {_fmt(row[stat])}\n{row['class']}", row) for tag, row in items]))
+    no_colour = image_stats["colourfulness"] < 1
+    for mode, label in (("L", "colourfulness ≈ 0\nstored as L"), ("RGB", "colourfulness ≈ 0\nstored as RGB")):
+        odd = image_stats[no_colour & (image_stats["mode"] == mode)].head(3)
+        if len(odd):
+            items = [(f"{_fmt(r['colourfulness'])}\n{r['class']}", r) for _, r in odd.iterrows()]
+            spec.append((label, items))
+    n_cols = max(len(items) for _, items in spec)
+    fig, axes = plt.subplots(len(spec), n_cols, figsize=(2.2 * n_cols, 1.9 * len(spec)), squeeze=False)
+    for ax in axes.ravel():
+        ax.axis("off")
+    for ax_row, (label, items) in zip(axes, spec, strict=True):
+        for ax, (caption, row) in zip(ax_row, items, strict=False):
+            _photo(ax, row, caption)
+        ax_row[0].set_ylabel(label, color=INK, fontsize=10, fontweight="bold")
+    fig.tight_layout()
+    display(fig)
+    plt.close(fig)
 
 
 # %%
-# Measure every photo once (a few seconds: each JPEG is decoded at thumbnail size) and keep the numbers.
+# @title Measure every photo once and keep the numbers in image_stats { display-mode: "form" }
+# (a few seconds: each JPEG is decoded at thumbnail size)
 THUMB = 64 if SMOKE else 128  # smaller thumbnails in smoke mode, same code (N-014)
 
 _records, _hists = [], []
@@ -133,28 +219,62 @@ _same_size = image_stats[["width", "height"]].to_numpy() == images[["width", "he
 _agree = int(_same_size.all(axis=1).sum())
 print(f"measured {len(image_stats)} photos · the manifest's width/height matches the file for {_agree}")
 STAT_COLUMNS = ["width", "height", "aspect", "megapixels", "brightness", "contrast", "colourfulness"]
-image_stats[STAT_COLUMNS].describe().round(2)
+image_stats[STAT_COLUMNS].agg(["min", "median", "mean", "max"]).T.round(2)
 
 # %% [markdown]
-# 💡 `describe()` is the quickest sanity check there is: look at `min` and `max` of every column before you
-# look at anything else. A `min` width of 0, a `max` of 6000 or a brightness of 254 each tell a story.
+# 💡 Read the `min` and `max` of every row before anything else: a width of 0, a maximum of 6000 or a
+# brightness of 254 each tell a story. A number is a summary; the photos behind it are the evidence. The next
+# cell shows, for every statistic, the photo with the minimum, a typical one (the median) and the maximum.
+
+# %%
+# @title Show the min, median and max photo of every statistic { display-mode: "form" }
+show_min_median_max(STAT_COLUMNS)
+
+# %% [markdown]
+# 💡 Look at the median row first: that is what a typical photo of this dataset looks like. The extremes
+# then show how far the dataset stretches. The last rows hold photos with *no colour at all*, stored in two
+# different ways.
 #
 # ### Sizes and shapes
 #
 # A model sees every photo at one fixed size, so the first question is how far the photos are from that.
-#
-# <table width="100%"><tr><td bgcolor="#E0F7F4"><font color="#00564D">
-# <b>❓ Questions</b><br>
+
+# %% [markdown]
+# <!-- callout: questions | Questions -->
 # Predict before you run. These photos were uploaded to Flickr by hundreds of people and collected by the COCO
 # team; the park's photos will come from a few fixed cameras.
-# </font></td></tr></table>
-#
-# **Q4.** 🟢 Do you expect all photos to have the same size? Sketch (in your head) where the dots of a
-# width-vs-height scatter would land: one point, a line, a cloud? Then run the cell.
+
+# %% [markdown]
+# **Q4.** 🟢 Do you expect all photos to have the same size? What shape would the dots of a width-vs-height
+# scatter make: one point, a line, or a cloud? Pick one, then run the cell.
 
 # %%
-# Q4  Left: every photo as a dot (width across, height up) in its class colour; the dashed line is a square
-#     photo. Right: the aspect ratio width/height, stacked by class.
+# @title Q4 hint: three possible scatter shapes { display-mode: "form" }
+# Three tiny example scatters of width (across) against height (up), to pick from.
+_rng = np.random.default_rng(SEED)
+_line_w = _rng.uniform(300, 640, 40)
+_examples = {
+    "one point\nall photos the same size": (np.full(40, 640.0), np.full(40, 480.0)),
+    "a line\nsizes differ, same shape": (_line_w, _line_w * 0.75),
+    "a cloud\nany size, any shape": (_rng.uniform(200, 640, 40), _rng.uniform(200, 640, 40)),
+}
+fig, axes = plt.subplots(1, 3, figsize=(8.4, 2.6))
+for ax, (title, (xs, ys)) in zip(axes, _examples.items(), strict=True):
+    ax.scatter(xs, ys, s=14, color=INK, alpha=0.7, edgecolor="none")
+    ax.set_xlim(0, 700)
+    ax.set_ylim(0, 700)
+    ax.set_xlabel("width (px)", fontsize=8)
+    ax.set_ylabel("height (px)", fontsize=8)
+    ax.tick_params(labelsize=7)
+    ax.set_title(title, fontsize=9)
+fig.tight_layout()
+display(fig)
+plt.close(fig)
+
+# %%
+# @title Q4 Plot image sizes and aspect ratios by class { display-mode: "form" }
+# Left: every photo as a dot (width across, height up) in its class colour; the dashed line is a square
+# photo. Right: the aspect ratio width/height, stacked by class.
 fig, (ax_sc, ax_hist) = plt.subplots(1, 2, figsize=(13, 4.8))
 for c in CLASSES:
     s = image_stats[image_stats["class"] == c]
@@ -187,32 +307,36 @@ display(fig)
 plt.close(fig)
 
 # %% [markdown]
-# 💡 The dots do not fill the plane: they sit on a few lines and clusters, because the photos share a common
-# longest side. The aspect histogram shows the same thing from the side: a landscape peak, a portrait peak and
-# a long tail of panoramas and tall crops. Nothing here is "wrong", but it means a model fed 224×224 squares
-# will see most of these photos squashed or cropped (the 🔀 Callout at the end of this section).
+# 💡 The dots do not fill the plane: they sit on a few lines, because the photos share a common longest side.
+# The aspect histogram shows the same from the side: a landscape peak, a portrait peak and a tail of panoramas
+# and tall crops. Nothing is "wrong", but a model fed 224×224 squares will see most of these photos squashed
+# or cropped (see 🔀 Across tasks at the end of this section).
 #
-# **Worked answer (Q4).** Not one size, and not a random cloud either: COCO downloaded its photos from Flickr
-# at one standard size, so the longest side is capped at the same value for almost every photo and the dots
-# line up along "width = cap" and "height = cap". A dataset from the park's own cameras would look different:
-# one dot per camera model (every frame of a camera has the same size), which is both tidier and a leakage
-# risk you will meet in section 6 (the size gives away the camera).
+# **Worked answer (Q4).** Neither one point nor a cloud: the dots lie on two lines, an L shape. COCO fetched
+# its Flickr photos at one standard size, so the longest side is capped at the same value for almost every
+# photo: width = cap for landscape photos, height = cap for portrait ones. The park's own cameras would give
+# one dot per camera model, which is tidier but a leakage risk (section 6): the size gives away the camera.
 #
 # ### Colour modes and colours
 #
-# How a file stores colour is easy to forget and painful to discover during training: a single grayscale (`L`)
-# or `RGBA` file in a batch of `RGB` arrays crashes the data loader, or silently gets a channel duplicated or
-# dropped. The next cell counts the modes and draws the typical RGB histogram of each class.
+# How a file stores colour is easy to forget and painful to discover during training: one grayscale (`L`) or
+# `RGBA` file in a batch of `RGB` arrays crashes the data loader, or silently gets a channel duplicated or
+# dropped. The next cell counts the modes, shows the photos that look grayscale, and draws the typical RGB
+# histogram of each class.
 
 # %%
-# Colour modes per class (always listing RGB / L / RGBA / CMYK), then the mean R, G, B histogram per class.
+# @title Count colour modes, show gray photos, plot RGB histograms { display-mode: "form" }
+# Colour modes per class (always listing RGB / L / RGBA / CMYK), the grayscale-looking photos, then the mean
+# R, G, B histogram per class.
 _modes = COLOUR_MODES + sorted(set(image_stats["mode"]) - set(COLOUR_MODES))
 mode_by_class = pd.crosstab(image_stats["mode"], image_stats["class"])
 mode_by_class = mode_by_class.reindex(index=_modes, columns=CLASSES, fill_value=0)
 image_stats["looks_gray"] = (image_stats["mode"] == "L") | (image_stats["colourfulness"] < 2.0)
 print("colour modes: " + " · ".join(f"{m} {int(mode_by_class.loc[m].sum())}" for m in _modes))
 _n_gray = int(image_stats["looks_gray"].sum())
-print(f"photos that look grayscale (mode L, or RGB with equal channels): {_n_gray}")
+print(f"photos that look grayscale (mode L, or RGB with colourfulness below 2): {_n_gray}")
+N_GRAY = 6 if SMOKE else 12  # how many grayscale-looking photos to show (N-014); there may be none
+show_rows(image_stats[image_stats["looks_gray"]].head(N_GRAY), "photos that look grayscale")
 
 fig = plt.figure(figsize=(13, 4.6))
 _gs = fig.add_gridspec(
@@ -250,22 +374,25 @@ plt.close(fig)
 # %% [markdown]
 # 💡 Read the histograms as *typical colours of a class*: a class whose curves differ from the others' (a
 # strong blue channel for a pond, high values across all three for a sandy savanna) is a class a model can
-# recognise from colour alone. That is a shortcut you should know about: a dog on green grass in the paddock
-# may be classified as "sheep" because the model learned "green = paddock = sheep".
+# recognise from colour alone. That is a shortcut: a dog on green grass in the paddock may be called "sheep"
+# because the model learned "green = paddock = sheep".
 #
 # ### Brightness and the extremes
 #
-# Brightness is the mean grey level of a photo (0 black, 255 white). Its distribution tells you whether the
-# dataset has night shots at all, and its extremes are the fastest route to broken or odd files.
+# The brightness distribution tells you whether the dataset has night shots at all, and its extremes are the
+# fastest route to broken or odd files.
 
 # %%
-# Brightness per class as box plots, in class colours. The dotted lines mark "very dark" and "very bright".
+# @title Plot brightness per class as violins { display-mode: "form" }
+# Brightness per class as violin plots, in class colours. The dotted lines mark "very dark" and "very bright".
 fig, ax = plt.subplots(figsize=(9, 3.8))
-_data = [image_stats.loc[image_stats["class"] == c, "brightness"] for c in CLASSES]
-_box = ax.boxplot(_data, tick_labels=CLASSES, patch_artist=True, widths=0.6, medianprops={"color": INK})
-for patch, c in zip(_box["boxes"], CLASSES, strict=True):
-    patch.set_facecolor(CLASS_COLORS[c])
-    patch.set_alpha(0.85)
+_data = [image_stats.loc[image_stats["class"] == c, "brightness"].to_numpy() for c in CLASSES]
+_violins = ax.violinplot(_data, widths=0.8, showmedians=True)
+for body, c in zip(_violins["bodies"], CLASSES, strict=True):
+    body.set_facecolor(CLASS_COLORS[c])
+    body.set_alpha(0.85)
+_violins["cmedians"].set_color(INK)
+ax.set_xticks(range(1, len(CLASSES) + 1), CLASSES)
 for level in (40, 215):
     ax.axhline(level, color=INK, lw=0.8, ls=":")
 ax.set_ylim(0, 255)
@@ -281,15 +408,14 @@ plt.close(fig)
 # night, which this data cannot teach.
 #
 # Numbers point, eyes decide. `show_extremes(stat, n)` shows the `n` photos at both ends of any column of
-# `image_stats`, so you can see *what* a very dark, very wide or very grey photo actually is.
-#
-# <table width="100%"><tr><td bgcolor="#FFF4D6"><font color="#7A4A00">
-# <b>✏️ Your turn · Look at the extremes</b><br>
-# Set <code>STAT_TO_SHOW</code> to one of <code>brightness, contrast, colourfulness, aspect, megapixels,
-# long_side</code> and <code>N_EXTREMES</code> to how many photos per end you want, then run the cell. Try
-# <code>"brightness"</code> first, then <code>"colourfulness"</code> (the low end is where grayscale pictures
-# hide) and <code>"aspect"</code>.
-# </font></td></tr></table>
+# `image_stats`, with the median photo ("the average stat") in the middle, so you see *what* a very dark, very
+# wide or very grey photo is next to a typical one.
+
+# %% [markdown]
+# <!-- callout: your-turn | Your turn · Look at the extremes -->
+# Set `STAT_TO_SHOW` to one of `brightness, contrast, colourfulness, aspect, megapixels, long_side` and
+# `N_EXTREMES` to how many photos per end you want, then run the cell. Try `"brightness"` first, then
+# `"colourfulness"` (the low end is where grayscale pictures hide) and `"aspect"`.
 
 # %%
 # ✏️ YOUR TURN
@@ -309,25 +435,49 @@ show_extremes(STAT_TO_SHOW, n_extremes)
 #
 # ### The detective beat: a cluster is a clue
 #
-# A statistic that most photos share, and a few do not, is more than a curiosity. Photos from one pipeline
-# (one camera, one download script, one phone model) come out with the same size and mode. A **cluster of odd
-# sizes or modes therefore points to a different source**: another camera, another download, a batch someone
-# converted by hand. On the park's cameras you would see it as two size clusters (two camera models) or a
-# group of grayscale frames (the infrared night mode). Here we look for the same thing in COCO.
+# Photos from one pipeline (one camera, one download script) come out with the same size and mode. So a
+# **cluster of odd sizes or modes points to a different source**. At the park it would look like this:
 #
-# <table width="100%"><tr><td bgcolor="#E0F7F4"><font color="#00564D">
-# <b>❓ Questions</b><br>
+# 1. **Two camera models** in the park → the width-vs-height scatter shows two clusters of sizes. The cameras
+#    may differ in lens, light and compression, so check that each class is spread over both.
+# 2. **The infrared night mode** of one camera → a group of grayscale frames among colour ones. A model that
+#    saw colour only in training has never seen those.
+# 3. **What to do about each** → decide per group: keep it, convert it to RGB, or drop it.
+#
+# The toy picture shows both clues. Next we look for the same clues in COCO.
+
+# %%
+# @title Toy example: what a cluster of odd sizes and modes looks like { display-mode: "form" }
+_rng = np.random.default_rng(SEED)
+fig, (ax_sizes, ax_modes) = plt.subplots(1, 2, figsize=(8.4, 2.8))
+_cameras = [((1920, 1080, 30), INK, "camera A"), ((1280, 720, 12), "#0B6E79", "camera B")]
+for (_cx, _cy, _n), _col, _name in _cameras:
+    ax_sizes.scatter(_rng.normal(_cx, 15, _n), _rng.normal(_cy, 10, _n), s=14, color=_col, label=_name)
+ax_sizes.set_xlabel("width (px)", fontsize=8)
+ax_sizes.set_ylabel("height (px)", fontsize=8)
+ax_sizes.set_title("two camera models: two size clusters", fontsize=9)
+ax_sizes.legend(frameon=False, fontsize=8)
+ax_modes.bar(["colour (RGB)", "night frames (L)"], [90, 14], color=[INK, "#9AA5A8"])
+ax_modes.set_ylabel("frames", fontsize=8)
+ax_modes.set_title("infrared night mode: a few grayscale frames", fontsize=9)
+for ax in (ax_sizes, ax_modes):
+    ax.tick_params(labelsize=7)
+fig.tight_layout()
+display(fig)
+plt.close(fig)
+
+# %% [markdown]
+# <!-- callout: questions | Questions -->
 # Look back at the scatter from Q4 before you run the next cell.
-# </font></td></tr></table>
-#
+
+# %% [markdown]
 # **Q5.** 🟡 Which longest-side value do most photos share, and how many photos do you think do *not* share
 # it? Write down a guess, then run the cell: it counts them, lists their sizes and shows them.
 
 # %%
-# Q5  The most common longest side, the photos that break the pattern, and the photos that look grayscale.
+# @title Q5 Find the common longest side and show the photos that break the pattern { display-mode: "form" }
 COMMON_LONG_SIDE = int(image_stats["long_side"].mode().iloc[0])
 odd_size = image_stats[image_stats["long_side"] != COMMON_LONG_SIDE].sort_values("long_side")
-gray_like = image_stats[image_stats["looks_gray"]]
 
 print(
     f"{len(image_stats) - len(odd_size)} of {len(image_stats)} photos have a longest side of "
@@ -338,52 +488,49 @@ if len(odd_size):
     print("odd sizes: " + " · ".join(f"{s} ×{n}" for s, n in _sizes.items()))
 else:
     print("every photo in this sample went through the same resize step.")
-print(f"{len(gray_like)} photos look grayscale.")
 
 N_ODD = 6 if SMOKE else 12  # how many of the odd ones to show (N-014)
 show_rows(odd_size.head(N_ODD), f"photos whose longest side is not {COMMON_LONG_SIDE} px")
-show_rows(gray_like.head(N_ODD), "photos that look grayscale")
 
 # %% [markdown]
-# 💡 The odd sizes are small, not large: nobody uploaded a 4000-pixel photo here. The photos that fall below
-# the common cap were *already* smaller than it when COCO fetched them, which is a hint about their origin
-# (old uploads, low-resolution cameras, screenshots). A grayscale photo in a colour dataset is a similar hint,
-# and both go on the list of things to decide about in section 5.
+# 💡 The odd sizes are all smaller than the cap, none larger: those photos were already small when COCO
+# fetched them (old uploads, low-resolution cameras, screenshots), a hint about where they come from. The
+# grayscale photos above are the same kind of hint. For each group, decide: keep, convert to RGB, or drop.
 #
-# **Worked answer (Q5).** On the full Play Dataset almost every photo has a longest side of 640 px, because
-# COCO downloaded Flickr's "640 px" rendition, and only a handful fall below it (none may appear in a small
-# sample). The number itself matters less than the habit: whenever a column of `image_stats` has one dominant
-# value, ask "what made the others different?", because the answer is usually a different source, and a
-# different source usually means different labels, lighting or quality. On your own dataset (section 11) this
-# is the first question to ask about size and mode.
-#
+# **Worked answer (Q5).** On the full Play Dataset almost every photo has a longest side of 640 px (Flickr's
+# "640 px" rendition) and only a handful fall below it; a small sample may show none. The habit matters more
+# than the number: when a column has one dominant value, ask "what made the others different?". The answer
+# is usually a different source, and a different source often means different labels, light or quality.
+
+# %% [markdown]
 # ### Across tasks: what resizing does to boxes and masks
 #
 # Everything above was about the photo. The park's second and third jobs (count, outline) attach **boxes** and
-# **masks** to the photo, and they are affected by the first thing every training pipeline does: resize.
-#
-# <table width="100%"><tr><td bgcolor="#EDE7F6"><font color="#311B92">
-# <b>🔀 Across tasks · Resizing</b><br>
-# <ul>
-# <li><b>Classification:</b> squashing a 4:3 photo into a 224×224 square distorts aspect ratios. Usually
-# harmless for "which animal", because every photo is distorted the same way. Cropping or padding keeps the
-# shape at the cost of pixels or borders.</li>
-# <li><b>Detection:</b> box coordinates live in pixels, so a box must be rescaled with the image: x and width
-# by <code>new_width / width</code>, y and height by <code>new_height / height</code>. A forgotten rescale is
-# the classic "the boxes are all in the top-left corner" bug.</li>
-# <li><b>Segmentation:</b> a mask holds class ids, not colours. Resizing it with the usual smooth (bilinear)
-# filter invents in-between values that are no class at all; masks need <b>nearest-neighbour</b>
-# resizing.</li>
-# </ul>
-# </font></td></tr></table>
-#
-# **Q6.** 🟡 A box is stored as `(x, y, w, h)` in pixels on a `W × H` photo, and the photo is resized to
-# 224×224. Write the formula for the new box. Then predict: how many distinct values does the mask hold after
-# a nearest-neighbour resize, and after a bilinear one? Run the cell to check both.
+# **masks** to it, and the first thing every training pipeline does is resize.
+
+# %% [markdown]
+# <!-- callout: across-tasks | Across tasks · Resizing -->
+# - **Classification:** squashing a 4:3 photo into a 224×224 square distorts it, but every photo is distorted
+#   the same way, so it is usually harmless. Cropping or padding keeps the shape at the cost of pixels or
+#   borders.
+# - **Detection:** a box is in pixels, so rescale it with the image: x and width by `new_width / width`, y and
+#   height by `new_height / height`. Forget it and "all the boxes sit in the top-left corner".
+# - **Segmentation:** a mask holds class ids, not colours. Smooth (bilinear) resizing invents in-between
+#   values that are no class; masks need **nearest-neighbour** resizing.
+
+# %% [markdown]
+# **Q6.** 🟡 A 640×427 photo holds a box `(x, y, w, h) = (100, 50, 200, 150)` in pixels, and the photo is
+# resized to 224×224. What is the new box? Then predict: how many distinct values does the mask hold after a
+# nearest-neighbour resize, and after a bilinear one? Run the cell to check both.
 
 # %%
-# Q6  One photo, one box and one mask, squeezed to 224×224: the box is rescaled; the mask is resized two ways.
+# @title Q6 Rescale a box, resize a mask two ways and show both as heatmaps { display-mode: "form" }
 TARGET = 224
+_w0, _h0, _box0 = 640, 427, (100, 50, 200, 150)  # the numbers of the question
+_new0 = (_box0[0] * TARGET / _w0, _box0[1] * TARGET / _h0, _box0[2] * TARGET / _w0, _box0[3] * TARGET / _h0)
+print(f"question: {_w0}×{_h0} → {TARGET}×{TARGET}, box {_box0} → ({', '.join(f'{v:.1f}' for v in _new0)})")
+
+# One real photo from the Play Dataset, with its box and mask:
 _polygon = annotations["segmentation"].apply(lambda s: isinstance(s, list))
 _ann = annotations[(annotations["iscrowd"] == 0) & _polygon].iloc[0]
 _photo = images.loc[images["id"] == _ann["image_id"]].iloc[0]
@@ -412,37 +559,72 @@ print(
     f"nearest {np.unique(mask_nearest).tolist()} · bilinear {len(np.unique(mask_bilinear))} distinct values"
 )
 
-fig, axes = plt.subplots(1, 4, figsize=(14, 3.9))
+fig, axes = plt.subplots(1, 4, figsize=(15, 3.9), layout="constrained")
 axes[0].imshow(original)
 axes[0].add_patch(Rectangle((x, y), w, h, fill=False, edgecolor=_color, lw=2))
 axes[0].set_title(f"original {W}×{H} + box", fontsize=9)
 axes[1].imshow(squashed)
 axes[1].add_patch(Rectangle(new_box[:2], new_box[2], new_box[3], fill=False, edgecolor=_color, lw=2))
 axes[1].set_title(f"resized {TARGET}×{TARGET} + rescaled box", fontsize=9)
-axes[2].imshow(mask_nearest, cmap=ListedColormap(["white", _color]), vmin=0, vmax=1)
+axes[2].imshow(mask_nearest, cmap="viridis", vmin=0, vmax=1)
 axes[2].set_title(f"mask, nearest: {len(np.unique(mask_nearest))} values", fontsize=9)
-_soft_cmap = LinearSegmentedColormap.from_list("mask", ["white", _color])
-axes[3].imshow(mask_bilinear, cmap=_soft_cmap, vmin=0, vmax=1)
+_heat = axes[3].imshow(mask_bilinear, cmap="viridis", vmin=0, vmax=1)
 axes[3].set_title(f"mask, bilinear: {len(np.unique(mask_bilinear))} values", fontsize=9)
 for ax in axes:
     frame(ax, _color, width=2)
-fig.suptitle(f"{_ann['class']}: what one resize does to the photo, its box and its mask", color=INK)
-fig.tight_layout()
+fig.colorbar(_heat, ax=axes[2:], fraction=0.025, pad=0.02, label="mask value (0 = background, 1 = animal)")
+fig.suptitle(f"{_ann['class']}: what one resize does to the photo, its box and its mask (masks as heatmaps)",
+             color=INK)
 display(fig)
 plt.close(fig)
 
+# Zoom on 6×6 pixels at the animal's edge, with the value of every pixel written in.
+_edge = np.argwhere((mask_bilinear > 0.3) & (mask_bilinear < 0.7))
+if len(_edge):
+    _r0, _c0 = (int(np.clip(v - 3, 0, TARGET - 6)) for v in _edge[len(_edge) // 2])
+    fig, axes = plt.subplots(1, 2, figsize=(8, 3.9))
+    for ax, data, name in ((axes[0], mask_nearest, "nearest"), (axes[1], mask_bilinear, "bilinear")):
+        patch = data[_r0 : _r0 + 6, _c0 : _c0 + 6]
+        ax.imshow(patch, cmap="viridis", vmin=0, vmax=1)
+        for (i, j), v in np.ndenumerate(patch):
+            ink = "white" if v < 0.6 else "black"  # readable on dark and on light cells
+            ax.text(j, i, f"{v:.2f}", ha="center", va="center", fontsize=8, color=ink)
+        ax.set_title(f"{name}: 6×6 pixels at the edge", fontsize=9)
+        ax.set_xticks([])
+        ax.set_yticks([])
+    fig.tight_layout()
+    display(fig)
+    plt.close(fig)
+
 # %% [markdown]
-# 💡 The box follows the photo as long as you scale x and y separately. The mask does not survive a smooth
-# resize: the bilinear version has a soft grey rim of values between 0 and 1, which are not "background" and
-# not "the animal". With six classes those in-between values would become ids of *other* animals.
+# 💡 The box follows the photo as long as x and y are scaled separately. The mask does not survive a smooth
+# resize: the bilinear heatmap has a rim of in-between values, which are neither "background" nor "animal".
 #
-# **Worked answer (Q6).** New box = `(x · 224/W, y · 224/H, w · 224/W, h · 224/H)`; x-like values use the
-# horizontal factor, y-like values the vertical one, and on a landscape photo the two factors differ, so the
-# box is squashed exactly like the photo. Nearest-neighbour resizing keeps the two original values (0 and 1).
-# Bilinear resizing produces many distinct values along every edge of the animal, and the number grows with
-# the length of the boundary, so thin parts (legs, tails, a bird's beak) suffer most. That is why segmentation
-# pipelines resize images with a smooth filter and masks with nearest-neighbour.
+# **Where do they come from?** Bilinear interpolation gives every new pixel a weighted average of the four
+# nearest old pixels:
 #
-# **Takeaway.** `image_stats` costs seconds and already answers four of the checklist's questions (size,
-# shape, colour mode, colour) for any folder of images, labelled or not. Section 4 adds the labels and asks
-# the question every count depends on: how many photos of each class do we have, and does it matter?
+# `new = (1−a)(1−b)·v00 + a(1−b)·v10 + (1−a)b·v01 + a·b·v11`
+#
+# where `a` and `b` say how far (0 to 1) the new pixel lies from the old ones. At an edge some of the four
+# are 0 (background) and some are 1 (animal), so the result is a fraction such as 0.25 or 0.5. (When
+# shrinking, the filter averages over a slightly wider neighbourhood; the idea is the same.)
+#
+# **Worked answer (Q6).** New box = `(x · 224/W, y · 224/H, w · 224/W, h · 224/H)`. For the question,
+# x and w are multiplied by 224/640 = 0.35 and y and h by 224/427 = 0.525, giving `(35, 26.2, 70, 78.7)`: the
+# box is squashed exactly like the photo. Nearest-neighbour keeps the two original values (0 and 1);
+# bilinear produces many distinct values along every edge, so thin parts (legs, tails, a beak) suffer most.
+
+# %% [markdown]
+# **Why not just round the fractions?** With 0 = background and 1 = dog, an edge pixel of 0.5 is not a class.
+# With several class ids (0 background, 1 cat, 2 dog), an edge between background (0) and dog (2) averages to
+# 1, which is a *cat that is not there*. Nearest-neighbour copies one existing neighbour, so it can only
+# produce ids that exist. That is why pipelines resize photos with a smooth filter and masks with
+# nearest-neighbour.
+
+# %% [markdown]
+# <!-- callout: takeaway | Takeaway -->
+# - **When you see** a size, shape or mode that most photos share and a few do not → **do** ask what source
+#   made the others different, then keep, convert to RGB, or drop them.
+# - **When you read** a statistic → **do** look at the min, median and max photo behind it.
+# - **When you resize** photos for training → **do** rescale boxes by the same x and y factors, and resize
+#   masks with nearest-neighbour.

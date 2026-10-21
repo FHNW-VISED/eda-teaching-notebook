@@ -10,23 +10,22 @@
 # *RLE* (run-length encoding: "300 background pixels, then 25 animal pixels, then …"). `pycocotools`, the
 # COCO team's own library, turns both into a 0/1 array the size of the photo. This section keeps the photos
 # of `clean_images` and counts what is inside those arrays.
-#
-# <table width="100%"><tr><td bgcolor="#E3F2FD"><font color="#0D47A1">
-# <b>📘 Theory · What changes when the unit is a pixel</b><br>
-# A segmentation model makes one decision per <b>pixel</b>: which class is this pixel, or is it background?
+
+# %% [markdown]
+# <!-- callout: theory | Theory · What changes when the unit is a pixel -->
+# A segmentation model makes one decision per **pixel**: which class is this pixel, or is it background?
 # Four things follow:
-# <ul>
-# <li><b>Imbalance is counted in pixels, and background is a class too.</b> Most of every photo is grass,
-# sky and water, and a big horse outweighs a whole flock of far-away birds.</li>
-# <li><b>Size is everything.</b> A bird of 10×10 px is 100 decisions; a horse filling the frame is
-# 100,000. The loss hears the horse a thousand times louder.</li>
-# <li><b>Thin parts</b> (legs, tails, beaks, a bird far away) are few pixels, and they are the first to
-# vanish when the photo is shrunk to the network's input size.</li>
-# <li><b>Mask quality is hard to see.</b> A box is four numbers; a mask is dozens of clicks, so masks are
-# sloppier, and a bad one looks like any other row in a table.</li>
-# </ul>
-# </font></td></tr></table>
 #
+# - **Imbalance is counted in pixels, and background is a class too.** Most of every photo is grass,
+#   sky and water, and a big horse outweighs a whole flock of far-away birds.
+# - **Size is everything.** A bird of 10×10 px is 100 decisions; a horse filling the frame is
+#   100,000. The loss hears the horse a thousand times louder.
+# - **Thin parts** (legs, tails, beaks, a bird far away) are few pixels, and they are the first to
+#   vanish when the photo is shrunk to the network's input size.
+# - **Mask quality is hard to see.** A box is four numbers; a mask is dozens of clicks, so masks are
+#   sloppier, and a bad one looks like any other row in a table.
+
+# %% [markdown]
 # The collapsed cell defines the mask tools: decode and encode RLE, measure a mask's shape, and `show_masks`,
 # a gallery that paints each mask in its class colour over the photo, with its annotated box dashed.
 
@@ -144,6 +143,7 @@ def show_masks(rows_df: pd.DataFrame, masks_df: pd.DataFrame, title: str, captio
 # without ever building the full 0/1 array.
 
 # %%
+# @title Build `masks`: one RLE per mask, with its pixel count { display-mode: "form" }
 # One row per mask of the photos in clean_images (crowd regions included), as RLE, with its pixel count.
 _size = clean_images.set_index("id")[["width", "height"]]
 masks = boxes[["id", "image_id", "class", "bbox", "iscrowd", "segmentation"]].copy()
@@ -157,19 +157,19 @@ masks.head(3)
 
 # %% [markdown]
 # ### Pixels per class, background included
-#
-# <table width="100%"><tr><td bgcolor="#E0F7F4"><font color="#00564D">
-# <b>❓ Questions</b><br>
+
+# %% [markdown]
+# <!-- callout: questions -->
 # Section 4 counted photos and section 8 counted boxes. A segmentation model counts pixels, and every pixel
-# that is not an animal is <i>background</i>, which is a class like any other for the model.
-# </font></td></tr></table>
-#
+# that is not an animal is *background*, which is a class like any other for the model.
+
+# %% [markdown]
 # **Q26.** 🟢 What share of all pixels in the Play Dataset do you expect to be background: about a quarter,
 # a half, or most of them? And will bird be frequent or rare by pixels? Write down both guesses, then run the
 # cell: it merges each photo's masks into one (a pixel belongs to at most one animal) and counts.
 
 # %%
-# Q26  Pixels per class including background (shares of all pixels), next to the photo and box shares.
+# @title Q26 Pixels per class including background, next to the photo and box shares { display-mode: "form" }
 photo_rle = {}  # one merged mask per photo, reused by the heatmaps below
 _animal_px = dict.fromkeys(CLASSES, 0)
 for image_id, own in masks.groupby("image_id"):
@@ -247,7 +247,7 @@ plt.close(fig)
 # you expect to fill its box least? Guess, then run.
 
 # %%
-# Q27  Shape numbers of every (non-crowd) mask, then mask area and fill ratio per class.
+# @title Q27 Shape numbers of every mask, then mask area and fill ratio per class { display-mode: "form" }
 animals = masks[masks["iscrowd"] == 0].reset_index(drop=True)
 _shape = pd.DataFrame([mask_shape(decode(r), b)
                        for r, b in zip(animals["rle"], animals["bbox"], strict=True)])
@@ -263,16 +263,17 @@ fig, axes = plt.subplots(1, 2, figsize=(11, 3.6))
 for ax, col, label, log in [(axes[0], "photo_share", "mask area, share of the photo (log)", True),
                             (axes[1], "fill", "fill ratio = mask area / box area", False)]:
     data = [animals.loc[animals["class"] == c, col].clip(lower=1e-5).to_numpy() for c in CLASSES]
-    parts = ax.boxplot(data, tick_labels=CLASSES, patch_artist=True, showfliers=not log, widths=0.6,
-                       flierprops={"markersize": 3, "markeredgecolor": INK})
-    for patch, c in zip(parts["boxes"], CLASSES, strict=True):
-        patch.set_facecolor(CLASS_COLORS[c])
-        patch.set_alpha(0.75)
-    for med in parts["medians"]:
-        med.set_color(INK)
+    if log:  # violins are drawn on log10(value) so the KDE is smooth on a log axis; ticks are relabelled
+        data = [np.log10(v) for v in data]
+    parts = ax.violinplot(data, showmedians=True, showextrema=False, widths=0.8)
+    for body, c in zip(parts["bodies"], CLASSES, strict=True):
+        body.set_facecolor(CLASS_COLORS[c])
+        body.set_alpha(0.75)
+    parts["cmedians"].set_color(INK)
+    ax.set_xticks(range(1, len(CLASSES) + 1), CLASSES)
     if log:
-        ax.set_yscale("log")
-        ax.yaxis.set_major_formatter(mpl.ticker.PercentFormatter(1.0, decimals=2))
+        _ticks = [1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1]
+        ax.set_yticks(np.log10(_ticks), [f"{100 * t:g}%" for t in _ticks])
     else:
         ax.set_ylim(0, 1.05)
         ax.yaxis.set_major_formatter(mpl.ticker.PercentFormatter(1.0))
@@ -311,6 +312,7 @@ show_masks(clean_images.set_index("id").loc[list(_ends["image_id"])].reset_index
 # dark spot means "in many of this class's photos, this spot is animal".
 
 # %%
+# @title Mean mask per class: where the animal pixels are { display-mode: "form" }
 # Mean mask per class on a common square: the share of the class's photos in which each spot is animal.
 HEAT_RES = 24 if SMOKE else 48  # coarser grid with few photos (N-014)
 _class_of = clean_images.set_index("id")["class"]
@@ -353,7 +355,7 @@ plt.close(fig)
 # runner-up? Pick one, then run.
 
 # %%
-# Q28  Share of each class's masks with at least 5 % of their pixels in thin parts, and the thinnest masks.
+# @title Q28 Share of each class's masks with thin parts, and the thinnest masks { display-mode: "form" }
 THIN_SHARE = 0.05  # a mask "has thin parts" when at least this share of its pixels is thin
 _big = animals["mask_area"] >= MIN_JUDGED_AREA
 _has_thin = animals["thin"] >= THIN_SHARE
@@ -397,22 +399,22 @@ show_masks(clean_images.set_index("id").loc[list(_most_thin["image_id"])].reset_
 # birds have long legs: most birds are so small that the *whole bird* is a thin part. Among the masks large
 # enough to judge, horse leads (legs), with bird, sheep and zebra next, and cat almost never has one. Two
 # different problems hide behind one number: tiny objects and thin parts of big ones.
-#
-# <table width="100%"><tr><td bgcolor="#EDE7F6"><font color="#311B92">
-# <b>🔀 Across tasks · What handles each of these later (next week and beyond)</b><br>
+
+# %% [markdown]
+# <!-- callout: across-tasks | Across tasks · What handles each of these later (next week and beyond) -->
 # The same vocabulary as section 8, now for pixels:
-# <ul>
-# <li><b>Pixel imbalance</b> (background ~85 %, bird ~1 %) → a <b>class-weighted</b> cross-entropy or a
-# <b>Dice loss</b>, which scores each class's overlap on its own scale, and reporting <b>mean IoU over
-# classes</b> (section 7), so that birds count as much as background.</li>
-# <li><b>Tiny animals and thin parts</b> → a higher input resolution, or <b>crops / tiles</b> of the photo,
-# so that a 7 px leg is still 7 px for the network; boundary-aware losses weigh the outline more.</li>
-# <li><b>Everything in the centre</b> → random crops and shifts when training, so the edge of the frame is
-# not always background.</li>
-# </ul>
-# None of these fixes a mask that is wrong. That is the data side, and the next part is about it.
-# </font></td></tr></table>
 #
+# - **Pixel imbalance** (background ~85 %, bird ~1 %) → a **class-weighted** cross-entropy or a
+#   **Dice loss**, which scores each class's overlap on its own scale, and reporting **mean IoU over
+#   classes** (section 7), so that birds count as much as background.
+# - **Tiny animals and thin parts** → a higher input resolution, or **crops / tiles** of the photo,
+#   so that a 7 px leg is still 7 px for the network; boundary-aware losses weigh the outline more.
+# - **Everything in the centre** → random crops and shifts when training, so the edge of the frame is
+#   not always background.
+#
+# None of these fixes a mask that is wrong. That is the data side, and the next part is about it.
+
+# %% [markdown]
 # ### Guided hunt: five ugly masks
 #
 # The park paid an annotation team per mask, and the masks came back. In the Play Dataset they are `masks`;
@@ -548,13 +550,12 @@ print(f"park_masks: {len(park_masks)} animal masks on {park_masks['image_id'].nu
 # the legs, under the neck), so it is rarely close to 1.</li>
 # </ul>
 # Only masks of at least 32×32 px are judged: below that, a few pixels of rounding change every number.
-#
-# <table width="100%"><tr><td bgcolor="#FFF4D6"><font color="#7A4A00">
-# <b>✏️ Your turn · Set the thresholds</b><br>
+
+# %% [markdown]
+# <!-- callout: your-turn | Your turn · Set the thresholds -->
 # Each threshold decides when a mask becomes a suspect. Run the hunt with the defaults first. Then make one
-# check stricter (for example <code>IOU_MIN = 0.97</code> or <code>SOLIDITY_MAX = 0.9</code>) and one looser,
-# rerun this cell and the next, and watch how many <i>real</i> masks join the suspects.
-# </font></td></tr></table>
+# check stricter (for example `IOU_MIN = 0.97` or `SOLIDITY_MAX = 0.9`) and one looser,
+# rerun this cell and the next, and watch how many *real* masks join the suspects.
 
 # %%
 # ✏️ YOUR TURN
@@ -578,7 +579,7 @@ if not _ok:
 # (kind → check), then run the cell and compare.
 
 # %%
-# Q29  Measure every judged mask of park_masks, flag the ones outside the thresholds, and score the hunt.
+# @title Q29 Measure every judged mask, flag the suspects, score the hunt { display-mode: "form" }
 _judge = park_masks[park_masks["mask_area"] >= MIN_JUDGED_AREA].reset_index(drop=True)
 park_shape = pd.concat([_judge, pd.DataFrame([mask_shape(decode(r), b)
                                               for r, b in zip(_judge["rle"], _judge["bbox"], strict=True)])],
@@ -615,6 +616,7 @@ show_masks(clean_images.set_index("id").loc[list(_show["image_id"])].reset_index
 # real COCO mask it replaced.
 
 # %%
+# @title The answer key: planted masks, checks that fired, original vs planted { display-mode: "form" }
 # The key: each planted mask, the checks that fired on it, and the original mask (top) vs the planted one.
 _checks_by_id = park_shape.set_index("id")["checks"]
 HUNT9_KEY["checks"] = HUNT9_KEY["ann_id"].map(_checks_by_id).fillna("")
@@ -684,7 +686,7 @@ plt.close(fig)
 # the outline of each one runs along, then run.
 
 # %%
-# Q30  Edge alignment: share of each mask's outline within 2 px of a Canny edge in the photo.
+# @title Q30 Edge alignment: share of each mask's outline within 2 px of a Canny edge { display-mode: "form" }
 N_EDGE_REAL = 10 if SMOKE else 150  # real masks to compare with (N-014)
 
 

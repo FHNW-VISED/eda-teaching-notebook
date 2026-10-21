@@ -23,14 +23,17 @@ EXECUTED = ROOT / "build" / "smoke-executed.ipynb"
 RESULTS_FILE = ROOT / "build" / "smoke-results.json"
 CLASSES = {"cat", "dog", "bird", "horse", "sheep", "zebra"}
 KARPATHY = "karpathy.github.io/2019/04/25/recipe"
-CALLOUT_TINTS = {  # SPEC L-001: every Callout kind is used at least once
-    "theory": "#E3F2FD",
-    "your turn": "#FFF4D6",
-    "questions": "#E0F7F4",
-    "across tasks": "#EDE7F6",
-    "pitfall": "#FDECEA",
-    "recipe": "#E8F5E9",
-}
+CALLOUT_KINDS = (  # SPEC L-001: every Callout kind is used at least once ("go-deeper" is optional)
+    "theory",
+    "your-turn",
+    "questions",
+    "across-tasks",
+    "pitfall",
+    "recipe",
+    "objective",
+    "takeaway",
+    "banner",
+)
 
 
 SPEC = ROOT / "SPEC.md"
@@ -88,8 +91,9 @@ def test_outcomes_and_story_stated(nb):
 
 @requires("all")
 def test_every_callout_kind_is_used(nb):
-    md = "\n".join(c.source for c in nb.cells if c.cell_type == "markdown").upper()
-    missing = [k for k, tint in CALLOUT_TINTS.items() if tint.upper() not in md]
+    # build.py turns each callout marker cell into a code cell tagged with metadata["callout"] (N-034)
+    used = {c.metadata.get("callout") for c in nb.cells if c.cell_type == "code"}
+    missing = [k for k in CALLOUT_KINDS if k not in used]
     assert not missing, f"Callout kinds never used: {missing} (SPEC L-001)"
 
 

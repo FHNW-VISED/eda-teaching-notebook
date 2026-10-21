@@ -1,15 +1,18 @@
 # %% [markdown]
 # ## 12. Wrap-up & next week
-#
-# **Objective:** look back at the three things you set out to do, see the park's numbers for each, and know
-# where next week's training starts.
-#
+
+# %% [markdown]
+# <!-- callout: objective | Objective -->
+# Look back at the three things you set out to do, see the park's numbers for each, and know where next
+# week's training starts.
+
+# %% [markdown]
 # Nothing was trained today, and yet we now know a lot about whether the park's data is fit for its three
 # jobs. The next cell collects the numbers the earlier sections measured, grouped by the three outcomes from
 # the title banner.
 
 # %%
-# The park's numbers from today, one block per learning outcome.
+# @title The park's numbers from today, one block per learning outcome { display-mode: "form" }
 _photos = RESULTS["images_per_class"]
 _boxes = RESULTS["boxes_per_class"]
 _pixels = RESULTS["pixels_per_class"]
@@ -23,7 +26,7 @@ recap = {
     ],
     "2 · Find and fix errors": [
         f"removed {RESULTS['n_removed']}, kept {RESULTS['n_clean']} "
-        "(copies and broken files, before any split)",
+        "(copies, before any split)",
     ],
     "3 · Split, metric, and the three tasks": [
         f"test photos with a burst sibling in train: random split {RESULTS['sibling_rate_random']:.0%}, "
@@ -43,47 +46,53 @@ for outcome, lines in recap.items():
 # 💡 Every line is a decision you can now defend: what to fix, how to split, what to measure, and in which
 # unit (photo, box or pixel) to count. In smoke mode the numbers are tiny; the full run gives the park's real
 # ones.
+
+# %% [markdown]
+# <!-- callout: takeaway | Takeaways -->
+# You can now do the three things from the banner:
 #
-# ### Takeaways
-#
-# <table width="100%"><tr><td bgcolor="#0B6E79"><font color="#FFFFFF">
-# <b>You can now:</b>
-# <ol>
-# <li><b>Inspect an image dataset qualitatively and quantitatively, and say whether it fits a task.</b><br>
-# Look at many photos before computing anything; then measure sizes, modes, colours and class counts. The
-# outliers point at bugs, and a photo the park's camera would never take points at a poor fit.</li>
-# <li><b>Find and fix common dataset errors before they leak into training.</b><br>
-# Hash the files for exact copies, hash the pixels (and their flipped and rotated variants) for near copies,
-# open every file once, and let a human judge the least typical labels and the ugliest masks. Write down
-# "removed N, kept M".</li>
-# <li><b>Choose a split and a metric that match the use case, and explain how imbalance, object size and
-# leakage look different for classification, detection and segmentation.</b><br>
-# Deduplicate, then split by whatever ties photos together (a camera, a burst). Pick the metric from the
-# expensive mistake: recall on dog for the paddock alert, counting error for the headcount, IoU per class
-# for the outlines. Always say what you count: photos, boxes or pixels.</li>
-# </ol>
-# </font></td></tr></table>
-#
+# - **1 · Inspect.** **When you see** a new image dataset → **do** look at many photos before computing
+#   anything, then measure sizes, modes, colours and class counts. An outlier points at a bug; a photo the
+#   park's camera would never take points at a poor fit.
+# - **2 · Fix errors.** **When you see** files that may be the same photo → **do** hash the files for exact
+#   copies and the pixels (with flipped and rotated variants) for near copies, open every file once, and let
+#   a human judge the least typical labels and the ugliest masks. Write down "removed N, kept M".
+# - **3 · Split and measure.** **When you see** photos tied together by a camera or a burst → **do**
+#   deduplicate, then split by that group. Pick the metric from the expensive mistake: recall on dog for the
+#   paddock alert, counting error for the headcount, IoU per class for the outlines. Always say what you
+#   count: photos, boxes or pixels.
+
+# %% [markdown]
 # ### Next week: training
 #
-# Next week the cleaned table and the split go into a model. Karpathy's recipe continues the same way:
-# first an end-to-end skeleton with a dumb baseline, then a model that overfits, then regularisation.
-# Two things from today come back straight away.
-#
+# Next week the cleaned table and the split go into a model. Karpathy's recipe continues the same way: first
+# an end-to-end skeleton with a dumb baseline, then a model that overfits, then regularisation. Two things
+# from today come back straight away.
+
+# %% [markdown]
 # **Data augmentation.** The flipped, rotated and recompressed copies you hunted in section 5 are what
-# augmentation makes *on purpose*: new training views of the same photo. Augment only the training set,
-# and only after the split, or the copies leak into the test set again.
-# - Neptune.ai, [Data augmentation in Python](https://neptune.ai/blog/data-augmentation-in-python):
+# augmentation makes *on purpose*: a flipped sheep is still a sheep, so training sees it twice. Augment only
+# the training set, and only after the split, or the copies leak into the test set again.
+
+# %% [markdown]
+# <!-- callout: go-deeper | Go deeper · Data augmentation -->
+# - [Data augmentation in Python (Neptune.ai)](https://neptune.ai/blog/data-augmentation-in-python):
 #   an overview of the techniques and libraries.
-# - Ultralytics, [YOLO data augmentation](https://docs.ultralytics.com/guides/yolo-data-augmentation/):
+# - [YOLO data augmentation (Ultralytics)](https://docs.ultralytics.com/guides/yolo-data-augmentation/):
 #   what each augmentation does for detection, where boxes must move with the pixels.
-#
-# **Tracking experiments (MLOps).** Training means many runs with different settings; a tracking tool
-# records each run's settings, curves and scores so you can compare them later.
-# - [Weights & Biases](https://wandb.ai/)
-# - [TensorBoard](https://www.tensorflow.org/tensorboard)
-# - [Neptune.ai](https://neptune.ai/)
-# - [MLflow](https://mlflow.org/)
-#
+
+# %% [markdown]
+# **Tracking experiments (MLOps).** Training means many runs with different settings, say five learning
+# rates for the dog-in-the-paddock model. A tracking tool records each run's settings, curves and scores so
+# you can compare them later.
+
+# %% [markdown]
+# <!-- callout: go-deeper | Go deeper · Experiment-tracking tools -->
+# - [Weights & Biases](https://wandb.ai/): hosted dashboards for runs, curves and scores.
+# - [TensorBoard](https://www.tensorflow.org/tensorboard): training curves, runs on your own machine.
+# - [Neptune.ai](https://neptune.ai/): hosted tracker for run settings and metadata.
+# - [MLflow](https://mlflow.org/): open source, self-hosted tracking.
+
+# %% [markdown]
 # **Bring along:** your answers to the guiding questions of section 11 and your split
 # (`data/cache/my_split.csv`, or the one you choose by hand).

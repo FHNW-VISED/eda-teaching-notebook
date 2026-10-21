@@ -1,50 +1,56 @@
 # %% [markdown]
 # # Know Your Data: Exploring and Preparing Image Datasets at the Wildwood Farm Park
+
+# %% [markdown]
+# <!-- callout: objective | Objective -->
+# Run the setup, meet the park, and see the three things you will be able to do at the end.
+
+# %% [markdown]
+# <!-- callout: banner | Know Your Data: Exploring and Preparing Image Datasets at the Wildwood Farm Park -->
+# **At the end of this notebook you will be able to:**
 #
-# **Objective:** run the setup, meet the park, and see the three things you will be able to do at the end.
+# 1. Inspect an image dataset qualitatively and quantitatively, and say whether it fits a task.
+# 2. Find and fix common dataset errors (duplicates, flipped/rotated copies, bad labels or masks) before
+#    they leak into training.
+# 3. Choose a split and a metric that match the use case, and explain how imbalance, object size and leakage
+#    look different for classification, detection and segmentation.
 #
-# <table width="100%"><tr><td bgcolor="#0B6E79"><font color="#FFFFFF">
-# <font size="5"><b>Know Your Data: Exploring and Preparing Image Datasets
-# at the Wildwood Farm Park</b></font><br><br>
-# <b>At the end of this notebook you will be able to:</b>
-# <ol>
-# <li>Inspect an image dataset qualitatively and quantitatively, and say whether it fits a task.</li>
-# <li>Find and fix common dataset errors (duplicates, flipped/rotated copies, broken files, bad labels or
-# masks) before they leak into training.</li>
-# <li>Choose a split and a metric that match the use case, and explain how imbalance, object size and leakage
-# look different for classification, detection and segmentation.</li>
-# </ol>
 # Questions are marked 🟢 beginner · 🟡 intermediate · 🔴 advanced (optional).
-# </font></td></tr></table>
-#
+
+# %% [markdown]
 # **Before you start:** you need a Google account (this notebook runs in Colab, a CPU runtime is enough),
 # Python basics, and the lecture on image datasets. No model is trained here; that is next week.
+#
 # The notebook follows the first part of Karpathy's
 # [*A Recipe for Training Neural Networks*](https://karpathy.github.io/2019/04/25/recipe/):
 # know your data before you touch a model.
 
 # %% [markdown]
 # ## 0. Setup & the park
+
+# %% [markdown]
+# <!-- callout: theory | The Wildwood Farm Park -->
+# The park has cameras in four places:
 #
-# **The Wildwood Farm Park** has cameras in four places, and it wants three things from them.
+# - 🐑🐴 **Farm paddock**: sheep, horses
+# - 🐦 **Aviary pond**: birds
+# - 🦓 **Savanna enclosure**: zebras
+# - 🐱🐶 **Visitor yard**: cats and dogs wander through
 #
-# <table width="100%"><tr>
-# <td align="center" width="25%"><font size="6">🐑🐴</font><br><b>Farm paddock</b><br>sheep, horses</td>
-# <td align="center" width="25%"><font size="6">🐦</font><br><b>Aviary pond</b><br>birds</td>
-# <td align="center" width="25%"><font size="6">🦓</font><br><b>Savanna enclosure</b><br>zebras</td>
-# <td align="center" width="25%"><font size="6">🐱🐶</font><br><b>Visitor yard</b><br>cats and dogs wander
-# through</td>
-# </tr></table>
+# It wants three things from them:
 #
-# 1. **Recognise** (classification): "who is in front of this camera?" The case that matters is **a dog in the
-#    sheep paddock**, which triggers an alert. Missing that dog is worse than a false alarm.
+# 1. **Recognise** (classification): "who is in front of this camera?" The case that matters is **a dog in
+#    the sheep paddock**, which triggers an alert. Missing that dog is worse than a false alarm.
 # 2. **Count** (detection): a daily headcount of sheep, zebras and birds. Far-away birds are tiny.
 # 3. **Outline** (segmentation): how much of each enclosure each animal uses. Birds cover few pixels.
-#
+
+# %% [markdown]
 # The park has no training data yet, so we practise on a **Play Dataset**: COCO 2017 photos of the same six
-# animals (cat, dog, bird, horse, sheep, zebra), each photo showing one animal class. Everything you learn
-# here is a checklist you will reuse on your own project dataset in the last section.
+# animals (cat, dog, bird, horse, sheep, zebra), each photo showing one animal class.
 #
+# Everything you learn here is a checklist you will reuse on your own project dataset in the last section.
+
+# %% [markdown]
 # **Run the next cell once.** It installs the one package Colab lacks, fixes the random seed, sets the
 # notebook's colours and defines `use()`, the helper that lets you write small functions without ever
 # blocking "Run all".
@@ -206,13 +212,16 @@ except ImportError:
 # Run the cell below as is, then fill in the body and run it again to see the message change.
 
 # %%
+# @title Reference solution — peek only if you are stuck { display-mode: "form" }
+def _ref_double(x):
+    return 2 * x
+
+
+# %%
+# ✍️ YOUR CODE
 def double(x):
     """Return twice x."""
     ...
-
-
-def _ref_double(x):
-    return 2 * x
 
 
 result = use(double, 21, reference=_ref_double)
@@ -221,11 +230,12 @@ print("the notebook continues with:", result)
 # %% [markdown]
 # ### The Play Dataset
 #
-# The next cell fetches the annotation subset we prepared (`data/coco_animals_subset.json`, COCO 2017 val,
-# six animal classes, each image shows exactly one of them) and downloads the photos themselves from
-# `images.cocodataset.org`. **The first run takes a minute or two** (about 115 MB); afterwards the images
-# are cached and the cell is instant. The result is two tidy tables, `images` (one row per photo) and
-# `annotations` (one row per animal: its box and mask).
+# The next cell fetches the annotation subset we prepared (COCO 2017 val, six animal classes, one class per
+# photo) and downloads the photos from `images.cocodataset.org`.
+#
+# **The first run takes a minute or two** (about 115 MB); afterwards the images are cached and the cell is
+# instant. The result is two tidy tables, `images` (one row per photo) and `annotations` (one row per
+# animal: its box and mask).
 
 # %%
 # @title Data helpers (download with cache, build the tables) { display-mode: "form" }
@@ -347,7 +357,7 @@ def build_tables(coco: dict, paths: dict[int, Path]) -> tuple[pd.DataFrame, pd.D
 
 
 # %%
-# Load the manifest, pick the images (all of them, or 6 per class in smoke mode), download, build the tables.
+# @title Load the manifest, download the images, build the tables { display-mode: "form" }
 COCO_RAW = json.loads(fetch_manifest("coco_animals_subset.json").read_text())
 _cat_name = {c["id"]: c["name"] for c in COCO_RAW["categories"]}
 _image_class = {a["image_id"]: _cat_name[a["category_id"]] for a in COCO_RAW["annotations"]}
@@ -375,5 +385,7 @@ images.head()
 
 # %% [markdown]
 # Each row of `images` is one photo with its size, its class and how many animals it holds; `annotations`
-# has one row per animal with its box and mask. Look at the `n_animals` column: several photos hold more
-# than one animal, which already hints at a question we will meet in section 4.
+# has one row per animal with its box and mask.
+#
+# Look at the `n_animals` column: several photos hold more than one animal, which already hints at a
+# question we will meet in section 4.

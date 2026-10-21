@@ -1,26 +1,37 @@
 # %% [markdown]
 # ## 2. Become one with the data
+
+# %% [markdown]
+# <!-- callout: objective | Objective -->
+# Look at many images before computing anything, and write down what you see.
+
+# %% [markdown]
+# Section 1 ended with three 👀 questions that no table can answer. Your eyes are the only tool for them, and
+# most people skip this step:
 #
-# **Objective:** look at many images before computing anything, and write down what you see.
+# - 👀 Does the data **fit** the park's cameras?
+# - 👀 Does its **variability** match what the cameras will see?
+# - 👀 Are the animals **identifiable by eye**?
 #
-# Section 1 ended with three 👀 bullets that no table can answer: does the data *fit* the park's cameras, does
-# its *variability* match what the cameras will see, and are the animals *identifiable by eye*? The only tool
-# for those is your eyes, and this is the step most people skip. Karpathy puts it first in his recipe:
-#
-# <table width="100%"><tr><td bgcolor="#E8F5E9"><font color="#1B5E20">
-# <b>🧾 Recipe · Step 1: Become one with the data</b><br>
-# <i>"The first step to training a neural net is to not touch any neural net code at all and instead begin by
+# Karpathy puts this step first in his recipe:
+
+# %% [markdown]
+# <!-- callout: recipe | Recipe · Step 1: Become one with the data -->
+# *"The first step to training a neural net is to not touch any neural net code at all and instead begin by
 # thoroughly inspecting your data. This step is critical. I like to spend copious amount of time (measured in
 # units of hours) scanning through thousands of examples, understanding their distribution and looking for
-# patterns."</i><br>
-# Andrej Karpathy, <a href="https://karpathy.github.io/2019/04/25/recipe/">A Recipe for Training Neural
-# Networks</a> (2019).
-# </font></td></tr></table>
+# patterns."*
 #
+# Andrej Karpathy, [A Recipe for Training Neural
+# Networks](https://karpathy.github.io/2019/04/25/recipe/) (2019).
+
+# %% [markdown]
 # We will not spend hours, but we will spend a few minutes. The first cell draws one row of photos per class,
-# each framed in its class colour (the same colour every plot in this notebook uses for that class). Scroll
-# slowly: look at the backgrounds, the distance to the animal, the lighting, and whether anything else is in
-# the photo.
+# framed in the class colour used in every plot of this notebook. Scroll slowly and look at:
+#
+# - the backgrounds and the lighting,
+# - the distance to the animal,
+# - anything else in the photo.
 
 # %%
 # @title Grid helpers { display-mode: "form" }
@@ -99,16 +110,16 @@ def show_all_classes(n_per_class: int) -> None:
 
 
 # %% [markdown]
-# <table width="100%"><tr><td bgcolor="#E0F7F4"><font color="#00564D">
-# <b>❓ Questions</b><br>
+# <!-- callout: questions | Questions -->
 # Predict before you run: the park's cameras are fixed, outdoors, and often far from the animal.
-# </font></td></tr></table>
-#
+
+# %% [markdown]
 # **Q2.** 🟢 Which class do you expect to look *least* like a fixed park camera's view, and why? One line,
 # then run the cell.
 
 # %%
-# Q2  One row per class: a fixed sample of photos, framed in the class colour used throughout the notebook.
+# @title Q2 Show one row of photos per class { display-mode: "form" }
+# A fixed sample of photos per class, framed in the class colour used throughout the notebook.
 N_PER_CLASS = 3 if SMOKE else 6  # fewer thumbnails in smoke mode, same code (N-014)
 show_all_classes(N_PER_CLASS)
 
@@ -120,15 +131,12 @@ show_all_classes(N_PER_CLASS)
 # up close, often with people and furniture. Sheep, horses and zebras are at least outdoors and sometimes far
 # away, which is closer to what the paddock and savanna cameras will see.
 #
-# Now pick one class and look at more of it. Twelve photos is enough to start noticing patterns; raise it if
-# you have time.
-#
-# <table width="100%"><tr><td bgcolor="#FFF4D6"><font color="#7A4A00">
-# <b>✏️ Your turn · Pick a class</b><br>
-# Set <code>CLASS_TO_SHOW</code> to one of <code>cat, dog, bird, horse, sheep, zebra</code> and
-# <code>N_SHOW</code> to how many photos you want (up to the class size), then run the cell. Try at least
-# <code>"dog"</code> (the alert class) and <code>"bird"</code> (the tiny-box class).
-# </font></td></tr></table>
+# Now look at more photos of one class: twelve is enough to start noticing patterns.
+
+# %% [markdown]
+# <!-- callout: your-turn | Your turn · Pick a class -->
+# Set `CLASS_TO_SHOW` to one of `cat, dog, bird, horse, sheep, zebra` and `N_SHOW` to how many photos you
+# want, then run the cell. Try at least `"dog"` (the alert class) and `"bird"` (the tiny-box class).
 
 # %%
 # ✏️ YOUR TURN
@@ -146,12 +154,12 @@ show_grid(CLASS_TO_SHOW, n_show)
 # 💡 The title of each photo says how many animals of that class it holds: more than one is common, so "one
 # label per image" is already a simplification, and section 4 asks which label a photo with several animals
 # should get.
-#
-# <table width="100%"><tr><td bgcolor="#E0F7F4"><font color="#00564D">
-# <b>❓ Questions</b><br>
+
+# %% [markdown]
+# <!-- callout: questions | Questions -->
 # Karpathy's step ends with writing things down. Do the same: edit the next markdown cell (double-click it).
-# </font></td></tr></table>
-#
+
+# %% [markdown]
 # **Q3.** 🟢 Write three observations about the photos you just looked at. Good observations are specific
 # ("many dog photos are indoors with a person's legs in the frame"), and each one hints at something the park
 # should worry about or check later (fit to the cameras, lighting, distance, several animals, people, odd
@@ -178,3 +186,12 @@ show_grid(CLASS_TO_SHOW, n_show)
 #
 # Keep your three lines: section 11 asks you for the same three on your own dataset, and the rest of this
 # notebook turns the observations above into numbers, one at a time.
+
+# %% [markdown]
+# <!-- callout: takeaway | Takeaway -->
+# - **When you see** a pattern in the photos (indoors, people, several animals) → **do** write it down as a
+#   specific observation, and turn it into a check later.
+# - **When you see** a gap between the photos and the deployment cameras (distance, lighting, setting) →
+#   **do** flag it now, before any model exists.
+# - **When you see** several animals or an odd subject in one photo → **do** note it as a labelling decision
+#   for sections 4 and 5.

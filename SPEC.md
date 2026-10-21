@@ -30,7 +30,7 @@ A Google account (Colab) and a browser. Python basics. Susanne's lecture on imag
 ## 3. Learning outcomes
 These appear verbatim in the title banner of `00_setup.py`.
 1. Inspect an image dataset qualitatively and quantitatively, and say whether it fits a task.
-2. Find and fix common dataset errors (duplicates, flipped/rotated copies, broken files, bad labels or masks) before they leak into training.
+2. Find and fix common dataset errors (duplicates, flipped/rotated copies, bad labels or masks) before they leak into training.
 3. Choose a split and a metric that match the use case, and explain how imbalance, object size and leakage look different for classification, detection and segmentation.
 
 ## 4. Use case and data
@@ -92,7 +92,7 @@ Time = participant minutes (~110 total; Susanne may cut sections 1 and the 🔴 
 | 2 | sections/02_become_one.py | Become one with the data 🧾 | Look at many images before computing anything | 🟢 | 8 | done |
 | 3 | sections/03_image_inspection.py | Image inspection 🧾 | Measure sizes, aspect ratios, colour modes and colour statistics | 🟢🟡 | 8 | done |
 | 4 | sections/04_labels_distribution.py | Labels & class distribution 🧾 | Count classes and see why imbalance matters for the dog alert | 🟢🟡 | 8 | done |
-| 5 | sections/05_errors_cleaning.py | Common dataset errors & cleaning 🧾 | Find duplicates, flipped/rotated copies, broken files and suspicious labels; produce a cleaned dataset | 🟡 | 15 | done |
+| 5 | sections/05_errors_cleaning.py | Common dataset errors & cleaning 🧾 | Find duplicates, flipped/rotated copies and suspicious labels; produce a cleaned dataset | 🟡 | 15 | done |
 | 6 | sections/06_splits_leakage.py | Splits & leakage | Choose a split that does not leak, and understand cross-validation | 🟡 | 12 | done |
 | 7 | sections/07_metrics.py | Metrics for the park | Pick the metric that matches the use case | 🟡 | 7 | done |
 | 8 | sections/08_boxes.py | Same data, boxes | See what imbalance, size, position and label quality mean for detection | 🟡 | 10 | done |
@@ -132,7 +132,6 @@ Time = participant minutes (~110 total; Susanne may cut sections 1 and the 🔴 
     - exact duplicates (file hash);
     - near-duplicates (perceptual hash, ✏️ `HASH_THRESHOLD`);
     - **flipped/rotated copies, found by hashing each image's flipped and rotated variants** (**[PROPOSAL]** a shoot-out: plain hashing misses them, variant hashing catches them);
-    - broken or odd files (unreadable, grayscale, CMYK, alpha, extreme sizes);
     - suspicious labels (each class's least typical images for a human to judge).
   - **Guided hunt** (G-25): a planted batch with exact duplicates + a flipped + a rotated + a recompressed copy. ✍️ `find_flipped_copies(image, candidates) -> list[str]`.
   - 🔴 model-based near-duplicate and outlier search on precomputed embeddings.
@@ -206,23 +205,31 @@ Time = participant minutes (~110 total; Susanne may cut sections 1 and the 🔴 
 
 ## 8. Notebook-specific rules
 
-**L-001 — Callouts** (N-025, G-11, G-32):
-- One-cell tables in markdown. **Inside them use HTML only** (`<b>`, `<i>`, `<br>`, `<ul><li>`, `<code>`, `<a>`). No markdown inside the table, and no `style=` (Colab strips it).
-- Template:
-  ```html
-  <table width="100%"><tr><td bgcolor="#E3F2FD"><font color="#0D47A1">
-  <b>📘 Theory · Data leakage</b><br>
-  Text …
-  </font></td></tr></table>
+**L-001 — Callouts** (N-025, N-034, N-044, N-048, G-11, G-32):
+- A callout is a markdown cell in `sections/*.py` whose **first line is a marker**, followed by **normal markdown** (paragraphs, lists, bold, `code`, links, tables, `<details>`):
   ```
-- Kinds, each written as bgcolor / font colour:
-  - 📘 **Theory** `#E3F2FD` / `#0D47A1` (the title names the topic);
-  - ✏️ **Your turn** `#FFF4D6` / `#7A4A00`;
-  - ❓ **Questions** `#E0F7F4` / `#00564D`;
-  - 🔀 **Across tasks** `#EDE7F6` / `#311B92`;
-  - ⚠️ **Pitfall** `#FDECEA` / `#8B1A10`;
-  - 🧾 **Recipe** `#E8F5E9` / `#1B5E20`.
-- Source: Simone, G-11 / G-32; Colab rendering research 2026-10-19.
+  # %% [markdown]
+  # <!-- callout: theory | Theory · Data leakage -->
+  # Text with **markdown** …
+  ```
+- Grammar: `<!-- callout: KIND | TITLE -->`, the title is optional (`<!-- callout: questions -->` uses the kind's name). The build puts the kind's emoji in front of the title, so do not type it.
+- Build (`scripts/build.py`): each marked cell becomes a collapsed code cell (`# @title`, no text) that redraws the box with `IPython.display.HTML`, and the same HTML is saved as its output, so the box shows in Colab before anything runs. Box: inline CSS, background, 6 px left bar in the text colour, rounded corners, text wraps.
+- **Never a markdown table with `bgcolor`** for a coloured box (Colab cuts the text in table cells; lint fails), and no `style=` in markdown.
+- Kinds (id · emoji and name · background / text and left bar):
+
+  | id | callout | background | text / bar |
+  |---|---|---|---|
+  | `theory` | 📘 Theory (the title names the topic) | `#E3F2FD` | `#0D47A1` |
+  | `your-turn` | ✏️ Your turn | `#FFF4D6` | `#7A4A00` |
+  | `questions` | ❓ Questions | `#E0F7F4` | `#00564D` |
+  | `across-tasks` | 🔀 Across tasks | `#EDE7F6` | `#311B92` |
+  | `pitfall` | ⚠️ Pitfall | `#FDECEA` | `#8B1A10` |
+  | `recipe` | 🧾 Recipe | `#E8F5E9` | `#1B5E20` |
+  | `objective` | 🎯 Objective (N-044) | `#B9E3EA` | `#08505C` |
+  | `takeaway` | ✅ Takeaway, "When you see X → do Y" lines (N-044) | `#E2F0C4` | `#3A5A0B` |
+  | `go-deeper` | 🔍 Go deeper, secondary depth, long parts inside `<details>` (N-048) | `#F3F4F6` | `#4B5563` |
+  | `banner` | title banner, no emoji (L-003) | `#0B6E79` | `#FFFFFF` (bar `#06464D`) |
+- Source: Simone, G-11 / G-32; Colab rendering research 2026-10-19 and 2026-10-21 (review pass 1, R-01/R-03/R-04).
 
 **L-002 — Code students change or write** (N-026, G-12):
 - Every ✏️ cell sits directly under a ✏️ Your turn Callout and starts with `# ✏️ YOUR TURN`.
@@ -230,7 +237,7 @@ Time = participant minutes (~110 total; Susanne may cut sections 1 and the 🔴 
 - Source: Simone, G-12, G-21, G-24.
 
 **L-003 — Theme green-blue** (N-027, G-9, G-18):
-- Title banner: a full-width table, bgcolor `#0B6E79`, white font, with the title, the three outcomes and the level legend.
+- Title banner: a `banner` callout (L-001), full width, white text on `#0B6E79`, with the title (larger font), the three outcomes as a numbered list and the level legend. It sits in the cell right under section 0's heading.
 - Matplotlib style: background white; text and axes `#21434A`; grid light.
 - `CLASS_COLORS` used in *every* plot, box and mask overlay: cat `#E07A5F`, dog `#3D405B`, bird `#F2CC8F`, horse `#81B29A`, sheep `#9C89B8`, zebra `#2A9D8F`.
 - Source: Simone, G-9, G-18.
