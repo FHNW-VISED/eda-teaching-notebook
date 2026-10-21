@@ -115,13 +115,15 @@ MY_COLORS = {c: CLASS_COLORS.get(c, _palette[i % len(_palette)]) for i, c in enu
 print(f"source: {my_source} · {my_root} · {len(my_files)} images in {len(MY_CLASSES)} class folders")
 
 # %% [markdown]
-# **Q34.** 🟢 Before running the checks, write down what you expect for your dataset: the largest and the
-# smallest class, how many image sizes and colour modes, and whether there are copies. On the sample the
-# folders are cat, dog, bird, horse, sheep and zebra with 20 photos each, plus the three planted problems
-# above: predict which of the checks below will catch each one.
+# **Q34.** 🟢 Before running the checks, think of what you expect for your dataset: the largest and the
+# smallest class, how many image sizes and colour modes, and whether there are copies. (Think of your
+# answers; there is no need to type them.) On the sample the folders are cat, dog, bird, horse, sheep and
+# zebra with 20 photos each, plus the three planted problems above: predict which of the checks below will
+# catch each one.
 #
 # The first check counts the images per folder, as section 4 did for the park. The **ratio** is the images
-# of the largest class divided by the images of the smallest (130 cats and 59 sheep in the park: 2.2 : 1).
+# of the largest class divided by the images of the smallest (in the park about 130 cats against about 50
+# sheep: between 2 : 1 and 3 : 1).
 
 # %%
 # @title Check 1: images per class, and the largest : smallest ratio { display-mode: "form" }
@@ -301,8 +303,8 @@ print(f"split saved to {_split_csv}")
 
 # %% [markdown]
 # 💡 The split is a suggestion from what the folders show. Only you know what else ties photos together, such
-# as one camera, one day, one patient; section 6 showed that a split which ignores such groups can halve the
-# error it reports.
+# as one camera, one day, one patient; section 6 showed that a split which ignores such groups reports a
+# better score than the model will earn.
 #
 # The checklist in one place, to paste into your project notes:
 
@@ -354,16 +356,16 @@ RESULTS["swap_in"] = {"source": my_source, "n_images": int(len(my_files)), "n_cl
 #      animals on grass (section 2).
 #    - *Your dataset:*
 # 3. **How balanced are the classes, and is the expensive class a small one?**
-#    - *The park:* cat and dog 130 photos each, sheep 59, about 2 : 1. Dog is not rare, but accuracy would
-#      still hide a weak recall on dog (section 4).
+#    - *The park:* cat and dog about 130 photos each, sheep about 50, roughly 2 : 1 to 3 : 1. Dog is not
+#      rare, but accuracy would still hide a weak recall on dog (section 4).
 #    - *Your dataset:*
 # 4. **Which sizes, aspect ratios and colour modes are there, and what must be resized or converted?**
 #    - *The park:* nearly every photo has a long side of 640 or 500 px, in landscape and portrait; files
-#      that are not RGB get converted (sections 3 and 5).
+#      that are not RGB get converted (section 3).
 #    - *Your dataset:*
 # 5. **Are there copies, flipped or rotated copies, unreadable or odd files, or doubtful labels?**
-#    - *The park:* a few copies and odd files, removed before splitting (section 5's "removed N, kept M");
-#      photos with several animals make the label ambiguous (section 4).
+#    - *The park:* a few copies, removed before splitting (section 5's "removed N, kept M"); photos with
+#      several animals make the label ambiguous (section 4).
 #    - *Your dataset:*
 # 6. **What ties photos together, and which split keeps those groups apart?**
 #    - *The park:* COCO has no groups, so a stratified split after deduplication; the trail cameras have

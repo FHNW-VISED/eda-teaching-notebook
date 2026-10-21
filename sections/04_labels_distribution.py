@@ -7,10 +7,9 @@
 # understand why the dog alert cares about imbalance more than about accuracy.
 
 # %% [markdown]
-# Sections 2 and 3 looked at the photos. This section looks at the **labels**: the one word per photo that a
-# classifier will learn to say. Two questions decide whether they are usable: how many photos of each class
-# do we have, and is "one word per photo" the right shape for this data? Karpathy lists what he looks for at
-# this point:
+# This section looks at the **labels**, the one word per photo. Two questions decide whether they are usable:
+# how many photos of each class, and is "one word per photo" the right shape for this data? Karpathy looks
+# for this at the same point:
 
 # %% [markdown]
 # <!-- callout: recipe | Recipe · Step 1, continued: imbalances and biases -->
@@ -60,25 +59,19 @@ display(fig)
 plt.close(fig)
 
 # %% [markdown]
-# 💡 The bars are not flat: the pet classes come first because people photograph their pets, and sheep come
-# last because few people photograph sheep. Nobody designed this; it is what Flickr uploads look like, and it
-# has nothing to do with what the park's cameras will see (sheep all day, a dog once a month).
-#
-# **Worked answer (Q7).** On the full Play Dataset cat and dog are the largest classes (capped at about 130
-# photos each) and sheep the smallest (about 50): the biggest class is roughly 2–3× the smallest. The small
-# smoke sample is flat, because it takes the same number of photos per class.
+# 💡 **Worked answer (Q7).** On the full Play Dataset cat and dog are the largest classes (about 130 photos
+# each) and sheep the smallest (about 50): roughly 2–3×. People photograph pets, not sheep; that is what
+# Flickr uploads look like, not what the park's cameras will see. (The smoke sample is flat.)
 
 # %% [markdown]
-# Whatever the sample, read the *ratio* between the largest and the smallest class, and ask whether the
-# smallest class is the one your use case cares about. Here it is not sheep that matters but dog: well
-# represented in the photos, yet the *rare* event in the paddock.
+# Look at the ratio, then ask whether the smallest class is the one you care about. Dog is common in this
+# dataset but will be rare in the paddock.
 #
 # ### Several animals in one photo: which label then?
 #
-# `images` has one `class` per photo, and section 0 showed that `n_animals` is often above 1. That is fine
-# while all the animals in a photo are the same class, and a real problem the moment they are not. The Play
-# Dataset keeps only COCO photos with **exactly one animal class**: a decision someone took *for* you. Check
-# what it hides.
+# `images` has one `class` per photo, yet `n_animals` is often above 1. That is fine while all the animals
+# are the same class. The Play Dataset keeps only COCO photos with **exactly one animal class**: a decision
+# someone took *for* you. Check what it hides.
 
 # %% [markdown]
 # **Q8.** 🟡 What share of the photos do you think hold more than one animal, and which class do you expect to
@@ -112,45 +105,32 @@ _crowded = images.sort_values(["n_animals", "id"], ascending=[False, True]).head
 show_rows(_crowded, "the most crowded photos", lambda r: f"{r['n_animals']} × {r['class']}", cols=N_CROWDED)
 
 # %% [markdown]
-# 💡 "One label per photo" works here only because every animal in a photo is the same species, and even then
-# the label says nothing about *how many*: a flock of thirty sheep and a single lamb are both "sheep". Some
-# crowded photos also hold people or fences, and the label is silent about all of it.
-#
-# **Worked answer (Q8).** On the full Play Dataset about a third of the photos hold more than one animal.
-# Sheep and birds are the crowded classes (flocks); cats and dogs are mostly alone.
+# 💡 **Worked answer (Q8).** On the full Play Dataset about a third of the photos hold more than one animal;
+# sheep and birds are the crowded classes (flocks), cats and dogs are mostly alone. One label per photo works
+# only because they share a species, and it cannot say *how many*: thirty sheep and a lamb are both "sheep".
 
 # %% [markdown]
-# "Which label then?" has three honest answers, and the park has to pick one before labelling a single frame:
+# "Which label then?" The park picks one of three before labelling a single frame:
 #
-# - **one label, the main animal**: cheap, but the labeller decides what "main" means, and the model learns
-#   that fuzzy rule;
-# - **one label per animal class present** (multi-label): "sheep and dog" is exactly the paddock alert, but it
-#   needs a different loss and metric than plain classification;
-# - **one box per animal** (detection, section 8): answers "which" and "how many" at once, at a higher
-#   annotation cost (see the 🔀 callout below).
-#
-# COCO's builders took the first answer, and the Play Dataset went further by dropping every photo with two
-# classes. For the paddock camera, where the one case that matters is a dog **among** sheep, that filter
-# would delete exactly the frames the alert is for.
+# - **one label, the main animal** (COCO's choice): cheap, but the labeller decides what "main" means;
+# - **one label per animal class present**: "sheep and dog" is exactly the paddock alert, but it needs a
+#   different loss and metric;
+# - **one box per animal** (detection, section 8): answers "which" and "how many", at a higher cost.
+
+# %% [markdown]
+# The Play Dataset went further and dropped every photo with two classes. For the paddock camera, where the
+# case that matters is a dog **among** sheep, that filter deletes exactly the frames the alert is for.
 
 # %% [markdown]
 # ### Why the dog alert cares about imbalance
 #
-# Imbalance is harmless in a bar chart and dangerous in a metric. The paddock camera sees sheep almost all
-# the time and a dog very rarely, and the usual score, accuracy, is blind to that.
-
-# %% [markdown]
-# <!-- callout: pitfall | Pitfall · Accuracy hides a rare class -->
-# Accuracy is the share of all photos labelled correctly, so it is dominated by the big classes. A model that
-# **never** predicts a rare class loses only that class's share of the points. If dogs are 2 % of the
-# paddock frames, "always say sheep" scores 98 % accuracy and misses every dog, which is the one event the
-# alert exists for. The number to watch for a rare class is its **recall**: of the real dogs, how many did
-# we catch? Section 7 turns this into the park's metric.
+# Imbalance is harmless in a bar chart and dangerous in a metric: the paddock camera sees sheep almost all
+# the time and a dog very rarely.
 
 # %% [markdown]
 # <!-- callout: your-turn | Your turn · A paddock day -->
-# `DOG_SHARE` is the fraction of the paddock camera's frames that show a dog (the rest show sheep). Leave it
-# at `0.02` for Q9, then try `0.2` and `0.5` and re-run the Q9 cell.
+# `DOG_SHARE` is the fraction of the paddock camera's frames that show a dog (the rest show sheep). Keep
+# `0.02` for Q9. Afterwards: edit the value (try `0.2`, then `0.5`), run this cell, then re-run the Q9 cell.
 
 # %%
 # ✏️ YOUR TURN
@@ -160,31 +140,31 @@ if not isinstance(DOG_SHARE, (int, float)) or not 0 <= DOG_SHARE <= 1:
     raise SystemExit(f"DOG_SHARE must be a number between 0 and 1, not {DOG_SHARE!r}")
 
 # %% [markdown]
-# **Q9.** 🟡 No model is trained in this notebook, so this is a thought experiment about the *dataset*.
-# Imagine the laziest "classifier" there is: a rule that always answers **the biggest class**, whatever the
-# photo shows. Use the bar chart from Q7 and answer, then run the cell:
+# **Q9.** 🟡 No model is trained here; this is a thought experiment about the *dataset*. Two lazy rules that
+# ignore the photo, one question each. **Accuracy** is the share of photos answered correctly; **recall on
+# dog** is, of the real dogs, how many the rule gets right. Guess both numbers for each rule, then run:
 #
-# - On the Play Dataset: what is the rule's **accuracy**, and its **recall on dog** (of the real dogs, how
-#   many does it get right)?
-# - On a paddock week of 1000 frames, 20 of them with a dog (`DOG_SHARE = 0.02`), where the rule answers
-#   "sheep" every time: what is its accuracy and its recall on dog?
+# - **Rule A, on the Play Dataset:** always answer *the biggest class* (read it off the Q7 bars). What are
+#   its accuracy and its recall on dog?
+# - **Rule B, on a paddock week:** 1000 frames, 20 of them with a dog (`DOG_SHARE = 0.02`), and the rule
+#   always answers "sheep". What are its accuracy and its recall on dog?
 
 # %%
 # @title Q9 A lazy model stamps "sheep" on every frame: accuracy and dog recall { display-mode: "form" }
-# The rule on the whole Play Dataset: always the biggest class.
+# Rule A on the whole Play Dataset: always the biggest class.
 _majority = max(images_per_class, key=images_per_class.get)
 _true = images["class"].to_numpy()
 acc_play = float((_true == _majority).mean())
 recall_dog_play = float(_majority == "dog") if (_true == "dog").any() else float("nan")
-print(f"Play Dataset · 'always {_majority}': accuracy {100 * acc_play:.0f} %, recall on dog "
+print(f"Rule A · Play Dataset, 'always {_majority}': accuracy {100 * acc_play:.0f} %, recall on dog "
       f"{100 * recall_dog_play:.0f} %")
 
-# A paddock day: PADDOCK_FRAMES frames, a share DOG_SHARE of them show a dog, the rest sheep.
+# Rule B on a paddock day: PADDOCK_FRAMES frames, a share DOG_SHARE of them show a dog, the rest sheep.
 PADDOCK_FRAMES = 200 if SMOKE else 1000
 _n_dog = int(round(DOG_SHARE * PADDOCK_FRAMES))
 acc_day = 1 - _n_dog / PADDOCK_FRAMES  # "always sheep" is right on every sheep frame
 recall_dog_day = 0.0 if _n_dog else float("nan")  # and wrong on every dog frame
-print(f"Paddock day   · {_n_dog} dog frames in {PADDOCK_FRAMES}: 'always sheep' accuracy "
+print(f"Rule B · paddock day, {_n_dog} dog frames in {PADDOCK_FRAMES}, 'always sheep': accuracy "
       f"{100 * acc_day:.0f} %, recall on dog {100 * recall_dog_day:.0f} %")
 
 # The same day in miniature: 12 real photos, a share DOG_SHARE of them dogs, the rest sheep.
@@ -222,41 +202,37 @@ print(f"This strip: accuracy {100 * _strip_right / len(_strip):.0f} %, recall on
       "The dog-in-the-paddock alert never fires.")
 
 # %% [markdown]
-# 💡 The lazy model's accuracy *is* the majority share: the rarer the dog, the better "always sheep" looks,
-# while its recall on dog stays at zero. A metric that rewards ignoring the event you built the system for is
-# the wrong metric.
-#
+# <!-- callout: pitfall | Pitfall · Accuracy hides a rare class -->
 # **Worked answer (Q9).**
 #
-# - **Play Dataset:** the rule scores the biggest class's share (about 20 % on the full set, a sixth in the
-#   balanced smoke sample). Its recall on dog is 0 %, unless dog *is* the biggest class: then 100 % on dog and
-#   0 % on everything else.
-# - **Paddock week:** "always sheep" is right on 980 of 1000 frames, so **98 %** accuracy, with **0 %** recall
-#   on dog: all 20 dogs are missed.
-# - **Lesson:** a balanced-looking Play Dataset says nothing about the imbalance of the *deployment*, and the
-#   score has to be computed on the class that matters. Class weights, oversampling or a focal loss are next
-#   week's topic; choosing the metric is section 7's.
+# - **Rule A, Play Dataset:** accuracy is the biggest class's share (about 20 % on the full set, a sixth in
+#   the balanced smoke sample); recall on dog is 0 %, unless dog *is* the biggest class (then 100 % on dog,
+#   0 % on everything else).
+# - **Rule B, paddock week:** "always sheep" is right on 980 of 1000 frames: **98 %** accuracy and **0 %**
+#   recall on dog, all 20 dogs missed.
+#
+# **Accuracy** is the share of all photos labelled correctly, so the big classes dominate it: the rarer the
+# dog, the better "always sheep" looks. For a rare class, watch its **recall**. A balanced-looking Play
+# Dataset says nothing about the imbalance of the *deployment*. Section 7 turns this into the park's metric;
+# class weights and oversampling are next week's topic.
 
 # %% [markdown]
 # ### Across tasks: what a label costs
 #
-# All of the above assumed "one word per photo". The park's other two jobs need richer labels, and richer
-# labels cost more. The cell below counts what the Play Dataset's annotations contain, in the crudest unit
-# there is: how many clicks a labeller had to make.
+# The park's other two jobs need richer labels, and richer labels cost more. The cell below counts them in
+# the crudest unit there is: clicks a labeller had to make.
 
 # %% [markdown]
 # <!-- callout: across-tasks | Across tasks · One label, one box, every pixel -->
-# - **Classification:** one label per image. One click (or one keystroke) per photo; seconds each. The
-#   cheapest label, and the one that cannot say "how many" or "where".
-# - **Detection:** one box per animal. Two clicks per box, and a decision for every animal (is that blur
-#   a bird?); tens of seconds per photo, more when the photo is crowded. Imbalance is now counted in
-#   *boxes*, and the ranking of the classes changes (section 8).
-# - **Segmentation:** every pixel gets a class. A polygon of many vertices per animal; a minute or more
-#   per animal, and the hardest to get right at thin parts. Imbalance is counted in *pixels*, and birds end
-#   up with a few per cent of them (section 9).
+# - **Classification:** one label per image. One click. It cannot say "how many" or "where".
+# - **Detection:** one box per animal. Two clicks per box and a decision for every animal (is that blur a
+#   bird?). Imbalance is now counted in *boxes* (section 8).
+# - **Segmentation:** every pixel gets a class. One click per vertex of a polygon, many vertices per animal.
+#   Imbalance is counted in *pixels*, and birds end up with a few per cent of them (section 9).
 #
-# The same photo therefore costs roughly 1 : 10 : 100 to label for the three tasks, which is why real datasets
-# have many more image labels than boxes, and many more boxes than masks.
+# The table below counts exactly these clicks on the Play Dataset. Each task costs several times more than
+# the one before, which is why real datasets have many more image labels than boxes, and many more boxes
+# than masks.
 
 # %%
 # @title Clicks per task: 1 per image label, 2 per box, 1 per mask vertex { display-mode: "form" }
@@ -278,8 +254,8 @@ if _n_crowd:
 display(annotation_cost)
 
 # %% [markdown]
-# 💡 The same photos, the same animals, and the click count grows by an order of magnitude per task. When the
-# park asks for "a quick model that also counts and outlines", this table is the answer to "how quick".
+# 💡 The same photos, the same animals, and the click count climbs with every task. When the park asks for
+# "a quick model that also counts and outlines", this table is the answer to "how quick".
 
 # %% [markdown]
 # <!-- callout: takeaway | Takeaway -->

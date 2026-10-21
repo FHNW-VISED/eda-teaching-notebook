@@ -1,9 +1,10 @@
 # %% [markdown]
 # # Know Your Data: Exploring and Preparing Image Datasets at the Wildwood Farm Park
+# ## 0. Setup & the park
 
 # %% [markdown]
 # <!-- callout: objective | Objective -->
-# Run the setup, meet the park, and see the three things you will be able to do at the end.
+# Run the setup once, meet the park, and see the three things you will be able to do at the end.
 
 # %% [markdown]
 # <!-- callout: banner | Know Your Data: Exploring and Preparing Image Datasets at the Wildwood Farm Park -->
@@ -18,42 +19,10 @@
 # Questions are marked 🟢 beginner · 🟡 intermediate · 🔴 advanced (optional).
 
 # %% [markdown]
-# **Before you start:** you need a Google account (this notebook runs in Colab, a CPU runtime is enough),
-# Python basics, and the lecture on image datasets. No model is trained here; that is next week.
-#
-# The notebook follows the first part of Karpathy's
-# [*A Recipe for Training Neural Networks*](https://karpathy.github.io/2019/04/25/recipe/):
-# know your data before you touch a model.
-
-# %% [markdown]
-# ## 0. Setup & the park
-
-# %% [markdown]
-# <!-- callout: theory | The Wildwood Farm Park -->
-# The park has cameras in four places:
-#
-# - 🐑🐴 **Farm paddock**: sheep, horses
-# - 🐦 **Aviary pond**: birds
-# - 🦓 **Savanna enclosure**: zebras
-# - 🐱🐶 **Visitor yard**: cats and dogs wander through
-#
-# It wants three things from them:
-#
-# 1. **Recognise** (classification): "who is in front of this camera?" The case that matters is **a dog in
-#    the sheep paddock**, which triggers an alert. Missing that dog is worse than a false alarm.
-# 2. **Count** (detection): a daily headcount of sheep, zebras and birds. Far-away birds are tiny.
-# 3. **Outline** (segmentation): how much of each enclosure each animal uses. Birds cover few pixels.
-
-# %% [markdown]
-# The park has no training data yet, so we practise on a **Play Dataset**: COCO 2017 photos of the same six
-# animals (cat, dog, bird, horse, sheep, zebra), each photo showing one animal class.
-#
-# Everything you learn here is a checklist you will reuse on your own project dataset in the last section.
-
-# %% [markdown]
-# **Run the next cell once.** It installs the one package Colab lacks, fixes the random seed, sets the
-# notebook's colours and defines `use()`, the helper that lets you write small functions without ever
-# blocking "Run all".
+# **Run the next three cells now, one after the other, and read on while they work.** The first installs
+# the one package Colab lacks, fixes the random seed, sets the colours and defines `use()`, the helper that
+# lets you write small functions without ever blocking "Run all". The last downloads the Play Dataset
+# (about 115 MB): **a minute or two the first time**, instant after that.
 
 # %%
 # @title Setup (run me first) { display-mode: "form" }
@@ -203,40 +172,6 @@ try:
 except ImportError:
     print("missing (run this cell again)")
 
-# %% [markdown]
-# ### How the ✍️ cells work
-#
-# About four times in this notebook you write a small function. Each one comes with its signature and a
-# `use(my_function, …, reference=…)` line that compares your result with the reference solution and
-# then continues with the reference, so an unfinished or wrong function never stops the notebook.
-# Run the cell below as is, then fill in the body and run it again to see the message change.
-
-# %%
-# @title Reference solution — peek only if you are stuck { display-mode: "form" }
-def _ref_double(x):
-    return 2 * x
-
-
-# %%
-# ✍️ YOUR CODE
-def double(x):
-    """Return twice x."""
-    ...
-
-
-result = use(double, 21, reference=_ref_double)
-print("the notebook continues with:", result)
-
-# %% [markdown]
-# ### The Play Dataset
-#
-# The next cell fetches the annotation subset we prepared (COCO 2017 val, six animal classes, one class per
-# photo) and downloads the photos from `images.cocodataset.org`.
-#
-# **The first run takes a minute or two** (about 115 MB); afterwards the images are cached and the cell is
-# instant. The result is two tidy tables, `images` (one row per photo) and `annotations` (one row per
-# animal: its box and mask).
-
 # %%
 # @title Data helpers (download with cache, build the tables) { display-mode: "form" }
 import json
@@ -381,11 +316,65 @@ RESULTS["n_images"] = int(len(images))
 _counts = Counter(images["class"])
 print(f"images: {len(images)} · animals (annotations): {len(annotations)}")
 print("per class: " + " · ".join(f"{c} {_counts[c]}" for c in CLASSES))
-images.head()
+images.drop(columns="license").head()  # the licence column stays in the table, not on screen (N-045)
 
 # %% [markdown]
-# Each row of `images` is one photo with its size, its class and how many animals it holds; `annotations`
-# has one row per animal with its box and mask.
+# <!-- callout: theory | Before you start -->
+# - A Google account (this notebook runs in Colab, a CPU runtime is enough), Python basics and the lecture
+#   on image datasets. No model is trained here; that is next week.
+# - When a question says *predict* or *guess*, say or think your answer **before** you run the cell. You do
+#   not need to type it.
+# - Bring your project dataset as one folder per class (section 11): mount Google Drive or upload a zip
+#   there.
+# - The notebook follows the first part of Karpathy's
+#   [*A Recipe for Training Neural Networks*](https://karpathy.github.io/2019/04/25/recipe/): know your data
+#   before you touch a model.
+
+# %% [markdown]
+# <!-- callout: theory | The Wildwood Farm Park and what it wants from its cameras -->
+# Cameras watch the 🐑🐴 farm paddock (sheep, horses), the 🐦 aviary pond (birds), the 🦓 savanna (zebras)
+# and the 🐱🐶 visitor yard (cats and dogs wander through). Three jobs:
 #
-# Look at the `n_animals` column: several photos hold more than one animal, which already hints at a
-# question we will meet in section 4.
+# 1. **Recognise** (classification): who is in front of this camera? **A dog in the sheep paddock** triggers
+#    an alert; missing that dog is worse than a false alarm.
+# 2. **Count** (detection): a daily headcount of sheep, zebras and birds. Far-away birds are tiny.
+# 3. **Outline** (segmentation): how much of each enclosure each animal uses. Birds cover few pixels.
+
+# %% [markdown]
+# The park has no training data yet, so we practise on a **Play Dataset**: COCO 2017 photos of the same six
+# animals, each photo showing one animal class. The cell above gave you two tables: `images` (one row per
+# photo: size, class, number of animals) and `annotations` (one row per animal: its box and mask).
+#
+# Several photos hold more than one animal (`n_animals`), which hints at a question in section 4. Everything
+# you learn here is a checklist you will reuse on your own dataset in section 11.
+
+# %% [markdown]
+# ### How the ✍️ cells work
+#
+# About four times you write a small function. Each comes with its signature and a
+# `use(my_function, …, reference=…)` line that compares your result with the reference solution and then
+# continues with the reference, so a wrong or unfinished function never stops the notebook.
+# **Run the reference cell first**, then the stub as is; then fill in the body and run it again to see the
+# message change.
+
+# %%
+# @title Reference solution — run this cell; open it only if you are stuck { display-mode: "form" }
+def _ref_double(x):
+    return 2 * x
+
+
+# %%
+# ✍️ YOUR CODE
+def double(x):
+    """Return twice x."""
+    ...
+
+
+result = use(double, 21, reference=_ref_double)
+print("the notebook continues with:", result)
+
+# %% [markdown]
+# <!-- callout: takeaway | Takeaway -->
+# - **When you see** a ✍️ cell → **do** run it as it is first; an unfinished function falls back to the
+#   reference.
+# - **When you see** `images` and `annotations` → **do** think "one row per photo, one row per animal".

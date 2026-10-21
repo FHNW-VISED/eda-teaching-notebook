@@ -1,15 +1,28 @@
 # %% [markdown]
 # ## 9. Same data, masks
-#
-# **Objective:** see what imbalance, object size, position and thin parts mean once the park wants an
-# *outline* of every animal, and find five ugly masks hidden among the real ones.
-#
+
+# %% [markdown]
+# <!-- callout: objective | Objective -->
+# See what imbalance, object size, position and thin parts mean once the park wants an *outline* of every
+# animal, and find five ugly masks hidden among the real ones.
+
+# %% [markdown]
 # The park's third job, **outline** each animal to see how much of the enclosure it uses, needs a **mask**:
-# for every animal, the exact pixels it covers. `annotations` already holds one in its `segmentation` column,
-# either as a COCO *polygon* (the x, y points an annotator clicked around the animal) or, for crowds, as
-# *RLE* (run-length encoding: "300 background pixels, then 25 animal pixels, then …"). `pycocotools`, the
-# COCO team's own library, turns both into a 0/1 array the size of the photo. This section keeps the photos
-# of `clean_images` and counts what is inside those arrays.
+# for every animal, the exact pixels it covers. `annotations` holds one in its `segmentation` column, and
+# `pycocotools` turns it into a 0/1 array the size of the photo. This section counts what is inside those
+# arrays, for the photos of `clean_images`.
+
+# %% [markdown]
+# <!-- callout: go-deeper | Go deeper · How a mask is stored: polygon and RLE -->
+# <details><summary>Two storage formats, and why RLE is handy</summary>
+#
+# - **polygon**: the x, y points an annotator clicked around the animal;
+# - **RLE** (run-length encoding, used for crowds): "300 background pixels, then 25 animal pixels, then …".
+#
+# The cell that builds the `masks` table turns every mask into one compressed RLE and counts its pixels.
+# RLE is small and fast: the union and the area of masks are computed without building the full 0/1 array.
+#
+# </details>
 
 # %% [markdown]
 # <!-- callout: theory | Theory · What changes when the unit is a pixel -->
@@ -19,7 +32,8 @@
 # - **Imbalance is counted in pixels, and background is a class too.** Most of every photo is grass,
 #   sky and water, and a big horse outweighs a whole flock of far-away birds.
 # - **Size is everything.** A bird of 10×10 px is 100 decisions; a horse filling the frame is
-#   100,000. The loss hears the horse a thousand times louder.
+#   100,000. The horse adds about 1,000 times more pixels to the training error than the bird, so a model
+#   mostly learns horses.
 # - **Thin parts** (legs, tails, beaks, a bird far away) are few pixels, and they are the first to
 #   vanish when the photo is shrunk to the network's input size.
 # - **Mask quality is hard to see.** A box is four numbers; a mask is dozens of clicks, so masks are
@@ -139,8 +153,7 @@ def show_masks(rows_df: pd.DataFrame, masks_df: pd.DataFrame, title: str, captio
 
 # %% [markdown]
 # The next cell turns every mask of `clean_images` into one compressed RLE (the `rle` column of a new table,
-# `masks`) and counts its pixels. RLE is small and fast: the union and the area of masks are computed
-# without ever building the full 0/1 array.
+# `masks`) and counts its pixels.
 
 # %%
 # @title Build `masks`: one RLE per mask, with its pixel count { display-mode: "form" }
@@ -160,8 +173,8 @@ masks.head(3)
 
 # %% [markdown]
 # <!-- callout: questions -->
-# Section 4 counted photos and section 8 counted boxes. A segmentation model counts pixels, and every pixel
-# that is not an animal is *background*, which is a class like any other for the model.
+# A segmentation model counts pixels, and every pixel that is not an animal is *background*, which is a class
+# like any other for the model.
 
 # %% [markdown]
 # **Q26.** 🟢 What share of all pixels in the Play Dataset do you expect to be background: about a quarter,
@@ -226,23 +239,57 @@ display(fig)
 plt.close(fig)
 
 # %% [markdown]
-# 💡 Background dwarfs everything: a model that answers "background" for every pixel is right most of the
-# time and outlines nothing, the pixel version of section 4's "always sheep". Among the animals, the solid
-# bars reorder the classes once more: cat and dog come back, because a pet photo is a close-up.
-#
-# **Worked answer (Q26).** Most of them: on the full set about 85 % of all pixels are background (the smoke
-# subset gives about 80 %). Bird is rare again: first by boxes in section 8, but about 1 % of all pixels
-# (6–7 % of the animal pixels), because most birds are far away. Photos, boxes, pixels: the
-# same dataset gives three rankings, which is why "bird is rare" needs its unit every time.
-#
+# **Worked answer (Q26).** Most of them: about 85 % of all pixels are background (the smoke subset gives about
+# 80 %). Bird is rare again: first by boxes, but about 1 % of all pixels (6–7 % of the animal pixels), because
+# most birds are far away, while cat and dog come back (a pet photo is a close-up). Photos, boxes, pixels:
+# three rankings of one dataset, so "bird is rare" needs its unit every time.
+
+# %% [markdown]
+# <!-- callout: pitfall | Pitfall · A model that answers "background" everywhere -->
+# With about 85 % background, a model that outlines nothing is right on about 85 % of the pixels. It is the
+# pixel version of section 4's "always sheep": the number looks great, and every animal is missed. The cell
+# below plays that model on one dog photo.
+
+# %%
+# @title Pitfall demo: the fake model that says "background" everywhere { display-mode: "form" }
+_dog = clean_images[(clean_images["class"] == "dog") & clean_images["id"].isin(list(photo_rle))]
+_dog = _dog.iloc[0] if len(_dog) else clean_images[clean_images["id"].isin(list(photo_rle))].iloc[0]
+_truth = decode(photo_rle[_dog["id"]])
+_acc = 1 - float(_truth.mean())
+_thumb = load_thumb(_dog["path"], 384)
+_t_small = cv2.resize(_truth, _thumb.size, interpolation=cv2.INTER_NEAREST) > 0
+fig, axes = plt.subplots(1, 3, figsize=(10, 3))
+_ov = np.zeros((_thumb.height, _thumb.width, 4))
+_ov[_t_small] = (*mpl.colors.to_rgb(CLASS_COLORS[_dog["class"]]), 0.6)
+axes[0].imshow(_thumb)
+axes[0].imshow(_ov)
+axes[0].set_title(f"truth: the {_dog['class']} is {1 - _acc:.0%} of the pixels", fontsize=9)
+axes[1].imshow(_thumb)
+axes[1].imshow(np.full((_thumb.height, _thumb.width, 4), (*mpl.colors.to_rgb(BACKGROUND_COLOR), 0.8)))
+axes[1].set_title("fake model: everything is background", fontsize=9)
+for ax in axes[:2]:
+    frame(ax, INK)
+axes[2].bar(["pixel\naccuracy", f"{_dog['class']}\nIoU"], [_acc, 0.0],
+            color=[BACKGROUND_COLOR, CLASS_COLORS[_dog["class"]]])
+axes[2].text(0, _acc + 0.02, f"{_acc:.0%}", ha="center", fontsize=9)
+axes[2].text(1, 0.02, "0%", ha="center", fontsize=9)
+axes[2].set_ylim(0, 1.1)
+axes[2].yaxis.set_major_formatter(mpl.ticker.PercentFormatter(1.0))
+axes[2].set_title("looks great, finds nothing", fontsize=9)
+fig.tight_layout()
+display(fig)
+plt.close(fig)
+
+# %% [markdown]
 # ### How big is a mask, and how much of its box does it fill?
 #
-# A mask always sits inside its box, so a second number comes for free: the **fill ratio**, mask area
-# divided by box area. A box around a curled-up cat is mostly cat; a box around a horse is mostly the air
-# between its legs. The next cell measures every mask's shape (it decodes each one, so it takes a few
-# seconds) and plots mask size and fill ratio per class. Crowd regions are left out: they outline a group,
-# not an animal.
-#
+# A mask sits inside its box, so a second number comes for free: the **fill ratio**, mask area divided by
+# box area. A box around a curled-up cat is mostly cat; a box around a horse is mostly the air between its
+# legs. The next cell measures every mask's shape (a few seconds) and plots mask size and fill ratio per
+# class, then shows the photo with the lowest, a typical (median) and the highest fill ratio. Crowd regions
+# are left out: they outline a group, not an animal.
+
+# %% [markdown]
 # **Q27.** 🟡 What fraction of its box does a typical animal fill: about 25 %, 50 % or 80 %? Which class do
 # you expect to fill its box least? Guess, then run.
 
@@ -286,25 +333,26 @@ fig.tight_layout()
 display(fig)
 plt.close(fig)
 
-N_EXTREME_MASKS = 2 if SMOKE else 3  # photos with the lowest / highest fill ratio to show (N-014)
-_judged = animals[animals["mask_area"] >= MIN_JUDGED_AREA].sort_values(["fill", "id"])
-_ends = pd.concat([_judged.drop_duplicates("image_id").head(N_EXTREME_MASKS),
-                   _judged.drop_duplicates("image_id", keep="last").tail(N_EXTREME_MASKS)])
+N_EXTREME_MASKS = 1 if SMOKE else 2  # photos at each end of the fill ratio to show (N-014)
+_judged = (animals[animals["mask_area"] >= MIN_JUDGED_AREA].sort_values(["fill", "id"])
+           .drop_duplicates("image_id").reset_index(drop=True))
+_ends = pd.concat([_judged.head(N_EXTREME_MASKS), _judged.iloc[[len(_judged) // 2]],
+                   _judged.tail(N_EXTREME_MASKS)]).drop_duplicates("image_id")
 _fill_of = dict(zip(_ends["image_id"], _ends["fill"], strict=True))
+_tags = ["lowest"] * N_EXTREME_MASKS + ["median"] + ["highest"] * N_EXTREME_MASKS
+_tag_of = dict(zip(_ends["image_id"], _tags, strict=False))
 show_masks(clean_images.set_index("id").loc[list(_ends["image_id"])].reset_index(), masks,
-           f"the {N_EXTREME_MASKS} lowest and the {N_EXTREME_MASKS} highest fill ratios",
-           caption=lambda r: f"{r['class']} · fill {_fill_of[r['id']]:.0%}", cols=2 * N_EXTREME_MASKS)
+           "lowest · typical (median) · highest fill ratio",
+           caption=lambda r: f"{_tag_of[r['id']]}: {r['class']}, fill {_fill_of[r['id']]:.0%}",
+           cols=len(_ends))
 
 # %% [markdown]
-# 💡 Fill ratios sit in a narrow band, roughly 40–60 % for every class: animals are not rectangles. That
-# band is what makes the fill ratio a quality check. A mask that fills 98 % of its box is a rectangle, not an
-# animal, and one that fills 5 % has lost most of the animal.
-#
-# **Worked answer (Q27).** About half: on the full set the median fill is near 45 % for bird and horse
-# (wings, legs, necks) and near 55 % for cat and sheep (compact shapes). The low end of the gallery shows
-# what drives it down (spread wings, a diagonal pose); the high end shows close-ups cut by the photo's edge.
-# The size plot repeats section 8 in pixels: birds are a sliver of the photo, cats and dogs a large part.
-#
+# **Worked answer (Q27).** About half, in a narrow band of roughly 40–60 % for every class: near 45 % for bird
+# and horse (wings, legs, necks), near 55 % for cat and sheep (compact shapes). The low end of the gallery
+# shows spread wings and diagonal poses, the high end close-ups cut by the photo's edge. That band is what
+# makes fill a quality check: a mask filling 98 % of its box is a rectangle, one filling 5 % lost the animal.
+
+# %% [markdown]
 # ### Where the animal pixels are: one heatmap per class
 #
 # Section 8 drew where the box *centres* are. A mask says more: which pixels of the frame are animal. The
@@ -343,14 +391,21 @@ plt.close(fig)
 # over the middle and lower half (close-ups), while bird stays pale everywhere because its pixels are few and
 # scattered. A model trained on this learns that the edges of the frame are background, which the paddock
 # camera will contradict every day.
-#
+
+# %% [markdown]
 # ### Thin parts
 #
-# A leg, a tail, a beak or a far-away bird is only a few pixels wide. When the photo is shrunk to a network's
-# input (say 224×224, about a third of a COCO photo), a part of 7 px becomes 2 px, and a mask resized with
-# nearest neighbour (section 3) can lose it altogether. The next cell marks, in every mask, the pixels in
-# parts narrower than `THIN_PX` = 7 px.
+# A leg, a tail, a beak or a far-away bird is only a few pixels wide. What happens when the photo is shrunk:
 #
+# 1. A COCO photo is about 640 px wide; the network takes 224×224, about a third. A horse's leg of 7 px
+#    becomes 2 px.
+# 2. A mask resized with nearest neighbour (section 3) samples one pixel in three, so anything under 3 px
+#    (a thin tail, a far-away bird's leg) can fall between the samples and vanish.
+# 3. The network never sees that part: the label says "no tail" for a horse that has one.
+#
+# The next cell marks, in every mask, the pixels in parts narrower than `THIN_PX` = 7 px.
+
+# %% [markdown]
 # **Q28.** 🟡 Which class has the most masks with thin parts, and is it for the same reason as the
 # runner-up? Pick one, then run.
 
@@ -391,20 +446,21 @@ show_masks(clean_images.set_index("id").loc[list(_most_thin["image_id"])].reset_
            cols=N_THIN_SHOW)
 
 # %% [markdown]
-# 💡 Thin pixels are a tiny share of all pixels, so a pixel-counting loss barely notices when it gets them
-# wrong, and IoU barely moves. Yet they are what makes an outline an outline: the legs tell a horse from a
-# rock. Look at the gallery: the dark pixels are legs, tails and ears.
-#
 # **Worked answer (Q28).** Bird, by far, on all masks (about two thirds on the full set), but not because
 # birds have long legs: most birds are so small that the *whole bird* is a thin part. Among the masks large
-# enough to judge, horse leads (legs), with bird, sheep and zebra next, and cat almost never has one. Two
-# different problems hide behind one number: tiny objects and thin parts of big ones.
+# enough to judge, horse leads (legs), then bird, sheep and zebra, and cat almost never has one: tiny objects
+# and thin parts of big ones are two problems behind one number. Thin parts are so few pixels that a model
+# can get all of them wrong and still score well.
 
 # %% [markdown]
 # <!-- callout: across-tasks | Across tasks · What handles each of these later (next week and beyond) -->
-# The same vocabulary as section 8, now for pixels:
+# Pixel imbalance, tiny animals and thin parts, and everything sitting in the centre all have a standard
+# answer on the model side, as in section 8. None of them fixes a mask that is wrong: that is the data
+# side, and the next part is about it.
 #
-# - **Pixel imbalance** (background ~85 %, bird ~1 %) → a **class-weighted** cross-entropy or a
+# <details><summary>Names to look up next week</summary>
+#
+# - **Pixel imbalance** (background about 85 %, bird about 1 %) → a **class-weighted** cross-entropy or a
 #   **Dice loss**, which scores each class's overlap on its own scale, and reporting **mean IoU over
 #   classes** (section 7), so that birds count as much as background.
 # - **Tiny animals and thin parts** → a higher input resolution, or **crops / tiles** of the photo,
@@ -412,7 +468,7 @@ show_masks(clean_images.set_index("id").loc[list(_most_thin["image_id"])].reset_
 # - **Everything in the centre** → random crops and shifts when training, so the edge of the frame is
 #   not always background.
 #
-# None of these fixes a mask that is wrong. That is the data side, and the next part is about it.
+# </details>
 
 # %% [markdown]
 # ### Guided hunt: five ugly masks
@@ -420,15 +476,15 @@ show_masks(clean_images.set_index("id").loc[list(_most_thin["image_id"])].reset_
 # The park paid an annotation team per mask, and the masks came back. In the Play Dataset they are `masks`;
 # the batch the team sent back is `park_masks`, built by the collapsed cell: `masks` with **five masks
 # spoiled at runtime**, one of each kind an annotation team really delivers:
-# <ul>
-# <li><b>swollen</b>: the outline drawn generously around the animal (the mask grown by a few pixels);</li>
-# <li><b>shifted</b>: the right outline, about 15 px off to the side;</li>
-# <li><b>a chunk missing</b>: a piece of the body cut out;</li>
-# <li><b>another animal's mask</b>: the outline of a different animal pasted onto this one;</li>
-# <li><b>a crude polygon</b>: an annotator in a hurry clicked five or six points around the animal.</li>
-# </ul>
-# Which masks, of which photos, is decided at runtime from `SEED`. They are hidden among hundreds of real
-# masks, and you will not look at hundreds of photos.
+#
+# - **swollen**: the outline drawn generously around the animal (the mask grown by a few pixels);
+# - **shifted**: the right outline, about 15 px off to the side;
+# - **a chunk missing**: a piece of the body cut out;
+# - **another animal's mask**: the outline of a different animal pasted onto this one;
+# - **a crude polygon**: an annotator in a hurry clicked five or six points around the animal.
+#
+# Which masks, of which photos, is decided at runtime from `SEED`. They hide among hundreds of real masks,
+# and nobody looks at hundreds of photos.
 
 # %%
 # @title Plant the hunt (five ugly masks, seeded) { display-mode: "form" }
@@ -538,24 +594,95 @@ print(f"park_masks: {len(park_masks)} animal masks on {park_masks['image_id'].nu
       "Five of them are ugly. Find them.")
 
 # %% [markdown]
-# You have four checks, all computed from the mask and its annotated box, no photo needed:
-# <ul>
-# <li><b>mask–box agreement</b>: the IoU (section 7) between the box drawn around the mask and the box the
-# annotator drew. On real COCO masks it is almost always above 0.95, because the box was made from the
-# mask;</li>
-# <li><b>fill ratio</b>: mask area / box area, from Q27;</li>
-# <li><b>pieces and holes</b>: an animal is usually one piece (two or three when something stands in front
-# of it) and almost never has a hole;</li>
-# <li><b>solidity</b>: mask area / area of a rubber band stretched around it. Animals have dents (between
-# the legs, under the neck), so it is rarely close to 1.</li>
-# </ul>
+# You have five checks, all computed from the mask and its annotated box, no photo needed. The picture right
+# below draws each of them on one toy mask:
+#
+# - **mask–box agreement**: the IoU (section 7) between the tight box around the mask and the box the
+#   annotator drew. On real COCO masks it is almost always above 0.95, because the box was made from the mask;
+# - **fill ratio**: mask area / box area, from Q27;
+# - **pieces**: an animal is usually one piece (two or three when something stands in front of it);
+# - **holes**: an animal almost never has one;
+# - **solidity**: mask area / area of its **convex hull**, the "rubber band" you would get by stretching one
+#   around the whole mask. Animals have dents (between the legs, under the neck), so it is rarely close to 1.
+#
 # Only masks of at least 32×32 px are judged: below that, a few pixels of rounding change every number.
+
+# %%
+# @title The five checks drawn on one toy mask { display-mode: "form" }
+# A toy "horse" (body, four legs, a hole, a separate piece) and its sloppily drawn box, measured with the same
+# mask_shape() that the hunt uses, so the numbers in the titles are the numbers the checks will compute.
+_H, _W = 60, 84
+_yy, _xx = np.mgrid[0:_H, 0:_W]
+_toy = ((_xx - 40) / 24) ** 2 + ((_yy - 32) / 13) ** 2 <= 1  # the body
+for _lx in (24, 32, 46, 54):  # four legs
+    _toy |= (_xx >= _lx) & (_xx < _lx + 5) & (_yy >= 38) & (_yy < 56)
+_toy |= (_xx >= 68) & (_xx < 76) & (_yy >= 30) & (_yy < 38)  # a separate piece, away from the body
+_hole = (_xx - 40) ** 2 + (_yy - 28) ** 2 <= 16
+_toy = (_toy & ~_hole).astype(np.uint8)
+_tx, _ty, _tw, _th = cv2.boundingRect(_toy)  # the mask's own tight box
+_drawn = (_tx + 5, _ty + 3, _tw, _th)  # the annotator's box, a bit off
+_s = mask_shape(_toy, _drawn)
+
+
+def _layer(mask, color, alpha):
+    out = np.zeros((_H, _W, 4))
+    out[mask > 0] = (*mpl.colors.to_rgb(color), alpha)
+    return out
+
+
+_n_parts, _parts_lab = cv2.connectedComponents(_toy, connectivity=8)
+_part_sizes = {k: int((_parts_lab == k).sum()) for k in range(1, _n_parts)}
+_main_part = max(_part_sizes, key=_part_sizes.get)
+_contours, _ = cv2.findContours(_toy, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+_hull = cv2.convexHull(np.vstack(_contours))[:, 0, :]
+
+fig, axes = plt.subplots(1, 5, figsize=(13, 2.9))
+for ax in axes:
+    ax.imshow(_layer(_toy, CLASS_COLORS["horse"], 0.35))
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.grid(False)
+ax = axes[0]  # 1 · mask-box agreement: the mask's own box (solid) against the drawn box (dashed)
+ax.add_patch(mpl.patches.Rectangle((_tx - 0.5, _ty - 0.5), _tw, _th, fill=False, lw=2, edgecolor=INK))
+ax.add_patch(mpl.patches.Rectangle((_drawn[0] - 0.5, _drawn[1] - 0.5), _drawn[2], _drawn[3], fill=False, lw=2,
+                                   ls="--", edgecolor=CLASS_COLORS["sheep"]))
+ax.set_title(f"1 · mask-box agreement\nsolid: mask's own box · dashed: drawn\nIoU = {_s['box_iou']:.2f}",
+             fontsize=8)
+ax = axes[1]  # 2 · fill: mask pixels out of the drawn box's pixels
+ax.imshow(_layer(_toy, CLASS_COLORS["horse"], 0.9))
+ax.add_patch(mpl.patches.Rectangle((_drawn[0] - 0.5, _drawn[1] - 0.5), _drawn[2], _drawn[3], fill=False, lw=2,
+                                   ls="--", edgecolor=CLASS_COLORS["sheep"]))
+ax.set_title(f"2 · fill = mask ÷ drawn box\n{int(_toy.sum()):,} ÷ {_drawn[2] * _drawn[3]:,} "
+             f"= {_s['fill']:.2f}", fontsize=8)
+ax = axes[2]  # 3 · pieces: each connected part, the main one in colour, the others dark
+for k in _part_sizes:
+    ax.imshow(_layer(_parts_lab == k, CLASS_COLORS["horse"] if k == _main_part else INK, 0.9))
+ax.set_title(f"3 · pieces\nseparate parts (dark = extra)\n= {_s['pieces']}", fontsize=8)
+ax = axes[3]  # 4 · holes: the enclosed gaps
+ax.imshow(_layer(_toy, CLASS_COLORS["horse"], 0.9))
+ax.imshow(_layer(_hole, INK, 1.0))
+ax.annotate("hole", xy=(40, 28), xytext=(40, 6), ha="center", fontsize=8, color=INK,
+            arrowprops={"arrowstyle": "->", "color": INK})
+ax.set_title(f"4 · holes\ngaps fully inside the mask\n= {_s['holes']}", fontsize=8)
+ax = axes[4]  # 5 · solidity: mask area over the area of its convex hull (the rubber band)
+ax.add_patch(mpl.patches.Polygon(_hull, closed=True, fill=False, lw=2, ls="--", edgecolor=INK))
+ax.imshow(_layer(_toy, CLASS_COLORS["horse"], 0.9))
+ax.set_title(f"5 · solidity = mask ÷ rubber band\n(dashed: the rubber band)\n= {_s['solidity']:.2f}",
+             fontsize=8)
+for ax in axes:
+    ax.set_xlim(-0.5, _W - 0.5)
+    ax.set_ylim(_H - 0.5, -0.5)
+fig.tight_layout()
+display(fig)
+plt.close(fig)
 
 # %% [markdown]
 # <!-- callout: your-turn | Your turn · Set the thresholds -->
-# Each threshold decides when a mask becomes a suspect. Run the hunt with the defaults first. Then make one
-# check stricter (for example `IOU_MIN = 0.97` or `SOLIDITY_MAX = 0.9`) and one looser,
-# rerun this cell and the next, and watch how many *real* masks join the suspects.
+# Each threshold decides when a mask becomes a suspect. Run the hunt with the defaults first. Then try
+# **`IOU_MIN` first**: set it to 0.97, rerun this cell and the Q29 cell below, and watch how many *real*
+# masks join the suspects. What to conclude: a stricter check finds more planted masks but also flags more
+# real masks, which is more human looking time. Then loosen one (for example `SOLIDITY_MAX = 1`) and see what
+# you lose. `FILL_RANGE`, `MAX_PIECES` and `MAX_HOLES` are there to play with if you have time.
 
 # %%
 # ✏️ YOUR TURN
@@ -657,31 +784,37 @@ display(fig)
 plt.close(fig)
 
 # %% [markdown]
-# 💡 No check catches everything, and together they catch all five, with real masks on top (on the full
-# set a few dozen, about 5 % of the masks judged: a list a person can look through in ten minutes).
-# The box check does most of the work because COCO built its boxes *from* the masks: any mask that moved,
-# grew or belongs elsewhere stops matching its box. The two others need a shape check: a chunk cut out of
-# the middle leaves the box intact but makes a hole, and a crude polygon fills its rubber band completely.
+# **Worked answer (Q29).** No check catches everything; together they catch all five, with a few dozen real
+# masks on top (about 5 % of those judged: a list a person can look through in ten minutes). The box check
+# does most of the work because COCO built its boxes *from* the masks, so a mask that moved, grew or belongs
+# elsewhere stops matching its box. The other two kinds need a shape check. Expect:
 #
-# **Worked answer (Q29).** Expect: *another animal* → box IoU (the pasted mask sits around a different
-# animal); *shifted* → box IoU (15 px of a 100–300 px box is a large share); *swollen* → box IoU, often fill
-# too (a swollen mask can fill more than its box); *chunk missing* → holes; *crude polygon* → solidity (a
-# polygon of a few points has no dents). Pieces catches none of the planted five, but look at the real masks
-# it flags: animals broken up by a fence or a branch, sometimes correctly. Read the `checks` column of your
-# own run against this list: on a different seed, a kind may trip one check more or less.
+# - *another animal* → box IoU (the pasted mask sits around a different animal);
+# - *shifted* → box IoU (15 px of a 100–300 px box is a large share);
+# - *swollen* → box IoU, often fill too (it can fill more than its box);
+# - *chunk missing* → holes (the box stays intact, the cut-out leaves a hole);
+# - *crude polygon* → solidity (a few points leave no dents, so it fills its rubber band).
 #
-# The real suspects are worth a look too. COCO is not clean: a 2024 re-annotation study found that about
-# **2.4 % of COCO's val masks are poor**, with duplicated mask pairs among them (Singh et al., *COCO-ReM*,
-# ECCV 2024), and the masks with the highest solidity in the Play Dataset are polygons of 5 to 14 clicked
-# points, real crude polygons. Some of your real suspects are genuine annotation errors, not false alarms.
-#
-# ### 🔴 Optional: does the outline follow the photo's edges?
-#
+# Pieces catches none of the five, but flags real animals broken up by a fence or a branch. On a different
+# seed, a kind may trip one check more or less: read the `checks` column of your own run.
+
+# %% [markdown]
+# <!-- callout: go-deeper | Go deeper · COCO's own masks are not clean -->
+# Some of your real suspects are genuine annotation errors, not false alarms. A 2024 re-annotation study
+# found that about **2.4 % of COCO's val masks are poor**, duplicated mask pairs among them (*COCO-ReM*,
+# ECCV 2024). In the Play Dataset, the masks with the highest solidity are polygons of 5 to 14 clicked
+# points: real crude polygons.
+
+# %% [markdown]
+# ### 🔴 Optional · does the outline follow the photo's edges?
+
+# %% [markdown]
 # Every check so far ignored the photo. A good outline runs along the animal's edge, where the colour
 # changes; a sloppy one cuts across fur and grass. The next cell finds the photo's edges (Canny, the classic
-# edge detector) and measures, for each mask, the share of its outline that lies within 2 px of an edge. It
-# does this for the five planted masks and a sample of real ones.
-#
+# edge detector) and measures, for each mask, the share of its outline within 2 px of an edge. It does this
+# for the five planted masks and a sample of real ones.
+
+# %% [markdown]
 # **Q30.** 🔴 Which of the five kinds would this check catch, and which one is it blind to? Think about what
 # the outline of each one runs along, then run.
 
@@ -739,16 +872,27 @@ display(fig)
 plt.close(fig)
 
 # %% [markdown]
-# 💡 Real outlines are spread widely on this scale and rarely reach 100 %: a smooth animal on a smooth
-# background has stretches without a strong edge, and a busy one has edges everywhere.
+# **Worked answer (Q30).** Real outlines are spread widely on this scale and rarely reach 100 % (a smooth
+# animal on a smooth background has stretches without a strong edge). Where each planted outline runs:
 #
-# **Worked answer (Q30).** Think of where each outline runs. *Shifted*, *swollen* and *crude polygon* run a
-# few pixels off the animal's edge, through grass or fur, so they tend to sit low. *Chunk missing* keeps its
-# real outline but adds the rim of the hole, which runs through the middle of the body, so it drops by as
-# much as the hole is large. *Another animal* is the blind spot: when the pasted mask is a neighbour's from
-# the same photo, it is a real, careful outline that follows real edges, just around the wrong animal, and
-# it sits among the real masks, and only the box check sees it. When it comes from another photo, its
-# outline lands on whatever happens to be there, and it sits low. If a planted mask lands among the real
-# ones on your run, look at its photo: a busy background (grass, water, a fence) has edges everywhere, so
-# any line lies close to one. That is why this check ranks masks for a human to look at rather than
-# judging them.
+# - *shifted*, *swollen*, *crude polygon*: a few pixels off the animal's edge, through grass or fur, so they
+#   tend to sit low;
+# - *chunk missing*: the real outline plus the rim of the hole, which runs through the body, so it drops by
+#   as much as the hole is large;
+# - *another animal* is the blind spot: a neighbour's mask from the same photo is a careful outline that
+#   follows real edges, just around the wrong animal, so only the box check sees it. From another photo it
+#   lands on whatever is there and sits low.
+#
+# If a planted mask lands among the real ones on your run, look at its photo: a busy background (grass,
+# water, a fence) has edges everywhere. So this check ranks masks for a human to look at; it does not judge.
+
+# %% [markdown]
+# <!-- callout: takeaway | Takeaway -->
+# - **When you see** a class called "rare" or "common" → **do** name the unit (photo, box or pixel); bird is
+#   rare by pixels (about 1 %) and common by boxes.
+# - **When you see** a dataset that is mostly background → **do** report per-class IoU or Dice, not pixel
+#   accuracy: "all background" already scores about 85 %.
+# - **When you see** thin parts or tiny animals → **do** resize masks with nearest neighbour, keep a higher
+#   input resolution or tile, and check that the thin parts survive.
+# - **When you see** a mask whose own box does not match the annotated box, or a hole or a rubber-band-tight
+#   shape → **do** open the photo: it is shifted, swollen, cut or crudely clicked.

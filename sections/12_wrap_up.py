@@ -65,34 +65,20 @@ for outcome, lines in recap.items():
 # %% [markdown]
 # ### Next week: training
 #
-# Next week the cleaned table and the split go into a model. Karpathy's recipe continues the same way: first
-# an end-to-end skeleton with a dumb baseline, then a model that overfits, then regularisation. Two things
-# from today come back straight away.
+# The cleaned table and the split go into a model: first a dumb end-to-end baseline, then a model that
+# overfits, then regularisation (Karpathy's recipe, continued). **Bring along** your answers to the guiding
+# questions of section 11 and your split (`data/cache/my_split.csv`, or the one you choose by hand).
 
 # %% [markdown]
-# **Data augmentation.** The flipped, rotated and recompressed copies you hunted in section 5 are what
-# augmentation makes *on purpose*: a flipped sheep is still a sheep, so training sees it twice. Augment only
-# the training set, and only after the split, or the copies leak into the test set again.
-
-# %% [markdown]
-# <!-- callout: go-deeper | Go deeper · Data augmentation -->
+# <!-- callout: go-deeper | Go deeper · Augmentation and experiment tracking -->
+# The flipped and rotated copies you hunted are what augmentation makes on purpose, on the training set
+# only, after the split. Training also means many runs, say five learning rates for the dog-in-the-paddock
+# model, and a tracking tool records each run's settings, curves and scores.
+#
 # - [Data augmentation in Python (Neptune.ai)](https://neptune.ai/blog/data-augmentation-in-python):
-#   an overview of the techniques and libraries.
+#   techniques and libraries.
 # - [YOLO data augmentation (Ultralytics)](https://docs.ultralytics.com/guides/yolo-data-augmentation/):
-#   what each augmentation does for detection, where boxes must move with the pixels.
-
-# %% [markdown]
-# **Tracking experiments (MLOps).** Training means many runs with different settings, say five learning
-# rates for the dog-in-the-paddock model. A tracking tool records each run's settings, curves and scores so
-# you can compare them later.
-
-# %% [markdown]
-# <!-- callout: go-deeper | Go deeper · Experiment-tracking tools -->
-# - [Weights & Biases](https://wandb.ai/): hosted dashboards for runs, curves and scores.
-# - [TensorBoard](https://www.tensorflow.org/tensorboard): training curves, runs on your own machine.
-# - [Neptune.ai](https://neptune.ai/): hosted tracker for run settings and metadata.
-# - [MLflow](https://mlflow.org/): open source, self-hosted tracking.
-
-# %% [markdown]
-# **Bring along:** your answers to the guiding questions of section 11 and your split
-# (`data/cache/my_split.csv`, or the one you choose by hand).
+#   for detection, where boxes must move with the pixels.
+# - [Weights & Biases](https://wandb.ai/) and [Neptune.ai](https://neptune.ai/): hosted trackers for runs.
+# - [TensorBoard](https://www.tensorflow.org/tensorboard) and [MLflow](https://mlflow.org/): trackers on
+#   your own machine, open source.

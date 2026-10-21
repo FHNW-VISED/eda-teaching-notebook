@@ -237,7 +237,7 @@ Time = participant minutes (~110 total; Susanne may cut sections 1 and the 🔴 
 - Source: Simone, G-12, G-21, G-24.
 
 **L-003 — Theme green-blue** (N-027, G-9, G-18):
-- Title banner: a `banner` callout (L-001), full width, white text on `#0B6E79`, with the title (larger font), the three outcomes as a numbered list and the level legend. It sits in the cell right under section 0's heading.
+- Title banner: a `banner` callout (L-001), full width, white text on `#0B6E79`, with the title (larger font), the three outcomes as a numbered list and the level legend. It sits right after section 0's heading and 🎯 Objective cells (the lint requires heading, then objective).
 - Matplotlib style: background white; text and axes `#21434A`; grid light.
 - `CLASS_COLORS` used in *every* plot, box and mask overlay: cat `#E07A5F`, dog `#3D405B`, bird `#F2CC8F`, horse `#81B29A`, sheep `#9C89B8`, zebra `#2A9D8F`.
 - Source: Simone, G-9, G-18.

@@ -6,8 +6,7 @@
 # Look at many images before computing anything, and write down what you see.
 
 # %% [markdown]
-# Section 1 ended with three 👀 questions that no table can answer. Your eyes are the only tool for them, and
-# most people skip this step:
+# Three 👀 questions from section 1 only your eyes can answer (most people skip this step):
 #
 # - 👀 Does the data **fit** the park's cameras?
 # - 👀 Does its **variability** match what the cameras will see?
@@ -124,17 +123,15 @@ N_PER_CLASS = 3 if SMOKE else 6  # fewer thumbnails in smoke mode, same code (N-
 show_all_classes(N_PER_CLASS)
 
 # %% [markdown]
-# 💡 Even six photos per class show that these are holiday snapshots, not camera-trap frames: close-ups,
-# people, sofas and streets, with the animal usually centred and filling the frame.
-#
-# **Worked answer (Q2).** Cats and dogs are the farthest from a park camera: they are photographed indoors,
-# up close, often with people and furniture. Sheep, horses and zebras are at least outdoors and sometimes far
-# away, which is closer to what the paddock and savanna cameras will see.
-#
-# Now look at more photos of one class: twelve is enough to start noticing patterns.
+# **Worked answer (Q2).** 💡 Holiday snapshots, not camera-trap frames. Cats and dogs are the farthest from a
+# park camera: indoors, up close, with people and sofas. Sheep, horses and zebras are at least outdoors and
+# sometimes far away, closer to what the paddock and savanna cameras will see.
 
 # %% [markdown]
 # <!-- callout: your-turn | Your turn · Pick a class -->
+# Look at more photos of one class: twelve is enough to start noticing patterns. **Look for:** which class has
+# the most photos that a paddock camera would never take?
+#
 # Set `CLASS_TO_SHOW` to one of `cat, dog, bird, horse, sheep, zebra` and `N_SHOW` to how many photos you
 # want, then run the cell. Try at least `"dog"` (the alert class) and `"bird"` (the tiny-box class).
 
@@ -151,9 +148,8 @@ n_show = min(N_SHOW, 6) if SMOKE else N_SHOW  # smoke mode caps the grid, same c
 show_grid(CLASS_TO_SHOW, n_show)
 
 # %% [markdown]
-# 💡 The title of each photo says how many animals of that class it holds: more than one is common, so "one
-# label per image" is already a simplification, and section 4 asks which label a photo with several animals
-# should get.
+# 💡 Each title says how many animals of that class the photo holds. More than one is common, so "one label
+# per image" is already a simplification (section 4).
 
 # %% [markdown]
 # <!-- callout: questions | Questions -->
@@ -175,17 +171,11 @@ show_grid(CLASS_TO_SHOW, n_show)
 # %% [markdown]
 # **Worked answer (Q3)**, for the dog grid on the full set. Yours will differ; that is the point.
 #
-# 1. **Setting:** most dog photos are indoors or in a street, taken by the owner from a metre away. A paddock
-#    camera sees a small dog far away in grass. The model will have to generalise from close-ups to that
-#    (section 11's question "does it fit?").
-# 2. **People:** a person, a hand or a leash appears in many photos. A model can learn "person + leash = dog"
-#    and miss the stray dog alone in the paddock.
-# 3. **Several animals and odd photos:** some photos hold two or three dogs, some show a dog in a costume,
-#    on a skateboard or on a screen. Each of these is a labelling decision (sections 4 and 5) before it is a
-#    modelling problem.
+# 1. **Setting:** most dogs are indoors or in a street, a metre away; the paddock camera sees one far off.
+# 2. **People:** a person, hand or leash is in many photos: "person + leash = dog" is a shortcut to learn.
+# 3. **Odd photos:** two or three dogs, a costume, a screen: labelling decisions (sections 4 and 5).
 #
-# Keep your three lines: section 11 asks you for the same three on your own dataset, and the rest of this
-# notebook turns the observations above into numbers, one at a time.
+# Keep your three lines: section 11 asks for the same three on your own dataset.
 
 # %% [markdown]
 # <!-- callout: takeaway | Takeaway -->

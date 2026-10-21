@@ -7,8 +7,8 @@
 # the one box an annotation team forgot.
 
 # %% [markdown]
-# Sections 4 to 7 treated each photo as one label. The park's second job, **count** the sheep, zebras and
-# birds every day, needs a **box per animal** instead, and the same photos now tell a different story.
+# The park's second job, **count** the sheep, zebras and birds every day, needs a **box per animal**
+# instead of one label per photo, and the same photos now tell a different story.
 #
 # `annotations` already holds one row per animal. Its box is `[x, y, w, h]` in pixels (COCO format: the
 # top-left corner, then the width and height). This section looks at the boxes of the photos in
@@ -17,16 +17,12 @@
 # %% [markdown]
 # <!-- callout: theory | Theory · What changes when the unit is a box -->
 # A classifier sees one example per photo. A detector sees one example per **box**, so a photo with twelve
-# sheep weighs twelve times a photo with one cat. Four things follow:
+# sheep weighs twelve times a photo with one cat. Four things follow, each with its own chart below:
 #
-# - **Imbalance is counted in boxes**, not photos. *Park:* sheep are few photos but many boxes,
-#   because a paddock photo shows a flock.
-# - **Size matters.** Detectors score far worse on small boxes. *Park:* a bird on the far side of the pond is
-#   a 12×8 px box, a speck.
-# - **Position matters.** If every animal sits in the middle of the frame, the detector learns "look in the
-#   middle". *Park:* the sheep at the fence edge is missed.
-# - **Crowding matters.** Overlapping boxes are hard for the detector and for the annotator. *Park:* two sheep
-#   standing behind each other, and the annotator draws one box.
+# - **Imbalance is counted in boxes**, not photos (a paddock photo shows a flock).
+# - **Size matters**: a bird on the far side of the pond is a 12×8 px speck.
+# - **Position matters**: animals always in the middle means the sheep at the fence edge is missed.
+# - **Crowding matters**: two sheep behind each other may get one box.
 
 # %% [markdown]
 # The collapsed cell defines `show_boxes`, a gallery that draws each photo's boxes in its class colour.
@@ -148,13 +144,10 @@ display(fig)
 plt.close(fig)
 
 # %% [markdown]
-# 💡 Same photos, two rankings. The flock classes (bird, sheep, zebra) climb because one photo of them holds
-# many animals; cat and dog sink because they are photographed alone. A detector on this set is *not* short of
-# sheep examples the way a classifier is.
-#
-# **Worked answer (Q22).** No. On the full set bird climbs from 4th by photos to 1st by boxes and sheep from
-# last to 2nd, while cat and dog drop to the bottom. The smoke subset is smaller, so compare the *shapes* of
-# the two charts, not the digits.
+# **Worked answer (Q22).** No. The flock classes climb because one photo holds many animals: on the full set
+# bird goes from 4th by photos to 1st by boxes and sheep from last to 2nd, while the lone cat and dog drop to
+# the bottom. A detector is not short of sheep the way a classifier is. On a small subset, compare shapes,
+# not digits.
 
 # %% [markdown]
 # ### Box sizes: small, medium, large
@@ -260,13 +253,10 @@ display(fig)
 plt.close(fig)
 
 # %% [markdown]
-# 💡 The violin is on a log scale because the spread is enormous: a bird can be a few pixels on a pond and
-# a horse can fill the frame. The **small share** is the number to watch. Small boxes are the ones every
-# detector misses first, and in the park they are exactly the far-away birds the headcount needs.
-#
 # **Worked answer (Q23).** Bird, by a wide margin: a large share of its boxes is *small*, while cat, dog and
-# horse are mostly *large*. A 10 px box is a speck, and shrinking the photo to a network's input makes it
-# smaller still (section 3).
+# horse are mostly *large*. The **small share** is the number to watch: small boxes are what every detector
+# misses first, and here they are the far-away birds the headcount needs (the violin is on a log scale
+# because sizes range from a speck to a full frame).
 
 # %% [markdown]
 # ### Where the animals are: a box-centre heatmap
@@ -308,8 +298,8 @@ plt.close(fig)
 
 # %% [markdown]
 # 💡 The centre is darker in every panel: photographers point the camera at the animal. A park camera does
-# not, so a detector that learned "animals live in the middle" misses the sheep at the fence. The flock
-# classes spread wider because a flock fills the frame, the one bias the Play Dataset shares with the paddock.
+# not, so a detector that learned "animals live in the middle" misses the sheep at the fence. Bird and sheep
+# boxes spread out more because a flock fills the frame: the one way this dataset resembles the paddock.
 
 # %% [markdown]
 # ### Animals per photo, and crowding
@@ -395,18 +385,18 @@ show_boxes(_rows, boxes, "the most crowded photos (every box drawn)",
            cols=N_CROWDED_BOXES)
 
 # %% [markdown]
-# 💡 Look at the crowded photos and try to count the animals *without* the boxes: that is the annotator's job,
-# and the detector's. Where boxes pile up, a missing or doubled box is a matter of attention, which is why the
-# next part plants one.
-#
-# **Worked answer (Q24).** The flock classes: sheep and zebra on the full set (herds stand close), then bird
-# (flocks on water). Cats and dogs are mostly alone, so they have almost no pairs. On a small subset the
-# leader can change, so read the `crowded_photos` row.
+# **Worked answer (Q24).** The flock classes: sheep and zebra on the full set (herds stand close), then bird.
+# Cats and dogs are mostly alone, so they have almost no pairs; on a small subset the leader can change, so
+# read the `crowded_photos` row. Try counting the crowded photos' animals *without* the boxes: that is the
+# annotator's job, and where boxes pile up a missing or doubled box is easy to make.
 
 # %% [markdown]
 # <!-- callout: across-tasks | Across tasks · What handles each of these later (next week and beyond) -->
-# Each finding has a standard answer on the model side. Know its name, so the data report can say "we saw
-# this, the training recipe handles it with …":
+# Each finding (box imbalance, small boxes, a wide range of sizes, photos with many boxes) has a standard
+# answer on the model side, so the data report can say "we saw this, the training recipe handles it".
+# None of them fixes a photo whose annotation is wrong: that is the data side, and it is yours.
+#
+# <details><summary>Names to look up next week</summary>
 #
 # - **Imbalance in boxes** (bird 1st, cat last) → a **weighted** or **focal loss**, which down-weights
 #   the easy, frequent boxes.
@@ -417,7 +407,7 @@ show_boxes(_rows, boxes, "the most crowded photos (every box drawn)",
 # - **Photos with several boxes** (a "sheep" photo holding 12 boxes) → **iterative stratification**, the
 #   split of section 6 that balances box counts per class, not only photo counts.
 #
-# None of these fixes a photo whose annotation is wrong. That is the data side, and it is yours.
+# </details>
 
 # %% [markdown]
 # ### Guided hunt: the box that is not there
@@ -426,16 +416,12 @@ show_boxes(_rows, boxes, "the most crowded photos (every box drawn)",
 # team's boxes are `park_boxes` and the keeper's headcount is the `n_animals` column of `clean_images`.
 
 # %% [markdown]
-# The story, step by step:
+# The story, in three steps:
 #
 # 1. The team draws a box around every animal and sends the table back (`park_boxes`).
 # 2. On the day, the keeper counted the animals in each photo by eye (`n_animals`).
-# 3. One box was dropped from a photo of a small flock: the keeper counted 3 sheep, the team drew 2 boxes.
-# 4. A detector trained on that photo is told the third sheep is *background*, so it is punished for
-#    finding it.
-#
-# Which photo is decided at runtime from `SEED`. Nobody can look at hundreds of photos, so we need a number
-# per photo that points at the problem.
+# 3. One box was dropped from a photo of a small flock, and a detector trained on it is told that animal is
+#    *background*. Which photo is decided at runtime from `SEED`; nobody can look at hundreds of photos.
 
 # %%
 # @title Plant the hunt (one box removed, seeded) { display-mode: "form" }
@@ -466,28 +452,6 @@ park_boxes, HUNT8_KEY = plant_hunt8(boxes, clean_images, SEED)
 print(f"park_boxes: {len(park_boxes)} boxes for {park_boxes['image_id'].nunique()} photos "
       f"(boxes had {len(boxes)}). One box is missing. Find the photo.")
 
-# %%
-# @title What a missing box looks like (toy drawing: headcount 3, boxes 2) { display-mode: "form" }
-fig, ax = plt.subplots(figsize=(6, 2))
-for k, x in enumerate([2, 5, 8]):
-    ax.add_patch(mpl.patches.Ellipse((x, 1), 2.0, 1.2, color=CLASS_COLORS["sheep"], alpha=0.8))
-    drawn = k < 2
-    ax.add_patch(mpl.patches.Rectangle((x - 1.3, 0.1), 2.6, 1.8, fill=False, lw=2 if drawn else 1.5,
-                                       ls="-" if drawn else "--",
-                                       edgecolor=CLASS_COLORS["sheep"] if drawn else INK))
-    if not drawn:
-        ax.text(x, 1.0, "no box", ha="center", va="center", fontsize=9, color=INK)
-ax.set_xlim(0, 10)
-ax.set_ylim(0, 2)
-ax.set_aspect("equal")
-ax.set_xticks([])
-ax.set_yticks([])
-ax.grid(False)
-ax.set_title("keeper counted 3 · team drew 2 boxes · difference 1 → open this photo", fontsize=9)
-fig.tight_layout()
-display(fig)
-plt.close(fig)
-
 # %% [markdown]
 # **Q25.** 🟡 You have two numbers for every photo: the keeper's headcount (`n_animals`) and the number of
 # boxes the team drew for it (the rows of `park_boxes` with that `image_id`). What simple comparison of
@@ -514,19 +478,38 @@ show_boxes(_rows, park_boxes, "the suspect photo(s): one animal has no box",
                              f"{int(box_counts.get(r['id'], 0))} boxes")
 
 # %% [markdown]
-# 💡 Two counts of the same thing from two sources, and a photo where they disagree: that is the whole trick,
-# and it costs nothing. Without a second count, the only way is a photo-by-photo visual check, which is why
-# annotation teams are asked for a per-image count in the brief.
-#
-# **Worked answer (Q25).** Subtract the number of boxes per photo from the keeper's headcount. One photo has
-# one box fewer than animals, and the gallery shows the animal without a frame. Section 9 repeats the idea
-# between masks and boxes, and the Challenge hides another missing box among other faults.
+# **Worked answer (Q25).** Subtract the number of boxes per photo from the keeper's headcount: one photo has
+# one box fewer than animals, and the gallery shows the animal without a frame. Two counts of the same thing
+# from two sources cost nothing, which is why annotation teams are asked for a per-image count. Section 9
+# repeats the idea between masks and boxes, and the Challenge hides another missing box among other faults.
+
+# %%
+# @title What a missing box looks like (toy drawing: headcount 3, boxes 2) { display-mode: "form" }
+fig, ax = plt.subplots(figsize=(6, 2))
+for k, x in enumerate([2, 5, 8]):
+    ax.add_patch(mpl.patches.Ellipse((x, 1), 2.0, 1.2, color=CLASS_COLORS["sheep"], alpha=0.8))
+    drawn = k < 2
+    ax.add_patch(mpl.patches.Rectangle((x - 1.3, 0.1), 2.6, 1.8, fill=False, lw=2 if drawn else 1.5,
+                                       ls="-" if drawn else "--",
+                                       edgecolor=CLASS_COLORS["sheep"] if drawn else INK))
+    if not drawn:
+        ax.text(x, 1.0, "no box", ha="center", va="center", fontsize=9, color=INK)
+ax.set_xlim(0, 10)
+ax.set_ylim(0, 2)
+ax.set_aspect("equal")
+ax.set_xticks([])
+ax.set_yticks([])
+ax.grid(False)
+ax.set_title("the toy version: keeper counted 3 · team drew 2 boxes · difference 1", fontsize=9)
+fig.tight_layout()
+display(fig)
+plt.close(fig)
 
 # %% [markdown]
 # <!-- callout: pitfall | Pitfall · Counting different things across tasks -->
 # The same class has a different share depending on the unit:
 #
-# - **Sheep** is 9 % of the photos but 22 % of the boxes.
+# - **Sheep** is about 9 % of the photos but about 22 % of the boxes.
 # - **Bird** is rare by photos, common by boxes, and rare again by pixels (section 9).
 #
 # Whenever you report imbalance, size or a split, say what the unit is: photo, box or pixel. The park's three

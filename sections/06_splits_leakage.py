@@ -6,25 +6,20 @@
 # %% [markdown]
 # <!-- callout: objective | Objective -->
 # Choose a split that does not leak, and know what k-fold, stratified, leave-one-out and leave-one-group-out
-# cross-validation each buy you.
+# (LOGO; here a group = a camera) cross-validation each buy you.
 
 # %% [markdown]
-# Section 5 ended with `clean_images`, a table without duplicates. The next decision decides whether next
-# week's test score means anything: **which photos does the model never see?**
+# The next decision decides whether next week's test score means anything: **which photos does the model
+# never see?**
 #
 # The held-out part has to look like the photos the park's cameras take *after* training, not like the ones
 # they already took. If a test photo has a near-twin in training, the score reports memory, not recognition.
 
 # %% [markdown]
 # <!-- callout: theory | Theory · Data leakage -->
-# **Leakage** is any way information about the test photos reaches the model during training.
-#
-# - **The obvious route:** a duplicate in both halves (section 5).
-# - **The quiet route:** a photo that is not a copy but comes from the same moment. A woodland trail camera
-#   fires a burst of three frames a second apart, so a random split can put frames 1 and 3 of one raccoon in
-#   training and frame 2 in test: same tree, same pose, same light.
-# - **The cost:** the model learns "this tree", the test score goes up, and the first camera at a new tree
-#   breaks it.
+# **Leakage** is any way information about the test photos reaches the model during training: a duplicate in
+# both train and test (section 5), or a near-twin from the same moment (a burst, the same tree). The score
+# then measures memory.
 #
 # **Rule:** split by whatever will be *new* at deployment (a camera, a day, a farm), not by photo.
 
@@ -32,23 +27,23 @@
 # ### Random vs stratified split on the Play Dataset
 #
 # The simplest split shuffles the photos and cuts them 80 / 20. A **stratified** split cuts *each class*
-# 80 / 20, so both halves keep the class shares of the whole table.
+# 80 / 20, so the train and test sets both keep the class shares of the whole table.
 #
-# A **class share** is a class's photos divided by all photos in that half (30 cats among 100 photos = 30 %).
+# A **class share** is a class's photos divided by all photos in that set (30 cats among 100 photos = 30 %).
 
 # %% [markdown]
 # <!-- callout: questions -->
-# Picture 100 cats and 20 sheep, and a random test half of 24 photos. On average it holds 20 cats and 4 sheep
-# (shares 83 % and 17 %). A bad shuffle gives 22 cats and 2 sheep (92 % and 8 %): the cat share moved by 9
-# points, the sheep share was cut in half.
+# Picture 100 cats and 20 sheep, and a random test set of 24 photos (20 %). On average it holds 20 cats and
+# 4 sheep (shares 83 % and 17 %). A bad shuffle gives 22 cats and 2 sheep (92 % and 8 %): the cat share moved
+# by 9 points, the sheep share was cut in half.
 
 # %% [markdown]
-# **Q15.** 🟡 On the Play Dataset's random 80 / 20 split, which class share moves the most between the whole
-# table and the test half, *relative to the class's own size*: the largest class or the smallest? Does the
-# stratified split fix that completely, or only mostly? Decide, then run.
+# **Q15.** 🟡 On the Play Dataset's random 80 / 20 split, for each class compare its share in the test set
+# with its share overall. Which class is off by the biggest fraction of itself: the biggest or the smallest?
+# Does the stratified split fix that completely, or only mostly? Decide, then run.
 
 # %%
-# @title Q15 Random vs stratified 80 / 20 split and the class share of each test half { display-mode: "form" }
+# @title Q15 Random vs stratified 80 / 20 split and the class share of each test set { display-mode: "form" }
 from sklearn.model_selection import (
     GroupKFold,
     GroupShuffleSplit,
@@ -94,20 +89,19 @@ _drift = (shares.sub(shares["whole table"], axis=0).abs() * 100).round(1)
 print("largest class-share drift from the whole table, in percentage points:")
 print(f"  random split: {_drift['random · test'].max():.1f} ({_drift['random · test'].idxmax()})   "
       f"stratified split: {_drift['stratified · test'].max():.1f} ({_drift['stratified · test'].idxmax()})")
+_whole = shares["whole table"].replace(0, np.nan)
+_rel = shares.sub(shares["whole table"], axis=0).abs().div(_whole, axis=0) * 100
+print("largest drift relative to the class's own share, in %:")
+print(f"  random split: {_rel['random · test'].max():.0f} ({_rel['random · test'].idxmax()})   "
+      f"stratified split: {_rel['stratified · test'].max():.0f} ({_rel['stratified · test'].idxmax()})")
 RESULTS["split_drift_random_pp"] = float(_drift["random · test"].max())
 RESULTS["split_drift_stratified_pp"] = float(_drift["stratified · test"].max())
 
 # %% [markdown]
-# 💡 Grey bars are the whole table, coloured bars the test half. Under a random cut the small classes wobble
-# most in relative terms; the stratified cut sits on the grey bars up to the rounding that whole photos force.
-#
-# **Worked answer (Q15).**
-#
-# - In percentage points the largest classes can move the most, but what hurts is the *relative* move: a rare
-#   class like the paddock's dog may end up almost absent from the test half, the one class the alert is about.
-# - Stratification removes that wobble up to rounding (you cannot put 10.6 sheep in test), so the shares match
-#   within one photo per class.
-# - It does nothing about *what is in* the photos, which is the rest of this section.
+# 💡 **Worked answer (Q15).** The smallest class moves the most relative to its own size: one photo can halve
+# a small share (grey bars = whole table, coloured = test set), and if that class is the dog, the alert is
+# scored on a handful of photos. Stratifying fixes it up to rounding (you cannot put 10.6 sheep in test), but
+# says nothing about *what is in* the photos: that is the rest of this section.
 
 # %% [markdown]
 # ### Cross-validation: four ways to reuse one dataset
@@ -118,14 +112,52 @@ RESULTS["split_drift_stratified_pp"] = float(_drift["stratified · test"].max())
 
 # %% [markdown]
 # <!-- callout: theory | Theory · k-fold, stratified k-fold, leave-one-out, leave-one-group-out -->
-# - **k-fold:** cut the table into k pieces (*folds*), test on each once and train on the other k−1. Usual k
-#   is 5 or 10. *Park:* 5 folds of 100 photos = five rounds with 20 test photos each.
-# - **stratified k-fold:** the same, but every fold keeps the class shares. Use it whenever classes are
-#   imbalanced, which is always. *Park:* otherwise one fold may hold no dog at all.
-# - **leave-one-out (LOO):** k = the number of photos; every photo is tested once against a model trained on
-#   all the others. *Park:* 100 photos = 100 trainings.
-# - **leave-one-group-out (LOGO):** each fold holds out one whole **group** that must stay together (a
-#   camera, a day, a patient). The only scheme here that tests a *new* camera. *Park:* 8 cameras = 8 folds.
+# - **k-fold:** k pieces (*folds*), each tested once, trained on the other k−1. *Park:* 5 folds of 100 photos.
+# - **stratified k-fold:** k-fold where every fold keeps the class shares; use it when classes are imbalanced.
+# - **leave-one-out (LOO):** k = the number of photos; each photo is tested alone. *Park:* 100 trainings.
+# - **leave-one-group-out (LOGO; here a group = a camera, so leave-one-camera-out):** each fold holds out one
+#   whole group. scikit-learn: `LeaveOneGroupOut`, or `GroupKFold` with k = the number of groups. The only
+#   scheme that tests a *new* camera.
+
+# %% [markdown]
+# The next cell draws the four schemes on 12 toy photos from 3 cameras (`D` = a dog, the rare class), three
+# folds each: magenta photos are tested, grey-blue ones are trained on.
+
+# %%
+# @title Diagram: which photos are tested in k-fold, stratified k-fold, LOO and LOGO { display-mode: "form" }
+SPLIT_COLORS = {"train": "#8FA8AD", "test": "#B5446E"}  # train: neutral grey-blue · test: the held-out part
+_dogs = {2, 3, 6}  # toy photos 0-11, four per camera (A: 0-3, B: 4-7, C: 8-11); the dog is the rare class
+_cv_folds = {  # the test photos of three folds per scheme
+    "k-fold (a fold may miss the dog)": [{2, 3, 7, 10}, {0, 5, 8, 11}, {1, 4, 6, 9}],
+    "stratified k-fold (each fold has one dog)": [{0, 2, 4, 9}, {1, 3, 7, 10}, {5, 6, 8, 11}],
+    "LOO (12 folds, the first three)": [{0}, {1}, {2}],
+    "LOGO (one camera per fold)": [{0, 1, 2, 3}, {4, 5, 6, 7}, {8, 9, 10, 11}],
+}
+fig, axes = plt.subplots(len(_cv_folds), 1, figsize=(8.5, 6.4))
+for ax, (name, folds) in zip(axes, _cv_folds.items(), strict=True):
+    for i, test in enumerate(folds):
+        for p in range(12):
+            x = p + 0.35 * (p // 4)  # a small gap between cameras
+            ax.add_patch(mpl.patches.FancyBboxPatch(
+                (x + 0.06, i + 0.08), 0.88, 0.84, boxstyle="round,pad=0.02",
+                facecolor=SPLIT_COLORS["test" if p in test else "train"], edgecolor="none"))
+            if p in _dogs:
+                ax.text(x + 0.5, i + 0.5, "D", ha="center", va="center", fontsize=8, color="white",
+                        fontweight="bold")
+    ax.set_xlim(0, 12.7)
+    ax.set_ylim(3, 0)
+    ax.set_xticks([])
+    ax.set_yticks([0.5, 1.5, 2.5], ["fold 1", "fold 2", "fold 3"], fontsize=8)
+    ax.grid(False)
+    for spine in ax.spines.values():
+        spine.set_visible(False)
+    ax.set_title(name, loc="left", fontsize=9, color=INK)
+axes[-1].set_xticks([2, 6.35, 10.7], ["camera A", "camera B", "camera C"], fontsize=8)
+axes[-1].tick_params(length=0)
+fig.suptitle("Toy table of 12 photos: every row is one fold, test photos in magenta", color=INK)
+fig.tight_layout()
+display(fig)
+plt.close(fig)
 
 # %% [markdown]
 # <!-- callout: go-deeper | Go deeper · When leave-one-out is worth it -->
@@ -139,14 +171,15 @@ RESULTS["split_drift_stratified_pp"] = float(_drift["stratified · test"].max())
 
 # %% [markdown]
 # The next cell runs the first three schemes on the Play Dataset and reports, for each, how many folds there
-# are, how big a test fold is, and the **smallest class share** any test fold has (0 means some fold tests
-# without a class). LOO runs on a slice of 40 photos, because that is where it belongs.
+# are, how big a test fold is, and the **lowest class share**: in every fold find the class with the fewest
+# test photos; the table shows the lowest of those shares; 0 % means some fold had no photo of some class.
+# LOO runs on a slice of 40 photos, because that is where it belongs.
 #
 # **Q16.** 🟡 Before running: for leave-one-out on that slice of 40 photos, how many folds are there, how many
-# photos does each test fold hold, and what is the smallest class share a test fold can have?
+# photos does each test fold hold, and what is the lowest class share a test fold can have?
 
 # %%
-# @title Q16 k-fold, stratified k-fold, leave-one-out: folds and smallest class share { display-mode: "form" }
+# @title Q16 k-fold, stratified k-fold, leave-one-out: folds and lowest class share { display-mode: "form" }
 K_FOLDS = 5
 LOO_N = 12 if SMOKE else 40  # leave-one-out on a slice: a "very small dataset" (N-014: same code, fewer rows)
 
@@ -159,7 +192,7 @@ def summarise_folds(name: str, splitter, X, y, groups=None) -> dict:
         counts = pd.Series(y[test_idx]).value_counts(normalize=True).reindex(sorted(set(y))).fillna(0)
         min_share = min(min_share, float(counts.min()))
     return {"scheme": name, "folds": len(sizes), "test fold size": f"{min(sizes)}–{max(sizes)}",
-            "smallest class share in a test fold": round(min_share, 3)}
+            "lowest class share in a test fold": round(min_share, 3)}
 
 
 _loo_ids = _ids[:LOO_N]
@@ -173,16 +206,10 @@ display(pd.DataFrame(cv_rows).set_index("scheme"))
 print(f"(loo ran on the first {LOO_N} photos: {LOO_N} folds, {LOO_N} trainings for one score)")
 
 # %% [markdown]
-# 💡 Plain k-fold lets the smallest class's share dip below its overall share in some fold; stratified k-fold
-# holds it steady; LOO's test folds are one photo each, so its share column reads 0 whatever you do.
-#
-# **Worked answer (Q16).**
-#
-# - 40 photos give **40 folds** (one per photo), each with **1 test photo**, so 40 trainings for one score.
-# - A one-photo fold holds one class, so the smallest class share is **0**: five of six classes are absent
-#   from every fold. Harmless for the mean, but LOO tells you nothing per class.
-# - The fourth scheme, LOGO, needs groups. The Play Dataset has none (COCO photos come from thousands of
-#   unrelated Flickr accounts); the park's trail cameras do.
+# 💡 **Worked answer (Q16).** 40 photos give **40 folds of 1 test photo**, so 40 trainings for one score, and
+# a lowest share of **0** (a one-photo fold holds one class): LOO says nothing per class. Plain k-fold lets a
+# small class dip in some fold, stratified k-fold holds it steady. LOGO needs groups: the Play Dataset has
+# none (COCO photos come from thousands of Flickr accounts), the park's cameras do.
 
 # %% [markdown]
 # ### The woodland trail cameras
@@ -195,7 +222,7 @@ print(f"(loo ran on the first {LOO_N} photos: {LOO_N} folds, {LOO_N} trainings f
 #   lists the photos.
 # - **First run:** the next cell downloads the photos and shrinks them to 512 px, so **it takes a minute**;
 #   afterwards it is instant.
-# - **Colours:** the five woodland classes borrow the park's colours, so every plot keeps one colour per class.
+# - **Colours:** the five woodland classes borrow the park's colours, so each class keeps one colour.
 
 # %%
 # @title Trail-camera helpers (manifest, download + resize to 512 px, burst gallery) { display-mode: "form" }
@@ -308,7 +335,6 @@ show_bursts(cct, n_bursts=3)
 
 # %%
 # @title Diagram: three bursts under a random split and a split by camera { display-mode: "form" }
-SPLIT_COLORS = {"train": "#8FA8AD", "test": "#B5446E"}  # train: neutral grey-blue · test: the held-out part
 _demo = {  # three cameras, one burst of three frames each; where does every frame land?
     "random split": [["train", "test", "train"], ["train", "train", "test"], ["test", "train", "train"]],
     "split by camera": [["train"] * 3, ["train"] * 3, ["test"] * 3],
@@ -319,7 +345,8 @@ for ax, (name, grid) in zip(axes, _demo.items(), strict=True):
     n_leaky = sum(f == "test" for burst in grid if "train" in burst for f in burst)
     for i, burst in enumerate(grid):
         for j, where in enumerate(burst):
-            ax.add_patch(mpl.patches.FancyBboxPatch((j + 0.08, i + 0.08), 0.84, 0.84, boxstyle="round,pad=0.02",
+            ax.add_patch(mpl.patches.FancyBboxPatch((j + 0.08, i + 0.08), 0.84, 0.84,
+                                                    boxstyle="round,pad=0.02",
                                                     facecolor=SPLIT_COLORS[where], edgecolor="none"))
             ax.text(j + 0.5, i + 0.5, f"frame {j + 1}\n{where}", ha="center", va="center", fontsize=8,
                     color="white")
@@ -331,7 +358,7 @@ for ax, (name, grid) in zip(axes, _demo.items(), strict=True):
     for spine in ax.spines.values():
         spine.set_visible(False)
     ax.set_title(f"{name}: sibling rate {n_leaky / n_test:.0%}", fontsize=10, color=INK)
-fig.suptitle("One burst per camera: every frame is coloured by the half it lands in", color=INK)
+fig.suptitle("One burst per camera: every frame is coloured by the set it lands in", color=INK)
 fig.tight_layout()
 display(fig)
 plt.close(fig)
@@ -410,43 +437,38 @@ def show_leaks(table: pd.DataFrame, train_idx, test_idx, n_examples: int = 2, si
 show_leaks(cct, _tr, _te)
 
 # %% [markdown]
-# 💡 With bursts of three frames, a random split gives most test photos a sibling in training; splitting by
-# camera brings the rate to zero by construction, because a burst never spans two cameras.
+# 💡 **Worked answer (Q17).** Random split: **most test photos**, about 96 of 100 (a test frame is safe only
+# if *both* siblings are in test too, probability about 0.2 × 0.2 = 4 %; fewer on the real slice, where some
+# bursts are shorter). Split by camera: **0 %**, because a burst never spans two cameras.
 #
-# **Worked answer (Q17).**
-#
-# - **Random split: most photos.** A test frame leaks unless *both* siblings are also in test, which has
-#   probability about 0.2 × 0.2 = 4 %. So about 96 of 100 test photos have a sibling in train (fewer on the
-#   real slice, where some bursts are shorter).
-# - **Split by camera: 0 %.** A burst never spans two cameras.
+# **What it costs in the field:** Beery et al. (2018) report a classification **error of 20.8 % at cameras
+# seen in training and 41.1 % at cameras never seen**: the error doubles at the first new tree. A random split
+# would have reported the 20.8 % and the park would have found the 41.1 % in the field.
 
 # %% [markdown]
-# <!-- callout: go-deeper | Go deeper · What a leaky split costs in the field -->
-# <details><summary>The paper this data comes from</summary>
-#
-# Beery et al. (2018) report a classification **error of 20.8 % at cameras seen in training and 41.1 % at
-# cameras never seen**: the error doubles at the first new tree. A random split would have reported the 20.8 %
-# and the park would have found the 41.1 % in the field.
-#
-# </details>
+# <!-- callout: go-deeper | Go deeper · Where this data comes from -->
+# The trail-camera photos are a slice of the Caltech Camera Traps data, introduced in Beery, Van Horn and
+# Perona (2018), *Recognition in Terra Incognita*, the paper behind the two error rates above. It tests the
+# same trained model at cameras it has seen and at cameras it has never seen.
 
 # %% [markdown]
-# <!-- callout: pitfall | Pitfall · Leave-one-out leaks like a random split -->
+# <!-- callout: pitfall | Pitfall · LOO leaks like a random split -->
 # LOO sounds strict (train on everything but one photo), but on burst data it is the *worst* case:
 #
 # 1. Hold out frame 2 of a burst.
-# 2. Frames 1 and 3, same tree and same animal, are in training, so the sibling rate is as high as it can be.
+# 2. Frames 1 and 3, same tree and same animal, are in training, so the sibling rate is as high as it can be:
+#    the share of photos that belong to a burst of more than one frame, nearly all of them.
 #
-# **Fix:** leave-one-*group*-out with the camera as the group. Every fold holds out one whole camera, so the
-# sibling rate is zero in every fold and the score is the one a new camera will see.
-# The unit you leave out must be the unit that will be new.
+# **Fix:** LOGO with the camera as the group. Every fold holds out one whole camera, so the sibling rate is
+# zero in every fold and the score is the one a new camera will see. The unit you leave out must be the unit
+# that will be new.
 
 # %% [markdown]
-# The next cell checks that claim fold by fold: leave-one-out and leave-one-group-out on the trail-camera
-# photos, each reporting the mean sibling rate over its folds.
+# The next cell checks that claim fold by fold: LOO and LOGO on the trail-camera photos, each reporting the
+# mean sibling rate over its folds.
 
 # %%
-# @title Leave-one-out vs leave-one-group-out (camera): sibling rate per fold { display-mode: "form" }
+# @title LOO vs LOGO (camera): sibling rate per fold { display-mode: "form" }
 def mean_sibling_rate(splitter, table: pd.DataFrame, groups=None) -> float:
     """Mean over the folds of the share of test photos with a burst sibling in the fold's training part."""
     rates = [sibling_rate(table.iloc[tr], table.iloc[te]) for tr, te in splitter.split(table, groups=groups)]
@@ -459,16 +481,20 @@ cv_schemes += ["logo"]
 RESULTS["cv_schemes"] = cv_schemes
 RESULTS["sibling_rate_loo"] = loo_sibling
 RESULTS["sibling_rate_logo"] = logo_sibling
-print(f"leave-one-out        : {len(cct)} folds, sibling rate {loo_sibling:.1%}")
-print(f"leave-one-group-out  : {cct['location'].nunique()} folds (one per camera), sibling rate "
-      f"{logo_sibling:.1%}")
+print(f"LOO  : {len(cct)} folds, sibling rate {loo_sibling:.1%}")
+print(f"LOGO : {cct['location'].nunique()} folds (one per camera), sibling rate {logo_sibling:.1%}")
 print(f"cross-validation schemes run in this notebook: {cv_schemes}")
 
 # %% [markdown]
-# 💡 LOO's sibling rate is the share of photos that belong to a burst of more than one frame, nearly all of
-# them; LOGO by camera is zero in every fold.
-#
 # ### ✍️ Choose and run a split
+
+# %% [markdown]
+# Before you choose the held-out cameras, the next cell counts the photos each class has at each camera: a
+# class with no photos at your test cameras gets no score.
+
+# %%
+# @title Photos per class per camera (to keep every class in test) { display-mode: "form" }
+display(pd.crosstab(cct["location"], cct["label"]).reindex(columns=CCT_CLASSES, fill_value=0))
 
 # %%
 # @title Reference solution — peek only if you are stuck { display-mode: "form" }
@@ -482,11 +508,12 @@ def _ref_split_by_camera(table, test_locations):
 # <!-- callout: your-turn | Your turn · `split_by_camera` -->
 # Fill in `split_by_camera(table, test_locations)`:
 #
-# - **Input:** the trail-camera table `cct` (columns `file_name`, `location`) and a list of cameras to hold out.
+# - **Input:** the table `cct` (columns `file_name`, `location`) and a list of cameras to hold out.
 # - **Output:** a dictionary `{"train": [...], "test": [...]}` of `file_name` values, every photo of a
 #   held-out camera in test and every other photo in train, each list sorted.
-# - **Then** choose `TEST_LOCATIONS` (any cameras from `CCT_LOCATIONS`). The `use()` line checks your function
-#   against the reference and continues with the reference either way.
+# - **Then** choose `TEST_LOCATIONS` (any cameras from `CCT_LOCATIONS`; the table above shows which cameras
+#   keep every class in test). The `use()` line checks your function against the reference and continues with
+#   the reference either way.
 
 # %%
 # ✍️ YOUR CODE
@@ -523,25 +550,26 @@ if _absent:
 
 # %% [markdown]
 # 💡 A split by camera has no siblings across the cut, but it can leave a class without test photos: not
-# every animal walks past every camera, so holding out the two cameras that see all the coyotes leaves the
-# test half without a coyote. You trade a clean score for a less balanced one, and you choose the held-out
-# cameras with both in mind.
-#
-# ### 🔴 Optional: a ruler to see the gap
+# every animal walks past every camera, so holding out cameras that never see a coyote leaves the test set
+# without one (and holding out all the cameras that do leaves training without one). You trade a clean score
+# for a less balanced one, and you choose the held-out cameras with both in mind.
 
 # %% [markdown]
-# <!-- callout: theory | Theory · The nearest-neighbour ruler (not training) -->
-# No network is trained in this notebook. To *see* the gap the two splits create, we use a **ruler**: a
-# 1-nearest-neighbour classifier on each photo's colour histogram (the 96 numbers of section 3). It copies the
-# label of the most similar training photo, has nothing to learn, and runs in seconds on a CPU. It measures
-# the same thing twice: with k-fold (random, leaks across bursts) and with leave-one-camera-out.
+# ### 🔴 Optional · A ruler to see the gap
 
 # %% [markdown]
-# **Q18.** 🔴 With 5 animals, guessing scores 20 %. Will the ruler score higher with k-fold or with
-# leave-one-camera-out, and roughly by how much? Predict, then run.
+# <!-- callout: go-deeper | Go deeper · The nearest-neighbour ruler -->
+# No network is trained in this notebook. To *see* the gap the two splits create, we use a **ruler, not
+# training**: a 1-nearest-neighbour classifier on each photo's colour histogram (the 96 numbers of section 3).
+# It copies the label of the most similar training photo, has nothing to learn, and runs in seconds on a CPU.
+# It measures the same thing twice: with k-fold (random, leaks across bursts) and with LOGO (one camera out).
+
+# %% [markdown]
+# **Q18.** 🔴 With 5 animals, guessing scores 20 %. Will the ruler score higher with k-fold or with LOGO, and
+# roughly by how much? Predict, then run.
 
 # %%
-# @title Q18 Colour-histogram ruler: 1-NN accuracy, k-fold vs leave-one-camera-out { display-mode: "form" }
+# @title Q18 Colour-histogram ruler: 1-NN accuracy, k-fold vs LOGO (one camera out) { display-mode: "form" }
 from sklearn.neighbors import KNeighborsClassifier
 
 RULER_THUMB = 64
@@ -560,15 +588,15 @@ def ruler_accuracy(splitter, groups=None) -> float:
 
 _n_cameras = cct["location"].nunique()
 ruler_kfold = ruler_accuracy(KFold(min(K_FOLDS, _n_cameras), shuffle=True, random_state=SEED))
-ruler_by_camera = ruler_accuracy(GroupKFold(_n_cameras), groups=cct["location"])
+ruler_by_camera = ruler_accuracy(GroupKFold(_n_cameras), groups=cct["location"])  # k = cameras: LOGO
 RESULTS["ruler_kfold"] = ruler_kfold
 RESULTS["ruler_by_camera"] = ruler_by_camera
-print(f"ruler accuracy, k-fold (random)      : {ruler_kfold:.1%}")
-print(f"ruler accuracy, leave-one-camera-out : {ruler_by_camera:.1%}")
+print(f"ruler accuracy, k-fold (random)  : {ruler_kfold:.1%}")
+print(f"ruler accuracy, LOGO (by camera) : {ruler_by_camera:.1%}")
 print(f"chance level with {len(CCT_CLASSES)} classes: {1 / len(CCT_CLASSES):.0%}")
 
 fig, ax = plt.subplots(figsize=(5.5, 3))
-ax.bar(["k-fold (random)", "leave-one-camera-out"], [ruler_kfold, ruler_by_camera],
+ax.bar(["k-fold (random)", "LOGO (by camera)"], [ruler_kfold, ruler_by_camera],
        color=[CLASS_COLORS["cat"], CLASS_COLORS["zebra"]])
 ax.axhline(1 / len(CCT_CLASSES), color=INK, linestyle="--", linewidth=1, label="chance")
 ax.set_ylabel("1-NN ruler accuracy")
@@ -579,14 +607,11 @@ plt.tight_layout()
 plt.show()
 
 # %% [markdown]
-# 💡 Under k-fold the most similar training photo is usually a burst sibling (same animal, same tree), so the
-# ruler looks good; under leave-one-camera-out it must find a similar photo at another camera and falls
-# towards chance.
-#
-# **Worked answer (Q18).** The random scheme scores higher, and the gap is large: on the full slice the ruler
-# roughly doubles its accuracy when its neighbours may be siblings. Read the direction and the size of the
-# gap, not the digits (they depend on the slice and the seed). A real model scores higher on both and the gap
-# stays: it is the 20.8 % → 41.1 % of the paper.
+# 💡 **Worked answer (Q18).** K-fold scores higher, by a large gap: on the full slice the ruler roughly
+# doubles its accuracy when its neighbours may be burst siblings (same animal, same tree), while under LOGO
+# it must find a similar photo at another camera and falls towards chance. Read the direction and the size of
+# the gap, not the digits (they depend on the slice and the seed). A real model scores higher on both and the
+# gap stays: it is the 20.8 % → 41.1 % of the paper.
 
 # %% [markdown]
 # <!-- callout: across-tasks | Across tasks · Splitting for boxes and masks -->
@@ -598,15 +623,15 @@ plt.show()
 # - **Segmentation:** the same, with pixel shares instead of box counts. A rare class with a few large masks,
 #   the aviary's birds, can end up entirely in one fold if you do not check (section 9).
 #
-# In all three: deduplicate first (section 5), then split, then never look at the test half again.
+# In all three: deduplicate first (section 5), then split, then never look at the test set again.
 
 # %% [markdown]
 # <!-- callout: takeaway | Takeaway -->
 # - **When you see** classes of very different sizes → **do** stratify the split, so every class is in the
-#   test half and scored.
+#   test set and scored.
 # - **When you see** photos from the same moment, camera or day (a burst, one tree) → **do** split by that
 #   group and measure the sibling rate (it should be 0 %) before any model.
-# - **When you see** a tiny dataset → **do** use leave-one-out only if every photo counts, and
-#   leave-one-group-out if the photos come in groups.
+# - **When you see** a tiny dataset → **do** use LOO only if every photo counts, and LOGO if the photos come
+#   in groups.
 # - **When you see** a test score that looks too good → **do** ask what train and test share. Section 7 picks
-#   the metric to compute on that test half.
+#   the metric to compute on that test set.
