@@ -8,62 +8,176 @@
 
 # %% [markdown]
 # Your project has its own dataset, and it deserves the same twenty minutes of looking before anybody trains
-# on it. This section reads **any folder-per-class dataset**: one sub-folder per class, the images inside.
+# on it. This section runs the checklist on **any folder-per-class dataset**: one sub-folder per class, the
+# images inside. The sub-folder names become the class names.
 #
 # ```
-# my_dataset/
-# ├── cat/      img_001.jpg, img_002.png, …
-# ├── dog/      …
-# └── sheep/    …
+# /content/drive/MyDrive/project/flowers    ← MY_DATASET_DIR points here
+# ├── daisy/      img_001.jpg, img_002.png, …
+# ├── rose/       …
+# └── tulip/      …
 # ```
 
 # %% [markdown]
-# <!-- callout: your-turn | Your turn · Point the notebook at your dataset -->
-# The workflow:
+# <!-- callout: your-turn | Your turn · Point the notebook at your dataset (you change one line) -->
+# **Step 1 · Get your dataset into Colab.** Colab cannot see your laptop's folders. Pick one:
 #
-# 1. **Put your dataset in Colab.** Mount Google Drive (`from google.colab import drive`, then
-#    `drive.mount("/content/drive")`) or upload a zip in the Files pane and unzip it. *Colab can now see the
-#    folder.*
-# 2. **Set `MY_DATASET_DIR`** in the next cell to the folder that holds the class folders, e.g.
-#    `"/content/drive/MyDrive/project/my_dataset"`. *Each sub-folder name becomes a class.*
-# 3. **Run this section again** from the cell below. *The four checks read your photos.*
-# 4. **Or leave it at `None`.** *The cells run on a small sample of the Play Dataset with three planted
-#    problems, so you can see what the output looks like first.*
+# - **It is on Google Drive:** nothing to do now. When the path starts with `/content/drive`, the next cell
+#   connects Drive for you (a Google sign-in window opens the first time).
+# - **It is a `.zip` on your laptop:** click the 📁 **Files** icon in Colab's left bar and drag the zip in.
+#   Wait until the upload circle disappears. Colab deletes uploads when the session ends.
+#
+# **Step 2 · Copy the path.** In the 📁 Files pane, find the folder whose sub-folders are your classes, or
+# the `.zip` itself. Right-click it → **Copy path**. (Drive files are under `drive/MyDrive/`.)
+#
+# **Step 3 · Paste it** between the quotes in the next cell, click into that cell, and run everything from
+# there: **Runtime → Run cell and below**.
+#
+# The next cell then stops with a plain message if the path is not right, and says what to change.
+#
+# - ✅ `/content/drive/MyDrive/project/flowers`: the folder that holds `daisy/`, `rose/`, `tulip/`.
+# - ✅ `/content/flowers.zip`: it is unzipped for you.
+# - ❌ `…/flowers/daisy`: one class folder, one level too deep.
+# - ❌ a folder that holds `train/` and `val/`: point at `…/train` instead (then at `…/val`, if you like).
+#
+# Leave it at `None` to see the whole section on a small park sample first.
 
 # %% [markdown]
 # <!-- callout: go-deeper | Go deeper · Detection or segmentation project, and big datasets -->
-# Put all images in one folder inside `MY_DATASET_DIR`. The class counts then say nothing, but sizes, modes,
-# copies and the split still do (the box and mask checks are sections 7 and 8). Images deeper inside a class
-# folder count, other files are ignored. Datasets above `MY_MAX_IMAGES` photos are sampled down, keeping the
-# class shares, so the checks stay at a minute or two.
+# Put all images in one folder inside `MY_DATASET_DIR` (e.g. `…/project/all/`). The class counts then say
+# nothing, but sizes, modes, copies and the split still do (the box and mask checks are sections 7 and 8).
+# Images deeper inside a class folder count, other files are listed and skipped. Datasets above
+# `MY_MAX_IMAGES` photos are sampled down, keeping the class shares, so the checks stay at a minute or two.
 
 # %%
 # ✏️ YOUR TURN
-MY_DATASET_DIR = None  # e.g. "/content/drive/MyDrive/project/my_dataset" (one sub-folder per class)
-
-# %% [markdown]
-# The next cell lists every image with its class (its folder name). If `MY_DATASET_DIR` is `None`, or the
-# folder cannot be used, it builds a sample in `data/cache/my_dataset/` instead: 20 cleaned photos
-# per class, plus **three planted problems** (an exact copy of a cat, a
-# mirrored copy of a dog, and a bird photo saved in grayscale).
+MY_DATASET_DIR = None  # paste your path between quotes, e.g. "/content/drive/MyDrive/project/flowers"
 
 # %%
-# @title Read the folder, or build the sample { display-mode: "form" }
+# @title Dataset reader: finds your class folders, or says exactly what to change { display-mode: "form" }
+import zipfile
+
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tif", ".tiff", ".webp"}
-MY_SAMPLE_DIR = DATA_DIR / "cache" / "my_dataset"
-MY_SAMPLE_PER_CLASS = 4 if SMOKE else 20  # photos per class in the sample (N-014: fewer in smoke mode)
+SPLIT_NAMES = {"train", "training", "val", "valid", "validation", "test", "testing", "dev"}
 MY_MAX_IMAGES = 2000  # larger datasets are sampled down to this many photos, stratified by class
 
 
+def _visible(folder: Path) -> list[Path]:
+    """The entries of `folder` that are not hidden or system files (.DS_Store, __MACOSX, …)."""
+    return sorted(f for f in folder.iterdir() if not f.name.startswith((".", "_")))
+
+
+def _is_image(f: Path) -> bool:
+    return f.is_file() and f.suffix.lower() in IMAGE_SUFFIXES
+
+
+def _contents(folder: Path, limit: int = 8) -> str:
+    """One line per entry: 'name/ (12 images)' for folders, the name for files."""
+    lines = []
+    for f in _visible(folder)[:limit]:
+        n = sum(_is_image(g) for g in f.rglob("*")) if f.is_dir() else None
+        lines.append(f"    {f.name}/  ({n} images)" if f.is_dir() else f"    {f.name}")
+    more = len(_visible(folder)) - limit
+    return "\n".join(lines + ([f"    … and {more} more"] if more > 0 else [])) or "    (empty)"
+
+
+def find_dataset(path) -> Path:
+    """The folder that holds the class folders. Stops with a plain message saying what to change if the
+    path cannot be used; unzips a .zip and steps into a lone wrapper folder on its own.
+
+    e.g. find_dataset("/content/flowers.zip") → Path("data/cache/my_upload/flowers/flowers")
+    """
+    p = Path(str(path).strip().strip("'\"")).expanduser()
+    if str(p).startswith("/content/drive") and IN_COLAB and not Path("/content/drive/MyDrive").exists():
+        from google.colab import drive  # Step 1, Drive route: connect it on first use
+
+        drive.mount("/content/drive")
+    if p.is_file() and p.suffix.lower() == ".zip":
+        dest = DATA_DIR / "cache" / "my_upload" / p.stem
+        if not dest.exists():
+            with zipfile.ZipFile(p) as z:
+                z.extractall(dest)
+        print(f"ℹ️ unzipped {p.name} into {dest}")
+        p = dest
+    if not p.exists():
+        parent = next(q for q in p.parents if q.exists())
+        raise SystemExit(f"❌ MY_DATASET_DIR: {p} does not exist (a typo, or the upload is not there).\n"
+                         f"   The nearest folder that exists is {parent}, which holds:\n{_contents(parent)}\n"
+                         "   Copy the path from the Files pane: right-click the folder → Copy path.")
+    if p.is_file():
+        raise SystemExit(f"❌ MY_DATASET_DIR: {p} is a file. Point at the folder that holds your class "
+                         f"folders, or at a .zip. It sits in {p.parent}, which holds:\n{_contents(p.parent)}")
+    while True:  # a zip often wraps everything in one more folder: step into it
+        subdirs = [d for d in _visible(p) if d.is_dir()]
+        loose = [f for f in _visible(p) if _is_image(f)]
+        if len(subdirs) == 1 and not loose and any(d.is_dir() for d in _visible(subdirs[0])):
+            print(f"ℹ️ {p.name}/ holds only the folder {subdirs[0].name}/: using that.")
+            p = subdirs[0]
+            continue
+        break
+    names = {d.name.lower() for d in subdirs}
+    if subdirs and names <= SPLIT_NAMES:
+        first = p / sorted(d.name for d in subdirs)[0]
+        raise SystemExit(f"❌ MY_DATASET_DIR: {p} holds split folders ({', '.join(sorted(names))}), "
+                         f"not class folders. Point at one of them, e.g. {first}, and run the section "
+                         "again for the other.")
+    if not subdirs and loose:
+        raise SystemExit(f"❌ MY_DATASET_DIR: {p} holds {len(loose)} images but no class folders. If this "
+                         f"is one class folder, point one level up, at {p.parent}. If your project has no "
+                         "classes (detection, segmentation), move the images into one folder inside, e.g. "
+                         f"{p / 'all'}.")
+    if not any(_is_image(f) for f in p.rglob("*")):
+        raise SystemExit(f"❌ MY_DATASET_DIR: {p} holds no image files "
+                         f"({', '.join(sorted(IMAGE_SUFFIXES))}). "
+                         f"It holds:\n{_contents(p)}")
+    return p
+
+
 def list_folder_per_class(root) -> pd.DataFrame:
-    """One row per image file under `root`: columns path, file, class (the top-level folder it sits in)."""
+    """One row per image file under `root`: columns path, file, class (the top-level folder it sits in).
+
+    e.g. a row: {"path": "/content/flowers/rose/img_7.jpg", "file": "rose/img_7.jpg", "class": "rose"}
+    """
     rows = []
-    class_dirs = [p for p in Path(root).iterdir() if p.is_dir() and not p.name.startswith((".", "_"))]
-    for class_dir in sorted(class_dirs):
+    for class_dir in (d for d in _visible(Path(root)) if d.is_dir()):
         for f in sorted(class_dir.rglob("*")):
-            if f.is_file() and f.suffix.lower() in IMAGE_SUFFIXES and not f.name.startswith("."):
+            if _is_image(f) and not f.name.startswith("."):
                 rows.append({"path": str(f), "file": str(f.relative_to(root)), "class": class_dir.name})
     return pd.DataFrame(rows, columns=["path", "file", "class"])
+
+
+def folder_notes(root: Path, files: pd.DataFrame) -> list[str]:
+    """Warnings about what the reader skipped or what makes the checks weak (one line each)."""
+    root = Path(root)
+    notes = []
+    loose = [f.name for f in _visible(root) if _is_image(f)]
+    if loose:
+        notes.append(f"⚠️ {len(loose)} images sit directly in {root.name}/, outside any class folder: "
+                     "skipped.")
+    others = [f for d in _visible(root) if d.is_dir() for f in d.rglob("*")
+              if f.is_file() and not _is_image(f) and not f.name.startswith(".")]
+    skipped = Counter(f.suffix.lower() or "(no extension)" for f in others)
+    if skipped:
+        notes.append("⚠️ skipped files that are not images: "
+                     + ", ".join(f"{n} × {ext}" for ext, n in skipped.most_common()))
+    empty = [d.name for d in _visible(root) if d.is_dir() and d.name not in set(files["class"])]
+    if empty:
+        notes.append(f"⚠️ class folders with no images: {', '.join(empty)}.")
+    if files["class"].nunique() == 1:
+        notes.append("⚠️ only one class folder: check 1 has nothing to compare (fine for a detection "
+                     "project).")
+    return notes
+
+# %% [markdown]
+# The next cell reads your folder (or, with `None`, builds the park sample: 20 cleaned photos per class plus
+# **three planted problems**, an exact copy of a cat, a mirrored dog and a grayscale bird). It prints what it
+# found and shows three images per class: **check that these are your images and your class names** before
+# reading anything else.
+
+# %%
+# @title Read your folder (or build the sample), and show what was found { display-mode: "form" }
+MY_SAMPLE_DIR = DATA_DIR / "cache" / "my_dataset"
+MY_SAMPLE_PER_CLASS = 4 if SMOKE else 20  # photos per class in the sample (N-014: fewer in smoke mode)
 
 
 def build_my_sample(dest: Path, per_class: int, seed: int) -> Path:
@@ -87,20 +201,14 @@ def build_my_sample(dest: Path, per_class: int, seed: int) -> Path:
     return dest
 
 
-my_source = "sample"
 if MY_DATASET_DIR is not None and not SMOKE:
-    _root = Path(str(MY_DATASET_DIR)).expanduser()
-    if not _root.is_dir():
-        print(f"❌ MY_DATASET_DIR = {MY_DATASET_DIR!r} is not a folder. Check the path in the Files pane.")
-    elif (_listed := list_folder_per_class(_root)).empty:
-        print(f"❌ No images in class sub-folders of {_root}. Expected {_root}/<class>/<image files>.")
-    else:
-        my_source, my_root, my_files = "yours", _root, _listed
-if my_source == "sample":
-    if MY_DATASET_DIR is not None:
-        print("Running on the Play Dataset sample instead" + (" (smoke mode)." if SMOKE else "."))
-    my_root = build_my_sample(MY_SAMPLE_DIR, MY_SAMPLE_PER_CLASS, SEED)
-    my_files = list_folder_per_class(my_root)
+    my_source, my_root = "yours", find_dataset(MY_DATASET_DIR)
+else:
+    my_source, my_root = "sample", build_my_sample(MY_SAMPLE_DIR, MY_SAMPLE_PER_CLASS, SEED)
+    print("MY_DATASET_DIR is None: running on the park sample. Paste your path above to run on yours.")
+my_files = list_folder_per_class(my_root)
+for _note in folder_notes(my_root, my_files):
+    print(_note)
 
 if len(my_files) > MY_MAX_IMAGES:
     _n_all = len(my_files)
@@ -112,7 +220,26 @@ MY_CLASSES = sorted(my_files["class"].unique())
 # Park classes keep their colour; any other class name borrows one from the same palette (L-003).
 _palette = list(CLASS_COLORS.values())
 MY_COLORS = {c: CLASS_COLORS.get(c, _palette[i % len(_palette)]) for i, c in enumerate(MY_CLASSES)}
-print(f"source: {my_source} · {my_root} · {len(my_files)} images in {len(MY_CLASSES)} class folders")
+print(f"✅ source: {my_source} · {my_root} · {len(my_files)} images in {len(MY_CLASSES)} class folders: "
+      + ", ".join(f"{c} ({n})" for c, n in my_files["class"].value_counts().reindex(MY_CLASSES).items()))
+
+_shown = MY_CLASSES[:8]  # a first look: three images per class (at most eight classes)
+fig, axes = plt.subplots(len(_shown), 3, figsize=(7, 2.2 * len(_shown)), squeeze=False)
+for r, c in enumerate(_shown):
+    _of_class = my_files[my_files["class"] == c].head(3)
+    for k in range(3):
+        ax = axes[r, k]
+        ax.axis("off")
+        if k < len(_of_class):
+            try:
+                ax.imshow(load_thumb(_of_class.iloc[k]["path"], 192))
+            except Exception:  # an unreadable file: check 2 lists it
+                ax.text(0.5, 0.5, "cannot be opened", ha="center", va="center", transform=ax.transAxes)
+            _name = Path(_of_class.iloc[k]["file"]).name
+            ax.set_title(f"{c} · {_name if len(_name) <= 24 else _name[:20] + '…'}", fontsize=8)
+fig.suptitle("A first look: are these your images and your classes?", color=INK)
+fig.tight_layout()
+plt.show()
 
 # %% [markdown]
 # Four checks run next and end in one report card. Check 1 counts the images per folder, as section 4 did for

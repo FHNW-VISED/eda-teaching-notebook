@@ -176,7 +176,8 @@ Time = participant minutes at lab pace. **Estimate, not re-timed:** ≈ 108 afte
   - Students fill `findings = [...]`. `check_findings(findings)` reports "found k of n" per type, and `reveal_answers()` shows the key in a closed toggle (R1).
   - No ruler in the Challenge: the nearest-neighbour "ruler" (G-33) lives only in section 6's 🔴 part (Q15).
 - **10 Your project dataset**
-  - **One clearly marked swap-in cell** (`MY_DATASET_DIR = None`, folder-per-class).
+  - **One clearly marked swap-in cell** (`MY_DATASET_DIR = None`, folder-per-class), under a three-step your-turn box (get it into Colab · Copy path · paste and Run cell and below) with ✅/❌ path examples (R22).
+  - A reader cell (`find_dataset`) mounts Drive for `/content/drive/…` paths, unzips a `.zip`, steps into a lone wrapper folder, and **stops with a plain message** for a typo (showing the nearest existing folder), a class folder, split folders (`train/`, `val/`), a file or a folder without images. It never falls back to the sample silently. It lists skipped files and empty class folders and shows three images per class. `tests/test_my_dataset.py` covers every layout.
   - In class: the folder tree, the swap-in cell and the report card on the sample (the classification checklist: counts, sizes, modes, duplicates, flips, a split suggestion).
   - An **"After the lab"** block (homework): Q25, the notes on how to read each check, and the guiding questions each answered for the park, with space for the student's answer (G-8; Q26).
   - In smoke mode, a tiny generated folder-per-class sample is used.

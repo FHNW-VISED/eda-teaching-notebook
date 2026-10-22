@@ -60,3 +60,21 @@ Tests: §7's six tests and the detective-beat / rabbit / 8-minute-hunt tests are
 | R19 | §10: check outputs with no hint what to look at in class | One 💡 "look at …" line under each check |
 | R20 | §10: `data/cache/my_split.csv` vanishes with the Colab session | Download/Drive instruction under check 4 and in the Takeaway |
 | R21 | §10 Q25 mixed a no-answer question with the sample question | Only the sample question (it has an answer) |
+
+## §10 setup, tested on a real outside dataset (R22)
+
+Simone: "have you tested with another dataset? does it work? make the setup as clear as possible … very very clear
+and test it out". It had **never** run on anything but the built-in sample, and a wrong path printed one ❌ line and
+then silently ran on the park sample.
+
+- Setup rewritten as three steps (get it into Colab · Copy path · paste and Runtime → Run cell and below) with ✅/❌
+  path examples; Drive mounts itself for `/content/drive/…`, a `.zip` is unzipped, a lone wrapper folder is
+  stepped into; every wrong layout **stops** with what to change; skipped files and empty class folders are listed;
+  three images per class are shown first.
+- `tests/test_my_dataset.py` (10 tests, in `just check`): right folder, quoted path, wrapper, zip with `__MACOSX`,
+  typo, class folder, split folders, a file, no images, skipped files/upper-case/nested.
+- End to end on PyTorch's ants/bees (`hymenoptera_data.zip`, 398 images): the zip stops on its train/val folders
+  with the right advice; `…/train` runs all four checks (245 images, the one `.gif` flagged as mode P, 0 copies,
+  49/196 split); a typo shows the nearest folder's contents; a messy folder (corrupt file, RGBA png, .txt, empty
+  class, copy across classes) is reported check by check.
+- Not testable outside Colab: the Drive sign-in and the Files-pane upload. Simone checks those in Colab.
