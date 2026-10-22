@@ -180,7 +180,8 @@ display(fig)
 plt.close(fig)
 
 # %% [markdown]
-# 💡 **Worked answer (Q17).** Far apart: accuracy around 80 %, recall on dog around 50 %. Accuracy is a
+# <!-- callout: answer | Worked answer (Q17) -->
+# Far apart: accuracy around 80 %, recall on dog around 50 %. Accuracy is a
 # photo-weighted average, so it sits near the tall bars while the dog bar sits far below; most missed dogs
 # were called *sheep*, exactly the frame that should have raised the alert. The manager is happy while every
 # second dog walks by. Compare the gap, not the digits.
@@ -270,7 +271,8 @@ print(f"The paddock alert is judged on {alert_metric} on dog: {_dog_scores[alert
       f"prepared predictions (accuracy would have said {accuracy:.0%}).")
 
 # %% [markdown]
-# **Worked answer.** `"recall"`.
+# <!-- callout: answer | Worked answer -->
+# `"recall"`.
 #
 # - The alert exists to catch the rare event, and recall on dog is the share of real dogs it catches.
 # - Precision on dog would be the shop's choice; accuracy is nobody's, because it rewards ignoring the dog.

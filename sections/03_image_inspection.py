@@ -314,7 +314,8 @@ display(fig)
 plt.close(fig)
 
 # %% [markdown]
-# **Worked answer (Q4).** 💡 Closest to a line: two lines meeting in an L. COCO fetched its Flickr photos at
+# <!-- callout: answer | Worked answer (Q4) -->
+# Closest to a line: two lines meeting in an L. COCO fetched its Flickr photos at
 # one standard size, so the longest side is capped: width = cap for landscape photos, height = cap for
 # portrait ones (the aspect histogram shows the same two peaks). At the park, each camera model would give one
 # dot, and a model could learn "this size = this camera = this animal" (leakage, section 6).
@@ -489,7 +490,8 @@ N_ODD = 6 if SMOKE else 12  # how many of the odd ones to show (N-014)
 show_rows(odd_size.head(N_ODD), f"photos whose longest side is not {COMMON_LONG_SIDE} px")
 
 # %% [markdown]
-# **Worked answer (Q5).** 💡 On the full Play Dataset almost every photo has a longest side of 640 px
+# <!-- callout: answer | Worked answer (Q5) -->
+# On the full Play Dataset almost every photo has a longest side of 640 px
 # (Flickr's "640 px" rendition); a handful are smaller, never larger: old uploads, low-resolution cameras,
 # screenshots (a small sample may show none). Like the grayscale photos they are a group with another source,
 # and section 5 keeps them (only extreme sizes get a note in `flags`). The habit: one dominant value → ask
@@ -596,7 +598,8 @@ if len(_edge):
     plt.close(fig)
 
 # %% [markdown]
-# **Worked answer (Q6).** 💡 **(a)** New box = `(x · 224/W, y · 224/H, w · 224/W, h · 224/H)`: here x and w
+# <!-- callout: answer | Worked answer (Q6) -->
+# **(a)** New box = `(x · 224/W, y · 224/H, w · 224/W, h · 224/H)`: here x and w
 # times 224/640 = 0.35, y and h times 224/427 = 0.525, giving `(35, 26.2, 70, 78.7)`, squashed like the photo.
 # **(b)** Nearest-neighbour keeps the two values (0 and 1); bilinear invents many in-between values along
 # every edge (the rim in the heatmap), so thin parts (legs, tails, a beak) suffer most.

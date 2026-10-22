@@ -1,9 +1,9 @@
 # Review notes — 2026-10-22 (Simone, sections 0–7 read; 8–9 not yet)
 
 Simone read the notebook after the cut pass (PR #19) and wrote the notes quoted below. The decisions
-were taken with him in a `/notebook` grilling session the same day. **Nothing here is applied yet.** It
-is applied in **one batched revise pass** on `cuts/2026-10-22`, together with his §8/§9 review and the
-open cut levers of PR #19. Then `just version`.
+were taken with him in a `/notebook` grilling session the same day. **Applied 2026-10-22 on `cuts/2026-10-22`**
+(he confirmed §8/§9 stay as they are). `just check`: 48 passed. R2's key sits in its own closed toggle right
+under Q11's (the key is computed at runtime, so it cannot live inside the static callout).
 
 ## Decided: apply
 

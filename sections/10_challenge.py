@@ -230,11 +230,13 @@ def plant_challenge(dest: Path, n_originals: int, seed: int):
     return files, table, annotated, key
 
 
-def show_batch(file_names, title: str, caption=None, cols: int = 5, annotations: bool = False) -> None:
+def show_batch(file_names, title: str, caption=None, cols: int = 5, annotations: bool = False,
+               show: bool = True):
     """Gallery of batch files, each framed in the colour of its label (the `class` column of `batch`).
 
     annotations=True paints the annotation team's masks in their class colour and draws their boxes dashed.
     A file that does not open shows as an empty frame. `caption(name) -> str` writes the title of each photo.
+    show=False returns the figure instead of drawing it (for answer_box).
     """
     names = list(file_names)
     if not names:
@@ -271,8 +273,11 @@ def show_batch(file_names, title: str, caption=None, cols: int = 5, annotations:
         ax.set_title(caption(name) if caption else f"{name}\n{row['class']} · {row['split']}", fontsize=8)
     fig.suptitle(title, color=INK)
     fig.tight_layout()
+    if not show:
+        return fig
     display(fig)
     plt.close(fig)
+    return None
 
 
 # %% [markdown]
@@ -346,18 +351,21 @@ def check_findings(findings, verbose: bool = True) -> dict:
 
 
 def reveal_answers() -> None:
-    """Print the answer key, one line per planted problem, and show the files with each problem."""
-    for k in _CHALLENGE_KEY:
-        print(f"{k['type']:19s} {' & '.join(k['files'])}: {k['detail']}")
+    """The answer key in a closed toggle: one line per planted problem, then the files with each problem."""
+    lines = [f"{k['type']:19s} {' & '.join(k['files'])}: {k['detail']}" for k in _CHALLENGE_KEY]
     type_of = {k["files"][0]: k["type"] for k in _CHALLENGE_KEY}
     in_annotations = {"wrong label", "missing box", "ugly mask"}
     file_problems = [k["files"][0] for k in _CHALLENGE_KEY if k["type"] not in in_annotations]
-    show_batch(file_problems, "problems in the files (copies, unreadable, grayscale)",
-               caption=lambda n: f"{type_of[n]}\n{n}", cols=6)
+    fig_files = show_batch(file_problems, "problems in the files (copies, unreadable, grayscale)",
+                           caption=lambda n: f"{type_of[n]}\n{n}", cols=6, show=False)
     annotation_problems = [k["files"][0] for k in _CHALLENGE_KEY if k["type"] in in_annotations]
-    show_batch(annotation_problems, "problems in the labels and annotations (frame = the label as typed)",
-               caption=lambda n: f"{type_of[n]}\n{n} · labelled {batch.set_index('file').at[n, 'class']}",
-               cols=6, annotations=True)
+    label_of = batch.set_index("file")["class"]
+    fig_labels = show_batch(annotation_problems,
+                            "problems in the labels and annotations (frame = the label as typed)",
+                            caption=lambda n: f"{type_of[n]}\n{n} · labelled {label_of[n]}",
+                            cols=6, annotations=True, show=False)
+    answer_box("The Challenge's answer key: every planted problem and its files", lines,
+               [fig_files, fig_labels])
 
 
 # %%
@@ -484,8 +492,7 @@ challenge_score = check_findings(findings)
 # Open the worked answer, then run the next cell to see the files of your batch.
 
 # %% [markdown]
-# <details><summary><b>Worked answer (Q26): which check finds which kind</b></summary>
-#
+# <!-- callout: answer | Worked answer (Q26): which check finds which kind -->
 # - **Unreadable**: `is_readable(path)` on every file. Run it first, because every other check that opens the
 #   photo stumbles on this file.
 # - **Exact, flipped, rotated and recompressed copies**: `find_copies(..., use_variants=True)` on the files
@@ -513,7 +520,6 @@ challenge_score = check_findings(findings)
 # **Looking or comparing?** Looking works for the copies and the grayscale photo, if you happen to see both
 # files. The wrong labels, the missing box and the ugly masks need two sources side by side: nobody spots
 # them by scrolling through 150 photos.
-# </details>
 
 # %%
 # @title Show the answer key: every planted problem, then its files { display-mode: "form" }

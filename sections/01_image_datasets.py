@@ -205,8 +205,10 @@ for status, bullet, finding in checklist:
 
 # %% [markdown]
 # Every ⚠️ and 👀 names the later section that settles it; that is the order we follow.
-#
-# **Worked answer (Q1).** Sample size, class count and resolution pass without work. The two that matter for
+
+# %% [markdown]
+# <!-- callout: answer | Worked answer (Q1) -->
+# Sample size, class count and resolution pass without work. The two that matter for
 # the alert are *fit* (holiday photos of dogs are not a camera on a paddock) and *imbalance* (the biggest
 # class has over twice the images of the smallest, so a model can score well while ignoring a rare animal).
 # Section 4 makes that concrete for the dog, section 7 picks the metric.

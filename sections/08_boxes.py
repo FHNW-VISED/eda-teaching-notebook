@@ -156,6 +156,8 @@ def count_boxes_per_class(annotations):
 
     Inputs: `annotations`, a DataFrame with one row per animal and a `class` column.
     Output: a dict {class: int} with every class of CLASSES as a key (0 when a class has no box).
+
+    e.g. {"cat": 12, "dog": 9, "bird": 30, "horse": 7, "sheep": 25, "zebra": 14}
     """
     ...
 
@@ -193,7 +195,8 @@ display(fig)
 plt.close(fig)
 
 # %% [markdown]
-# **Worked answer (Q18).** No. The flock classes climb because one photo holds many animals: on the full set
+# <!-- callout: answer | Worked answer (Q18) -->
+# No. The flock classes climb because one photo holds many animals: on the full set
 # bird goes from 4th by photos to 1st by boxes and sheep from last to 2nd, while the lone cat and dog drop to
 # the bottom.
 
@@ -286,7 +289,8 @@ display(fig)
 plt.close(fig)
 
 # %% [markdown]
-# **Worked answer (Q19).** Bird, by a wide margin: a large share of its boxes is *small*, while cat, dog and
+# <!-- callout: answer | Worked answer (Q19) -->
+# Bird, by a wide margin: a large share of its boxes is *small*, while cat, dog and
 # horse are mostly *large*. The **small share** is the number to watch: small boxes are what every detector
 # misses first, and here they are the far-away birds the headcount needs.
 
@@ -448,7 +452,8 @@ show_boxes(_rows, boxes, "the most crowded photos (every box drawn)",
            cols=N_CROWDED_BOXES)
 
 # %% [markdown]
-# **Worked answer (Q20).** The flock classes: sheep and zebra on the full set (herds stand close), then bird.
+# <!-- callout: answer | Worked answer (Q20) -->
+# The flock classes: sheep and zebra on the full set (herds stand close), then bird.
 # Cats and dogs are mostly alone, so they have almost no pairs; on a small subset the leader can change, so
 # read the `crowded_photos` row. Try counting the crowded photos' animals *without* the boxes: that is the
 # annotator's job, and where boxes pile up a missing or doubled box is easy to make.
@@ -519,7 +524,8 @@ show_boxes(_rows, park_boxes, "the suspect photo(s): one animal has no box",
                              f"{int(box_counts.get(r['id'], 0))} boxes")
 
 # %% [markdown]
-# **Worked answer (Q21).** Subtract the number of boxes per photo from the keeper's headcount: one photo has
+# <!-- callout: answer | Worked answer (Q21) -->
+# Subtract the number of boxes per photo from the keeper's headcount: one photo has
 # one box fewer than animals, and the gallery shows the animal without a frame. Two counts of the same thing
 # from two sources cost nothing, which is why annotation teams are asked for a per-image count. Section 9
 # repeats the idea between masks and boxes, and the Challenge hides another missing box among other faults.

@@ -303,8 +303,7 @@ RESULTS["swap_in"] = {"source": my_source, "n_images": int(len(my_files)), "n_cl
 # zebra with 20 photos each, plus the three planted problems: which check caught each one?
 
 # %% [markdown]
-# **Worked answer (Q27, on the sample).**
-#
+# <!-- callout: answer | Worked answer (Q27, on the sample) -->
 # - **Check 1:** every folder holds the same number of photos, plus the planted copies in cat and dog, so
 #   the ratio is close to 1 : 1. That is a property of the sample, not of the park.
 # - **Check 2:** all sizes fall in the Play Dataset's few clusters (long side 640 or 500 px). The grayscale

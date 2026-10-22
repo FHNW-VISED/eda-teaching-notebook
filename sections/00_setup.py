@@ -169,6 +169,38 @@ def use(fn, *args, reference, **kwargs):
     return expected
 
 
+# --- answer_box(): a worked answer computed at runtime, closed until opened (N-024, SPEC L-005) ---
+ANSWER_BG, ANSWER_INK = "#F6EFE4", "#5C4027"  # the build's `answer` callout colours
+
+
+def answer_box(title, lines=(), fig=None, table=None):
+    """Draw a collapsed 💡 toggle holding printed lines, a DataFrame and/or matplotlib figure(s)."""
+    import base64
+    import html
+    import io
+
+    from IPython.display import HTML, display
+
+    parts = []
+    if lines:
+        text = html.escape("\n".join(lines))
+        parts.append(f'<pre style="white-space:pre-wrap;margin:6px 0 0 0;font-size:0.92em;">{text}</pre>')
+    if table is not None:
+        parts.append(table.to_html(border=0))
+    for f in fig if isinstance(fig, (list, tuple)) else [fig]:
+        if f is None:
+            continue
+        buf = io.BytesIO()
+        f.savefig(buf, format="png", bbox_inches="tight")
+        plt.close(f)
+        png = base64.b64encode(buf.getvalue()).decode()
+        parts.append(f'<img src="data:image/png;base64,{png}" style="max-width:100%;margin-top:6px;">')
+    box = (f"background:{ANSWER_BG};color:{ANSWER_INK};border-left:6px solid {ANSWER_INK};border-radius:6px;"
+           "padding:12px 14px;line-height:1.5;font-size:14px;width:100%;box-sizing:border-box;margin:2px 0;")
+    display(HTML(f'<div style="{box}"><details style="margin:0;"><summary style="cursor:pointer;'
+                 f'font-weight:bold;">💡 {html.escape(title)}</summary>{"".join(parts)}</details></div>'))
+
+
 print(f"Colab: {IN_COLAB} · smoke mode: {SMOKE} · seed: {SEED} · imagehash: ", end="")
 try:
     import imagehash  # noqa: F401
@@ -393,7 +425,10 @@ def _ref_double(x):
 # %%
 # ✍️ YOUR CODE
 def double(x):
-    """Return twice x."""
+    """Return twice x.
+
+    e.g. double(21) → 42
+    """
     ...
 
 

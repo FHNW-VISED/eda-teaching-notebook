@@ -269,7 +269,8 @@ show_rows(_rows, "closest pairs by perceptual hash (each pair side by side)",
           lambda r: f"{r['class']} · {_dist_of[r['id']]} bits apart", cols=2)
 
 # %% [markdown]
-# 💡 **Worked answer (Q10).** Exact copies: COCO val2017 was deduplicated by its authors, so expect none or
+# <!-- callout: answer | Worked answer (Q10) -->
+# Exact copies: COCO val2017 was deduplicated by its authors, so expect none or
 # close to it. The park's re-exported cards will not be so tidy, so run the MD5 check on every folder you get.
 # But MD5 only sees identical bytes: re-save a photo at another JPEG quality and the hash changes completely,
 # which is why we need a hash that looks at the picture.
@@ -400,6 +401,8 @@ def find_flipped_copies(image, candidates):
     image: a PIL image. candidates: dict {name: PIL image} (the image itself is not among them).
     Returns a sorted list of names whose pHash is within HASH_THRESHOLD bits of the pHash of one of
     image's flipped or rotated variants (every variant except "original").
+
+    e.g. ["card_017.jpg", "card_031.jpg"]
     """
     ...
 
@@ -507,28 +510,21 @@ display(fig)
 plt.close(fig)
 
 # %% [markdown]
-# 💡 **Worked answer (Q11).** Plain hashing catches the byte-identical copies (MD5) and the smaller,
+# <!-- callout: answer | Worked answer (Q11) -->
+# Plain hashing catches the byte-identical copies (MD5) and the smaller,
 # re-compressed one (pHash survives both), but files the mirrored and rotated copies as new photos: a flip
 # moves the hash by dozens of bits. Variant hashing catches them too, because one of the six variants of the
 # source hashes like the copy. The price: six hashes per photo instead of one, still seconds for thousands.
 
 
-# %% [markdown]
-# ### The hunt's score and the answer key
-
 # %%
-# @title Score the reference detector against the planted key, print the answer key { display-mode: "form" }
+# @title The memory card's answer key: which file is a copy of which { display-mode: "form" }
 hunt5_found = score_hunt(variant_found, HUNT5_KEY)
 RESULTS["hunt5"] = {"planted": len(HUNT5_KEY), "found": int(hunt5_found),
                     "kinds": dict(Counter(k["kind"] for k in HUNT5_KEY))}
-print(f"planted copies found by variant hashing: {hunt5_found} of {len(HUNT5_KEY)}")
-print("answer key:")
-for _k in HUNT5_KEY:
-    print(f"  {_k['copy']}: {_k['kind']} copy of {_k['source']}")
-
-# %% [markdown]
-# 💡 At the default threshold the detector found all 5 planted copies and reported nothing else. Test your
-# own detector the same way: plant a few copies and check it finds them and nothing more.
+answer_box("The memory card's answer key", ["answer key:"]
+           + [f"  {k['copy']}: {k['kind']} copy of {k['source']}" for k in HUNT5_KEY]
+           + [f"Variant hashing found {hunt5_found} of the {len(HUNT5_KEY)} planted copies."])
 
 # %% [markdown]
 # ### 🔴 Optional · Suspicious labels: each class's least typical photos, then embeddings
@@ -571,7 +567,8 @@ show_rows(least_typical, "least typical photos per class: does the label fit?",
 # ones you would send back to the annotator.
 
 # %% [markdown]
-# 💡 **Worked answer (Q12).** Colour cannot tell a cat from a dog, so this list finds photos that are
+# <!-- callout: answer | Worked answer (Q12) -->
+# Colour cannot tell a cat from a dog, so this list finds photos that are
 # *unusual*, not *wrong*: close-ups, night shots, an animal filling a tenth of the frame. Real label errors in
 # COCO val are rare at image level (more common in the masks, section 9), so an honest answer is "nothing to
 # send back, two to keep an eye on". On a crowd-sourced dataset, this list is where the wrong labels live.
@@ -654,7 +651,8 @@ _overlap = len(set(embedding_outliers["id"]) & set(least_typical["id"]))
 print(f"{_overlap} of {len(embedding_outliers)} embedding outliers are also in the colour-based list")
 
 # %% [markdown]
-# 💡 **Worked answer (Q13).** The hash finds copies of the same *picture*; the embedding finds photos of the
+# <!-- callout: answer | Worked answer (Q13) -->
+# The hash finds copies of the same *picture*; the embedding finds photos of the
 # same *thing*. The two pair lists overlap on exact and near copies and differ elsewhere, and the two outlier
 # lists overlap only partly: colour and content are different notions of "typical".
 

@@ -124,6 +124,15 @@ def check_word_budget(num: int, cells) -> None:
         )
 
 
+def yourcode_stubs(src: str) -> list[ast.FunctionDef]:
+    """The top-level functions of a '# ✍️ YOUR CODE' cell (the stubs the learner fills)."""
+    try:
+        tree = ast.parse(src)
+    except SyntaxError:
+        return []
+    return [n for n in tree.body if isinstance(n, ast.FunctionDef)]
+
+
 def spec_rows() -> dict[str, str]:
     """sections/NN_x.py -> status, from SPEC.md's sections table."""
     if not SPEC.exists():
@@ -186,6 +195,11 @@ def main() -> int:
                         where,
                         f"helper-only cell ({n_lines} lines) needs '# @title ...' to collapse (N-008)",
                     )
+                if src.lstrip().startswith("# ✍️ YOUR CODE"):
+                    for fn in yourcode_stubs(src):
+                        doc = ast.get_docstring(fn) or ""
+                        if not re.search(r"\be\.g\.", doc):
+                            fail(where, f"✍️ {fn.name} docstring needs an example return 'e.g. …' (N-050)")
                 continue
             check_callout(where, src)
             if re.search(r"\bstyle\s*=", src):

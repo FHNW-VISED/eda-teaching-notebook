@@ -236,7 +236,8 @@ display(fig)
 plt.close(fig)
 
 # %% [markdown]
-# **Worked answer (Q22).** Most of them: about 85 % of all pixels are background (the smoke subset gives about
+# <!-- callout: answer | Worked answer (Q22) -->
+# Most of them: about 85 % of all pixels are background (the smoke subset gives about
 # 80 %). Bird is rare again: about 1 % of all pixels (6–7 % of the animal pixels), because most birds are far
 # away, while cat and dog come back (a pet photo is a close-up). Photos, boxes, pixels: three rankings of one
 # dataset, so "bird is rare" needs its unit. (The cell merges each photo's masks into one, so a pixel belongs
@@ -343,7 +344,8 @@ show_masks(clean_images.set_index("id").loc[list(_ends["image_id"])].reset_index
            cols=len(_ends))
 
 # %% [markdown]
-# **Worked answer (Q23).** About half, in a narrow band of roughly 40–60 % for every class: near 45 % for bird
+# <!-- callout: answer | Worked answer (Q23) -->
+# About half, in a narrow band of roughly 40–60 % for every class: near 45 % for bird
 # and horse (wings, legs, necks), near 55 % for cat and sheep (compact shapes). The low end of the gallery
 # shows spread wings and diagonal poses, the high end close-ups cut by the photo's edge. That band is what
 # makes fill a quality check: a mask filling 98 % of its box is a rectangle, one filling 5 % lost the animal.
@@ -629,7 +631,8 @@ show_masks(clean_images.set_index("id").loc[list(_show["image_id"])].reset_index
            caption=lambda r: f"{r['class']} · {_checks_of[r['id']]}")
 
 # %% [markdown]
-# The answer key: the five planted masks, the checks that fired, and each next to the real mask it replaced.
+# The answer key, closed until you open it: the five planted masks, the checks that fired, and each next to
+# the real mask it replaced.
 
 # %%
 # @title The answer key: planted masks, checks that fired, original vs planted { display-mode: "form" }
@@ -640,11 +643,10 @@ HUNT9_KEY["found"] = HUNT9_KEY["checks"] != ""
 hunt9_found = int(HUNT9_KEY["found"].sum())
 RESULTS["hunt9"] = {"planted": len(HUNT9_KEY), "found": hunt9_found}
 RESULTS["mask_suspects_real"] = int((~mask_suspects["id"].isin(HUNT9_KEY["ann_id"])).sum())
-for _, k in HUNT9_KEY.iterrows():
-    print(f"{'✅' if k['found'] else '❌'} {k['kind']:15s} photo {k['image_id']} ({k['class']}, {k['how']}) "
-          f"→ {k['checks'] or 'no check fired'}")
-print(f"found {hunt9_found} of {len(HUNT9_KEY)} planted · plus {RESULTS['mask_suspects_real']} real COCO "
-      "masks among the suspects")
+_lines = [f"{'✅' if k['found'] else '❌'} {k['kind']:15s} photo {k['image_id']} ({k['class']}, {k['how']}) "
+          f"→ {k['checks'] or 'no check fired'}" for _, k in HUNT9_KEY.iterrows()]
+_lines.append(f"found {hunt9_found} of {len(HUNT9_KEY)} planted · plus {RESULTS['mask_suspects_real']} "
+              "real COCO masks among the suspects")
 
 _by_image = clean_images.set_index("id")
 fig, axes = plt.subplots(2, len(HUNT9_KEY), figsize=(3.2 * len(HUNT9_KEY), 6.2), squeeze=False)
@@ -669,11 +671,11 @@ for col, (_, k) in enumerate(HUNT9_KEY.iterrows()):
                      fontsize=9)
 fig.suptitle("the five planted masks (top: the real COCO mask, bottom: what the team sent)", color=INK)
 fig.tight_layout()
-display(fig)
-plt.close(fig)
+answer_box("The answer key: the five planted masks, the checks that fired, original vs planted", _lines, fig)
 
 # %% [markdown]
-# **Worked answer (Q24).** No check catches everything; together they catch all five, plus a few dozen real
+# <!-- callout: answer | Worked answer (Q24) -->
+# No check catches everything; together they catch all five, plus a few dozen real
 # masks (about 5 % of those judged: a list a person can look through in ten minutes). The box check does most
 # of the work because COCO built its boxes *from* the masks, so a mask that moved, grew or belongs elsewhere
 # stops matching its box. The other two kinds need a shape check. Expect:
@@ -803,7 +805,8 @@ show_masks(clean_images.set_index("id").loc[list(_most_thin["image_id"])].reset_
            cols=N_THIN_SHOW)
 
 # %% [markdown]
-# **Worked answer (Q25).** Bird, by far, on all masks (about two thirds on the full set), but not because
+# <!-- callout: answer | Worked answer (Q25) -->
+# Bird, by far, on all masks (about two thirds on the full set), but not because
 # birds have long legs: most birds are so small that the *whole bird* is a thin part. Among the masks large
 # enough to judge, horse leads (legs), then bird, sheep and zebra, and cat almost never has one: tiny objects
 # and thin parts of big ones are two problems behind one number. Thin parts are so few pixels that a model

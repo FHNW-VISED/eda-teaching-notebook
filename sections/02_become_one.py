@@ -98,7 +98,8 @@ def show_grid(class_name: str, n: int, cols: int = 6, label_animals: bool = True
 # view, and why? One line.
 
 # %% [markdown]
-# **Worked answer (Q2).** 💡 Holiday snapshots, not camera-trap frames. Cats and dogs are the farthest from a
+# <!-- callout: answer | Worked answer (Q2) -->
+# Holiday snapshots, not camera-trap frames. Cats and dogs are the farthest from a
 # park camera: indoors, up close, with people and sofas. Sheep, horses and zebras are at least outdoors and
 # sometimes far away, closer to what the paddock and savanna cameras will see.
 
@@ -151,7 +152,8 @@ show_grid(CLASS_TO_SHOW, n_show)
 # 3. …
 
 # %% [markdown]
-# **Worked answer (Q3)**, for the dog grid on the full set. Yours will differ; that is the point.
+# <!-- callout: answer | Worked answer (Q3) -->
+# , for the dog grid on the full set. Yours will differ; that is the point.
 #
 # 1. **Setting:** most dogs are indoors or in a street, a metre away; the paddock camera sees one far off.
 # 2. **People:** a person, hand or leash is in many photos: "person + leash = dog" is a shortcut to learn.

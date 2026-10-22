@@ -35,6 +35,7 @@ CALLOUT_KINDS: dict[str, tuple[str, str, str, str]] = {
     "objective": ("🎯", "Objective", "#B9E3EA", "#08505C"),
     "takeaway": ("✅", "Takeaway", "#E2F0C4", "#3A5A0B"),
     "go-deeper": ("🔍", "Go deeper", "#F3F4F6", "#4B5563"),
+    "answer": ("💡", "Worked answer", "#F6EFE4", "#5C4027"),
     "banner": ("", "", "#0B6E79", "#FFFFFF"),
 }
 BANNER_BAR = "#06464D"  # darker teal left bar on the white-on-teal banner
@@ -104,6 +105,10 @@ def callout_html(kind: str, title: str | None, body_md: str) -> str:
     title_html = re.sub(r"^<p>(.*)</p>$", r"\1", _md_to_html(title).strip(), flags=re.S) if title else ""
     title_html = _style_tags(title_html)
     body = _style_tags(_md_to_html(body_md).strip())
+    if kind == "answer":  # N-024: a worked answer is a toggle, closed until the learner opens it
+        summary = _style_tags(f"<summary>{emoji} {title_html}</summary>")
+        body = f'<details style="margin:0;">{summary}\n{body}\n</details>'
+        title_html = ""
     bar = BANNER_BAR if kind == "banner" else fg
     box = (
         f"background:{bg};color:{fg};border-left:6px solid {bar};border-radius:6px;padding:12px 14px;"

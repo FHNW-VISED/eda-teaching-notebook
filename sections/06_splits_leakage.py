@@ -99,7 +99,8 @@ RESULTS["split_drift_random_pp"] = float(_drift["random · test"].max())
 RESULTS["split_drift_stratified_pp"] = float(_drift["stratified · test"].max())
 
 # %% [markdown]
-# 💡 **Worked answer (Q14).** The smallest class moves the most relative to its own size: one photo can halve
+# <!-- callout: answer | Worked answer (Q14) -->
+# The smallest class moves the most relative to its own size: one photo can halve
 # a small share (grey bars = whole table, coloured = test set), and if that class is the dog, the alert is
 # scored on a handful of photos. Stratifying fixes it up to rounding (you cannot put 10.6 sheep in test), but
 # says nothing about *what is in* the photos: that is the rest of this section.
@@ -133,7 +134,7 @@ _cv_folds = {  # the test photos of three folds per scheme
     "LOO (12 folds, the first three)": [{0}, {1}, {2}],
     "LOGO (one camera per fold)": [{0, 1, 2, 3}, {4, 5, 6, 7}, {8, 9, 10, 11}],
 }
-fig, axes = plt.subplots(len(_cv_folds), 1, figsize=(8.5, 6.4))
+fig, axes = plt.subplots(len(_cv_folds), 1, figsize=(8.5, 7.2))
 for ax, (name, folds) in zip(axes, _cv_folds.items(), strict=True):
     for i, test in enumerate(folds):
         for p in range(12):
@@ -144,10 +145,15 @@ for ax, (name, folds) in zip(axes, _cv_folds.items(), strict=True):
             if p in _dogs:
                 ax.text(x + 0.5, i + 0.5, "D", ha="center", va="center", fontsize=8, color="white",
                         fontweight="bold")
+    ticks, labels = [0.5, 1.5, 2.5], ["fold 1", "fold 2", "fold 3"]
+    if name.startswith("LOO"):  # N-051: say in the picture that folds 4-12 exist but are not drawn
+        for p in range(12):
+            ax.text(p + 0.35 * (p // 4) + 0.5, 3.3, "⋮", ha="center", va="center", fontsize=11, color=INK)
+        ticks, labels = ticks + [3.3], labels + ["folds 4–12\nnot shown"]
     ax.set_xlim(0, 12.7)
-    ax.set_ylim(3, 0)
+    ax.set_ylim(3.6, 0)
     ax.set_xticks([])
-    ax.set_yticks([0.5, 1.5, 2.5], ["fold 1", "fold 2", "fold 3"], fontsize=8)
+    ax.set_yticks(ticks, labels, fontsize=8)
     ax.grid(False)
     for spine in ax.spines.values():
         spine.set_visible(False)
@@ -277,8 +283,20 @@ def download_cct(table: pd.DataFrame, workers: int = 16) -> pd.DataFrame:
 
 
 def show_bursts(table: pd.DataFrame, n_bursts: int, size: int = 256) -> None:
-    """One row per burst: its frames side by side, framed in the class colour, titled with the location."""
-    bursts = [b for _, b in table.groupby("seq_id", sort=True) if len(b) > 1][:n_bursts]
+    """One row per burst: its frames side by side, framed in the class colour, titled with the location.
+
+    Picks bursts of different animals at different cameras where the table allows it.
+    """
+    candidates = [b for _, b in table.groupby("seq_id", sort=True) if len(b) > 1]
+    bursts, seen_labels, seen_locations = [], set(), set()
+    for b in candidates:
+        label, location = b["label"].iloc[0], b["location"].iloc[0]
+        if label not in seen_labels and location not in seen_locations:
+            bursts.append(b)
+            seen_labels.add(label)
+            seen_locations.add(location)
+    bursts += [b for b in candidates if not any(b is k for k in bursts)][: n_bursts - len(bursts)]
+    bursts = bursts[:n_bursts]
     cols = max(len(b) for b in bursts)
     fig, axes = plt.subplots(len(bursts), cols, figsize=(2.6 * cols, 2.1 * len(bursts)), squeeze=False)
     for r, burst in enumerate(bursts):
@@ -426,7 +444,8 @@ def show_leaks(table: pd.DataFrame, train_idx, test_idx, n_examples: int = 2, si
 show_leaks(cct, _tr, _te)
 
 # %% [markdown]
-# 💡 **Worked answer (Q15).** Random split: **most test photos**, about 96 of 100. Split by camera: **0 %**,
+# <!-- callout: answer | Worked answer (Q15) -->
+# Random split: **most test photos**, about 96 of 100. Split by camera: **0 %**,
 # because a burst never spans two cameras.
 #
 # A test frame is safe only if *both* siblings are in test too, probability about 0.2 × 0.2 = 4 %; the rate
@@ -461,6 +480,39 @@ show_leaks(cct, _tr, _te)
 # </details>
 
 # %% [markdown]
+# <!-- callout: across-tasks | Across tasks · Splitting for boxes and masks -->
+# - **Classification:** stratify by the image label; group by camera, day or source.
+# - **Detection:** the unit is still the *image*, never the box. A paddock photo with 3 sheep and 1 horse
+#   cannot have its sheep in train and its horse in test. One photo carries several labels, so plain
+#   stratification does not apply: *iterative stratification* balances the box counts per class across folds
+#   (section 8).
+# - **Segmentation:** the same, with pixel shares instead of box counts. A rare class with a few large masks,
+#   the aviary's birds, can end up entirely in one fold if you do not check (section 9).
+#
+# In all three: deduplicate first (section 5), then split, then never look at the test set again.
+
+# %% [markdown]
+# <!-- callout: takeaway | Takeaway -->
+# - **When you see** classes of very different sizes → **do** stratify the split, so every class is in the
+#   test set and scored.
+# - **When you see** photos from the same moment, camera or day (a burst, one tree) → **do** split by that
+#   group and measure the sibling rate (it should be 0 %) before any model.
+# - **When you see** a tiny dataset → **do** use LOO only if every photo counts, and LOGO if the photos come
+#   in groups.
+# - **When you see** a test score that looks too good → **do** ask what train and test share. Section 7 picks
+#   the metric to compute on that test set.
+
+
+# %% [markdown]
+# ### 🔴 Optional · Split the trail cameras yourself
+#
+# Three steps for after class or a fast group: check the LOO pitfall fold by fold, write a split by camera,
+# and see what the leak does to a score.
+
+# %% [markdown]
+# #### LOO vs LOGO, fold by fold
+
+# %% [markdown]
 # The next cell checks that claim fold by fold: the mean sibling rate of LOO and LOGO on the trail-camera
 # photos.
 
@@ -483,7 +535,7 @@ print(f"LOGO : {cct['location'].nunique()} folds (one per camera), sibling rate 
 print(f"cross-validation schemes run in this notebook: {cv_schemes}")
 
 # %% [markdown]
-# ### ✍️ Choose and run a split
+# #### ✍️ Choose and run a split
 
 # %% [markdown]
 # Before you choose the held-out cameras, the next cell counts each class's photos per camera: a class with
@@ -518,6 +570,8 @@ def split_by_camera(table, test_locations):
 
     table: a DataFrame with columns file_name and location (cct). test_locations: list of location ids.
     Returns {"train": sorted file_names of every other camera, "test": sorted file_names of test_locations}.
+
+    e.g. {"train": ["59a30dbc-….jpg", "5a2c84a7-….jpg", …], "test": ["5965aa3e-….jpg", …]}
     """
     ...
 
@@ -556,7 +610,7 @@ if _absent:
 # </details>
 
 # %% [markdown]
-# ### 🔴 Optional · A ruler to see the gap
+# #### A ruler to see the gap
 
 # %% [markdown]
 # <!-- callout: go-deeper | Go deeper · The nearest-neighbour ruler -->
@@ -608,31 +662,9 @@ plt.tight_layout()
 plt.show()
 
 # %% [markdown]
-# 💡 **Worked answer (Q16).** K-fold scores higher, by a large gap: on the full slice the ruler roughly
+# <!-- callout: answer | Worked answer (Q16) -->
+# K-fold scores higher, by a large gap: on the full slice the ruler roughly
 # doubles its accuracy when its neighbours may be burst siblings (same animal, same tree), while under LOGO
 # it must find a similar photo at another camera and falls towards chance. Read the direction and the size of
 # the gap, not the digits (they depend on the slice and the seed). A real model scores higher on both and the
 # gap stays: it is the 20.8 % → 41.1 % of the paper.
-
-# %% [markdown]
-# <!-- callout: across-tasks | Across tasks · Splitting for boxes and masks -->
-# - **Classification:** stratify by the image label; group by camera, day or source.
-# - **Detection:** the unit is still the *image*, never the box. A paddock photo with 3 sheep and 1 horse
-#   cannot have its sheep in train and its horse in test. One photo carries several labels, so plain
-#   stratification does not apply: *iterative stratification* balances the box counts per class across folds
-#   (section 8).
-# - **Segmentation:** the same, with pixel shares instead of box counts. A rare class with a few large masks,
-#   the aviary's birds, can end up entirely in one fold if you do not check (section 9).
-#
-# In all three: deduplicate first (section 5), then split, then never look at the test set again.
-
-# %% [markdown]
-# <!-- callout: takeaway | Takeaway -->
-# - **When you see** classes of very different sizes → **do** stratify the split, so every class is in the
-#   test set and scored.
-# - **When you see** photos from the same moment, camera or day (a burst, one tree) → **do** split by that
-#   group and measure the sibling rate (it should be 0 %) before any model.
-# - **When you see** a tiny dataset → **do** use LOO only if every photo counts, and LOGO if the photos come
-#   in groups.
-# - **When you see** a test score that looks too good → **do** ask what train and test share. Section 7 picks
-#   the metric to compute on that test set.

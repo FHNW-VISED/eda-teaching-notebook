@@ -58,7 +58,8 @@ display(fig)
 plt.close(fig)
 
 # %% [markdown]
-# 💡 **Worked answer (Q7).** On the full Play Dataset cat and dog are the largest classes (about 130 photos
+# <!-- callout: answer | Worked answer (Q7) -->
+# On the full Play Dataset cat and dog are the largest classes (about 130 photos
 # each) and sheep the smallest (about 50): roughly 2–3×. People photograph pets, not sheep; that is what
 # Flickr uploads look like, not what the park's cameras will see. (The smoke sample is flat.)
 
@@ -104,7 +105,8 @@ _crowded = images.sort_values(["n_animals", "id"], ascending=[False, True]).head
 show_rows(_crowded, "the most crowded photos", lambda r: f"{r['n_animals']} × {r['class']}", cols=N_CROWDED)
 
 # %% [markdown]
-# 💡 **Worked answer (Q8).** On the full Play Dataset about a third of the photos hold more than one animal;
+# <!-- callout: answer | Worked answer (Q8) -->
+# On the full Play Dataset about a third of the photos hold more than one animal;
 # sheep and birds are the crowded classes (flocks), cats and dogs are mostly alone. One label per photo works
 # only because they share a species, and it cannot say *how many*: thirty sheep and a lamb are both "sheep".
 
@@ -154,16 +156,16 @@ _majority = max(images_per_class, key=images_per_class.get)
 _true = images["class"].to_numpy()
 acc_play = float((_true == _majority).mean())
 recall_dog_play = float(_majority == "dog") if (_true == "dog").any() else float("nan")
-print(f"Rule A · Play Dataset, 'always {_majority}': accuracy {100 * acc_play:.0f} %, recall on dog "
-      f"{100 * recall_dog_play:.0f} %")
+_lines = [f"Rule A · Play Dataset, 'always {_majority}': accuracy {100 * acc_play:.0f} %, recall on dog "
+          f"{100 * recall_dog_play:.0f} %"]
 
 # Rule B on a paddock day: PADDOCK_FRAMES frames, a share DOG_SHARE of them show a dog, the rest sheep.
 PADDOCK_FRAMES = 200 if SMOKE else 1000
 _n_dog = int(round(DOG_SHARE * PADDOCK_FRAMES))
 acc_day = 1 - _n_dog / PADDOCK_FRAMES  # "always sheep" is right on every sheep frame
 recall_dog_day = 0.0 if _n_dog else float("nan")  # and wrong on every dog frame
-print(f"Rule B · paddock day, {_n_dog} dog frames in {PADDOCK_FRAMES}, 'always sheep': accuracy "
-      f"{100 * acc_day:.0f} %, recall on dog {100 * recall_dog_day:.0f} %")
+_lines.append(f"Rule B · paddock day, {_n_dog} dog frames in {PADDOCK_FRAMES}, 'always sheep': accuracy "
+              f"{100 * acc_day:.0f} %, recall on dog {100 * recall_dog_day:.0f} %")
 
 # The same day in miniature: 12 real photos, a share DOG_SHARE of them dogs, the rest sheep.
 _N_STRIP = 12
@@ -194,21 +196,20 @@ _strip_right = int((_strip["class"] == "sheep").sum())
 fig.suptitle(f"A lazy model stamps 'sheep' on {len(_strip)} paddock frames: {_strip_right} right, "
              f"{len(_strip) - _strip_right} wrong", color=INK)
 fig.tight_layout()
-display(fig)
-plt.close(fig)
-print(f"This strip: accuracy {100 * _strip_right / len(_strip):.0f} %, recall on dog 0 %. "
-      "The dog-in-the-paddock alert never fires.")
+_lines.append(f"This strip: accuracy {100 * _strip_right / len(_strip):.0f} %, recall on dog 0 %. "
+              "The dog-in-the-paddock alert never fires.")
+answer_box("Q9 · the lazy model's numbers and a strip of real frames (open after you guessed)", _lines, fig)
 
 # %% [markdown]
-# <!-- callout: pitfall | Pitfall · Accuracy hides a rare class -->
-# **Worked answer (Q9).**
-#
+# <!-- callout: answer | Worked answer (Q9) -->
 # - **Rule A, Play Dataset:** accuracy is the biggest class's share (about 20 % on the full set, a sixth in
 #   the balanced smoke sample); recall on dog is 0 %, unless dog *is* the biggest class (then 100 % on dog,
 #   0 % on everything else).
 # - **Rule B, paddock week:** "always sheep" is right on 980 of 1000 frames: **98 %** accuracy and **0 %**
 #   recall on dog, all 20 dogs missed.
-#
+
+# %% [markdown]
+# <!-- callout: pitfall | Pitfall · Accuracy hides a rare class -->
 # **Accuracy** is the share of all photos labelled correctly, so the big classes dominate it: the rarer the
 # dog, the better "always sheep" looks. For a rare class, watch its **recall**. A balanced-looking Play
 # Dataset says nothing about the imbalance of the *deployment*. Section 7 turns this into the park's metric;

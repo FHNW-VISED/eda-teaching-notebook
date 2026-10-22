@@ -230,6 +230,7 @@ Time = participant minutes at lab pace (~144 total after the cut pass of 2026-10
   | `objective` | 🎯 Objective (N-044) | `#B9E3EA` | `#08505C` |
   | `takeaway` | ✅ Takeaway, "When you see X → do Y" lines (N-044) | `#E2F0C4` | `#3A5A0B` |
   | `go-deeper` | 🔍 Go deeper, secondary depth, long parts inside `<details>` (N-048) | `#F3F4F6` | `#4B5563` |
+  | `answer` | 💡 Worked answer: the whole box is a closed `<details>` toggle, title = summary (N-024, L-005). Runtime answers (figures, keys) use `answer_box()` from section 0 in the same colours | `#F6EFE4` | `#5C4027` |
   | `banner` | title banner, no emoji (L-003) | `#0B6E79` | `#FFFFFF` (bar `#06464D`) |
 - Source: Simone, G-11 / G-32; Colab rendering research 2026-10-19 and 2026-10-21 (review pass 1, R-01/R-03/R-04).
 
