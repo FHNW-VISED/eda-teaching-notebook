@@ -93,7 +93,7 @@ def find_dataset(path) -> Path:
 
         drive.mount("/content/drive")
     if p.is_file() and p.suffix.lower() == ".zip":
-        dest = DATA_DIR / "cache" / "my_upload" / p.stem
+        dest = (DATA_DIR / "cache" / "my_upload" / p.stem).resolve()  # absolute: messages show a pastable path
         if not dest.exists():
             with zipfile.ZipFile(p) as z:
                 z.extractall(dest)
