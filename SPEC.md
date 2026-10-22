@@ -132,18 +132,17 @@ Time = participant minutes at lab pace (~144 total after the cut pass of 2026-10
   - Then:
     - exact duplicates (file hash) and near-duplicates (perceptual hash, ✏️ `HASH_THRESHOLD`), asked together in one question (Q10);
     - **flipped/rotated copies, found by hashing each image's flipped and rotated variants** (**[PROPOSAL]** a shoot-out: plain hashing misses them, variant hashing catches them);
-  - **Guided hunt** (G-25): a planted batch with exact duplicates + a flipped + a rotated + a recompressed copy. ✍️ `find_flipped_copies(image, candidates) -> list[str]`. The hunt ends on its printed answer key (no extra figure).
+  - **Guided hunt** (G-25): a planted batch with exact duplicates + a flipped + a rotated + a recompressed copy. ✍️ `find_flipped_copies(image, candidates) -> list[str]`. The hunt's answer key (copy → kind → source) sits in Q11's worked-answer toggle; there is no separate scoring cell (R2).
   - One 🔴 optional part, "Suspicious labels": each class's least typical images for a human to judge (Q12), then model-based near-duplicate and outlier search on precomputed embeddings (Q13), with a short note that teams use embeddings this way at scale.
   - Ends with `clean_images`, the cleaned table, and a summary "removed N, kept M".
 - **06 Splits & leakage**
   - On COCO: random vs stratified split, with class shares per split.
   - Cross-validation: **k-fold, stratified k-fold, leave-one-out (useful for very small datasets: every image is tested once; costly and noisy), and leave-one-group-out** (G-27), shown as one fold diagram on 12 toy photos (it carries the "0 %" answer for leave-one-out); no table and no question, and `cv_schemes` is still computed in a collapsed cell.
-  - Then the park's woodland trail cameras (CCT20): bursts and locations.
+  - Then the park's woodland trail cameras (CCT20): one burst gallery of three different animals at three different cameras (R4).
   - **Leakage shown without a model** (G-26): the share of test images with a burst sibling in training, random split vs split by camera, plus the paper's 20.8 % → 41.1 %.
   - ⚠️ Pitfall: **plain leave-one-out leaks across burst frames just like a random split**, and leave-one-*group*-out (one camera) is the fix.
   - Deduplicate *before* splitting (section 5).
-  - ✍️ choose and run a split.
-  - 🔴 optional nearest-neighbour classifier on colour features to *see* the score gap (seconds on CPU).
+  - One 🔴 optional part after the lesson (R5): the LOO-vs-LOGO sibling rate per fold, ✍️ choose and run a split by camera, and the nearest-neighbour classifier on colour features to *see* the score gap (seconds on CPU).
 - **07 Metrics for the park**
   - On **prepared predictions** (a fixed CSV generated with a seed; no model): accuracy vs recall on dog for the paddock alert, plus a confusion matrix.
   - The pet-food-shop contrast as one paragraph with its numbers inline (no extra cell).
@@ -247,10 +246,11 @@ Time = participant minutes at lab pace (~144 total after the cut pass of 2026-10
 
 **L-004 — Karpathy quotes**: verbatim, **2–3 sentences**, in a 🧾 Recipe Callout with a link to https://karpathy.github.io/2019/04/25/recipe/, only in sections 2, 3, 4 and 5. Source: Simone, G-6, G-18.
 
-**L-005 — Answers** (G-3, N-024 overridden):
-- Worked answers on the Play Dataset are **shown openly** right after each question.
-- Only the Challenge hides its key (`reveal_answers()` + `<details>`).
-- Source: Susanne, "we answer it exemplarily with our play dataset"; Simone, G-3.
+**L-005 — Answers** (G-3, N-024; replaced 2026-10-22, review R1):
+- Every question is still **answered exemplarily on the Play Dataset**, right after it, but inside a collapsed `<details>` toggle (the markup of §1's "The reasons and park examples behind each point").
+- Answer figures and printed keys go inside the toggle too, drawn as HTML output; figures the question asks the student to read stay visible.
+- The Challenge keeps `reveal_answers()` + `<details>`.
+- Source: Susanne, "we answer it exemplarily with our play dataset"; Simone, G-3; Simone, 2026-10-22: "the 'worked answers' … could be made with the toggle as well, so that they are hidden until the toggle is removed".
 
 **L-006 — No training**: no neural-network training anywhere. The 🔴 nearest-neighbour "ruler" is the only fitted model, and it is labelled as a ruler. Source: Susanne, 2026-10-19; G-26, G-33.
 
