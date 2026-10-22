@@ -378,7 +378,7 @@ show_masks(clean_images.set_index("id").loc[list(_ends["image_id"])].reset_index
 #
 # 1. look at the five kinds (first picture);
 # 2. look at the five checks (second picture);
-# 3. answer Q22: which check catches which kind;
+# 3. answer the question: which check catches which kind;
 # 4. run the hunt and read its output;
 # 5. open the answer key.
 
