@@ -12,7 +12,7 @@
 # images inside. The sub-folder names become the class names.
 #
 # ```
-# /content/drive/MyDrive/project/flowers    ← MY_DATASET_DIR points here
+# my_dataset/                ← MY_DATASET_DIR points here (or at my_dataset.zip)
 # ├── daisy/      img_001.jpg, img_002.png, …
 # ├── rose/       …
 # └── tulip/      …
@@ -20,24 +20,36 @@
 
 # %% [markdown]
 # <!-- callout: your-turn | Your turn · Point the notebook at your dataset (you change one line) -->
-# **Step 1 · Get your dataset into Colab.** Colab cannot see your laptop's folders. Pick one:
+# Colab cannot see your laptop's folders, so the dataset first goes where Colab can read it. Pick **one** of
+# the two options, then do the last step.
 #
-# - **It is on Google Drive:** nothing to do now. When the path starts with `/content/drive`, the next cell
-#   connects Drive for you (a Google sign-in window opens the first time).
-# - **It is a `.zip` on your laptop:** click the 📁 **Files** icon in Colab's left bar and drag the zip in.
-#   Wait until the upload circle disappears. Colab deletes uploads when the session ends.
+# **Option A · Upload it to this Colab session** (fastest; gone when the session ends)
 #
-# **Step 2 · Copy the path.** In the 📁 Files pane, find the folder whose sub-folders are your classes, or
-# the `.zip` itself. Right-click it → **Copy path**. (Drive files are under `drive/MyDrive/`.)
+# 1. **Zip the dataset folder** on your laptop: Mac, right-click the folder → *Compress*; Windows,
+#    right-click → *Send to* → *Compressed (zipped) folder*. Colab uploads files, not folders.
+# 2. Click the 📁 **Files** icon in Colab's left bar and **drag the zip into it** (or use the upload icon at
+#    the top of the pane). Wait until the progress circle at the bottom left disappears.
+# 3. **Right-click the zip → Copy path.** It looks like `/content/my_dataset.zip`; the notebook unzips it.
 #
-# **Step 3 · Paste it** between the quotes in the next cell, click into that cell, and run everything from
-# there: **Runtime → Run cell and below**.
+# ⚠️ Colab deletes uploaded files when the session ends (closing the tab for a while, or *Disconnect and
+# delete runtime*): next time, upload the zip again.
 #
-# The next cell then stops with a plain message if the path is not right, and says what to change.
+# **Option B · Use Google Drive** (stays between sessions; slower the first time)
 #
-# - ✅ `/content/drive/MyDrive/project/flowers`: the folder that holds `daisy/`, `rose/`, `tulip/`.
-# - ✅ `/content/flowers.zip`: it is unzipped for you.
-# - ❌ `…/flowers/daisy`: one class folder, one level too deep.
+# 1. **Put the dataset on your Drive** at [drive.google.com](https://drive.google.com): *New → Folder upload*
+#    for the folder, or *File upload* for a zip.
+# 2. **Connect Drive to Colab:** in the 📁 Files pane, click the **Mount Drive** icon (a folder with the
+#    Drive logo) and allow access in the window that opens. A `drive/` folder appears in the pane.
+# 3. Open `drive/MyDrive/`, find the folder whose sub-folders are your classes (or the zip), **right-click →
+#    Copy path.** It looks like `/content/drive/MyDrive/project/my_dataset`.
+#
+# **Last step, both options:** paste the path between the quotes in the next cell, click into that cell, and
+# run everything from there: **Runtime → Run cell and below**. If the path is not right, the cell after it
+# stops with a plain message that says what to change.
+#
+# - ✅ `/content/my_dataset.zip` (option A) or `/content/drive/MyDrive/project/my_dataset` (option B): the
+#   folder that holds `daisy/`, `rose/`, `tulip/`, or a zip of it.
+# - ❌ `…/my_dataset/daisy`: one class folder, one level too deep.
 # - ❌ a folder that holds `train/` and `val/`: point at `…/train` instead (then at `…/val`, if you like).
 #
 # Leave it at `None` to see the whole section on a small park sample first.
@@ -51,7 +63,7 @@
 
 # %%
 # ✏️ YOUR TURN
-MY_DATASET_DIR = None  # paste your path between quotes, e.g. "/content/drive/MyDrive/project/flowers"
+MY_DATASET_DIR = None  # paste your path between quotes, e.g. "/content/my_dataset.zip"
 
 # %%
 # @title Dataset reader: finds your class folders, or says exactly what to change { display-mode: "form" }
