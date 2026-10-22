@@ -10,3 +10,4 @@ Never edit a version folder.
 | v01 | 2026-10-20 | Night run 2026-10-19: all 14 issues built (PR #15) | c3f3413 |
 | v02 | 2026-10-21 | Review pass 1: your EDA review applied, sections 0–12 (PR #16) | dbaaf2d |
 | v03 | 2026-10-22 | Cut pass 2026-10-22 | 890a2df |
+| v04 | 2026-10-22 | Review, cuts and order fixes 2026-10-22 (PR #19) | 42dcb55 |
