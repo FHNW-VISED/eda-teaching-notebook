@@ -410,16 +410,11 @@ _reference = _reference_findings()
 _reference_score = check_findings(_reference, verbose=False)
 RESULTS["challenge_reference"] = {"found": _reference_score["found"], "planted": _reference_score["planted"],
                                   "unmatched": _reference_score["unmatched"]}
-_TOOL_OF = {"unreadable": "is_readable", "exact duplicate": "find_copies (MD5)",
-            "flipped copy": "find_copies (variant hashes)", "rotated copy": "find_copies (variant hashes)",
-            "recompressed copy": "find_copies (pHash)", "train/test overlap": "a copy pair + batch['split']",
-            "grayscale": "measure_image: mode / colourfulness", "wrong label": "label vs the animals' class",
-            "missing box": "headcount vs boxes", "ugly mask": "mask_shape: box IoU"}
-_demo = [f"{kind:19s} ← {_TOOL_OF[kind]:36s} {', '.join(f for f, k in _reference if k == kind) or '—'}"
-         for kind in CHALLENGE_TYPES]
+# Only the count per kind: which check finds which kind, and the files, are in the answer key below.
+_demo = [f"{'✅' if k == n else '⬜'} {kind:19s} found {k} of {n}"
+         for kind, (k, n) in _reference_score["per_type"].items()]
 answer_box(f"Demo: what the ten checks found ({_reference_score['found']} of {_reference_score['planted']} "
-           f"planted, {_reference_score['unmatched']} false alarms)",
-           ["kind                ← check                                files"] + _demo)
+           f"planted, {_reference_score['unmatched']} false alarms)", _demo)
 
 # %% [markdown]
 # ### 🔴 Optional · Run the hunt yourself

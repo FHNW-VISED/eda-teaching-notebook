@@ -541,18 +541,20 @@ display(fig)
 plt.close(fig)
 
 # %% [markdown]
-# **Picture B · The five checks.** Each is computed from the mask and its annotated box, with the rule that
-# makes a mask a suspect. Picture B measures them twice: on the healthy horse (top row) and on one broken
-# horse (bottom row: a hole, a stray piece, a box drawn a bit off), so you see what each check reacts to.
+# **Picture B · The five checks.** Each check measures one thing about a mask and its box, and has a rule
+# that makes the mask a suspect. Picture B runs all five on two horses: the healthy one from Picture A (top
+# row) and a broken one (bottom row: a hole, a stray piece, a box drawn a bit off). Each panel says
+# **normal** or **SUSPECT**.
 #
-# 1. **mask–box agreement** (the only check that uses IoU): draw the tightest box around the mask and compare
-#    it with the team's box; their IoU (section 7) is 1 when they match. Suspect when it is below `IOU_MIN`
-#    (0.9), **the one value you can change**.
-# 2. **fill ratio**: mask area / box area, from Q21. Suspect outside 15–95 %.
-# 3. **pieces**: separate parts of the mask. Suspect with more than 3.
-# 4. **holes**: gaps fully inside the mask. Suspect with any hole.
-# 5. **solidity**: mask area / area of its **convex hull**, the "rubber band" around the whole mask. Suspect
-#    above 0.97: a real animal has dents (between the legs, under the neck).
+# 1. **Mask–box agreement**: draw the tightest box around the mask and compare it with the box the team
+#    drew, with IoU (section 7): 1 when they match. Suspect below `IOU_MIN` (0.9), **the one value you can
+#    change**.
+# 2. **Fill**: mask area ÷ box area, as in Q21. Suspect outside 0.15–0.95.
+# 3. **Pieces**: how many separate parts the mask has. Suspect above 3.
+# 4. **Holes**: gaps fully inside the mask. Suspect with any hole.
+# 5. **Solidity**: mask area ÷ the area inside its **rubber band**, the outline a rubber band would make if
+#    stretched around the whole mask (its *convex hull*). Suspect above 0.97: a real animal has dents
+#    (between the legs, under the neck).
 #
 # <details><summary>What is normal for a real animal</summary>
 #

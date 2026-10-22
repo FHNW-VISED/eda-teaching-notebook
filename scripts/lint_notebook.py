@@ -1,8 +1,8 @@
 """Mechanical checks for the rules in RULES.md that a script can decide.
 
 Prints one line per problem (compact on purpose: agents read this output) and exits 1 on any FAIL.
-Rule IDs refer to RULES.md. Word budgets (cut pass, 2026-10-22) only print WARNING lines: they never change
-the exit code.
+Rule IDs refer to RULES.md. Word budgets (cut pass, 2026-10-22) and mentions of a question before it is
+asked (N-052) only print WARNING lines: they never change the exit code.
 """
 
 from __future__ import annotations
@@ -21,6 +21,7 @@ SECTIONS = ROOT / "sections"
 SPEC = ROOT / "SPEC.md"
 
 Q_RE = re.compile(r"\*\*Q(\d+)\.?\*\*")
+Q_MENTION_RE = re.compile(r"\bQ(\d+)\b")
 LEVELS = ("🟢", "🟡", "🔴")
 HELPER_MIN_LINES = 8
 # N-035: the only allowed first lines of a code cell (collapsed, a question's cell, or a cell to edit).
@@ -59,6 +60,14 @@ def is_helper_cell(src: str) -> bool:
         and all(isinstance(n, defs) for n in body)
         and any(isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) for n in body)
     )
+
+
+def forward_question_refs(line: str, next_q: int) -> list[int]:
+    """N-052 (4): the question numbers a markdown line mentions before they are asked. `next_q` is the first
+    question not asked yet; the line's own **Qn.** markers count as asked."""
+    for m in Q_RE.finditer(line):
+        next_q = max(next_q, int(m.group(1)) + 1)
+    return [int(m.group(1)) for m in Q_MENTION_RE.finditer(Q_RE.sub(" ", line)) if int(m.group(1)) >= next_q]
 
 
 def callout_kind(src: str) -> str | None:
@@ -205,6 +214,8 @@ def main() -> int:
             if re.search(r"\bstyle\s*=", src):
                 fail(where, "markdown uses style= — Colab strips it; use a callout cell (N-025, N-034)")
             for line in src.splitlines():
+                for q in forward_question_refs(line, expected_q):
+                    warnings.append(f"WARNING {where}: mentions Q{q} before it is asked (N-052)")
                 for m in Q_RE.finditer(line):
                     q = int(m.group(1))
                     if q != expected_q:

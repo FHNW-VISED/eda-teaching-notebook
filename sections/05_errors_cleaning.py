@@ -30,11 +30,12 @@
 # </details>
 
 # %% [markdown]
-# ### Exact duplicates: the same bytes twice
+# ### Duplicates: the same bytes, or the same picture
 #
 # The cheapest check first. Two files that are byte-for-byte identical have the same **MD5 hash**, so one
-# pass over the files finds every exact copy, whatever its name. It runs together with the near-duplicate
-# check further down.
+# pass over the files finds every exact copy, whatever its name. A resized or re-compressed copy has
+# different bytes and so a different MD5: it needs a second kind of hash, explained next. Both run in the
+# same cell further down.
 
 # %%
 # @title Hash helpers (MD5, perceptual hash, flipped and rotated variants) { display-mode: "form" }
@@ -115,9 +116,6 @@ def flag_odd_files(stats: pd.DataFrame) -> pd.DataFrame:
             rows.append({"id": r["id"], "class": r["class"], "flags": ", ".join(flags)})
     return pd.DataFrame(rows, columns=["id", "class", "flags"])
 
-
-# %% [markdown]
-# ### Near-duplicates: the same picture, different bytes
 
 # %% [markdown]
 # <!-- callout: theory | Theory · Perceptual hashing -->

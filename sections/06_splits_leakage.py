@@ -542,8 +542,9 @@ show_leaks(cct, _tr, _te)
 # #### LOO vs LOGO, fold by fold
 
 # %% [markdown]
-# The next cell checks that claim fold by fold: the mean sibling rate of LOO and LOGO on the trail-camera
-# photos.
+# The pitfall above, "LOO leaks like a random split": each photo is tested alone, so its burst siblings are
+# always in training. The next cell measures it fold by fold: the mean sibling rate of LOO, and of LOGO by
+# camera, on the trail-camera photos.
 
 # %%
 # @title LOO vs LOGO (camera): sibling rate per fold { display-mode: "form" }

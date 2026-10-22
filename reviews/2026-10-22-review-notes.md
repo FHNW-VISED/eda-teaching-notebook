@@ -91,8 +91,16 @@ then silently ran on the park sample.
 | O6 | §5 the flip detector was written before the shoot-out showed why | shoot-out (Q10) → why picture → answer → ✍️ `find_flipped_copies` → key |
 | O7 | §2 Q2 asked about a grid 18 cells back | the question now sits right under the grid in §1 (becomes Q1; the checklist question becomes Q2) |
 
-Low items (empty "Exact duplicates" heading, the Challenge's two keys, "checks that claim", a lint for forward
-references) are proposed, not applied. Forward question references after the pass: none.
+Low items, applied later the same day (Simone: "you can do all the smaller stuff"):
+
+| # | Problem | Fix |
+|---|---|---|
+| O8 | §5 "Exact duplicates" heading had no check of its own (MD5 runs in the Q9 cell with the pHash) | one heading, "Duplicates: the same bytes, or the same picture"; the "Near-duplicates" heading is gone |
+| O9 | §9 the demo box and the answer key both listed check-per-kind and the files | the demo shows only "found k of n" per kind; check-per-kind stays in the Q24 worked answer, the files in the key |
+| O10 | §6 optional part opened with "checks that claim", a claim made far above | names it: the pitfall "LOO leaks like a random split", and why |
+| O11 | no script caught "run it in Q9 below" | lint WARNING for a question number mentioned before it is asked (N-052 (4)); template + repo; none in this notebook |
+
+Forward question references after the pass: none (now checked by lint).
 
 ## Picture B's text (R23)
 
