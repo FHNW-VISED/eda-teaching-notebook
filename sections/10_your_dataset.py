@@ -134,6 +134,9 @@ print(f"largest {my_counts.idxmax()} ({my_counts.max()}) · smallest {my_counts.
       f"· ratio {my_imbalance:.1f} : 1")
 
 # %% [markdown]
+# 💡 Look at the ratio: up to 3 : 1 is common; from 10 : 1 accuracy hides the small class (section 4).
+
+# %% [markdown]
 # Check 2 opens every file with `is_readable`, then reads its size (width × height) and its colour mode (`RGB`
 # stores three colour channels, `L` one gray channel).
 
@@ -165,6 +168,9 @@ print(f"distinct sizes: {_ok.groupby(['width', 'height']).ngroups} · "
       f"long side from {int(_ok[['width', 'height']].max(axis=1).min())} "
       f"to {int(_ok[['width', 'height']].max(axis=1).max())} px")
 display(my_stats[my_stats["mode"] != "RGB"].head(10))
+
+# %% [markdown]
+# 💡 Look for a second cluster of sizes or any mode that is not `RGB`: each is a second source to decide on.
 
 # %% [markdown]
 # Check 3 is section 5's copy hunt: exact copies by file hash, and near, flipped and rotated copies by the
@@ -220,6 +226,9 @@ if len(_show):
     plt.show()
 
 # %% [markdown]
+# 💡 Look at the pairs across class folders first: one of the two labels is wrong.
+
+# %% [markdown]
 # Check 4 suggests a split: it groups the copies, then makes a stratified (every class in both halves, in the
 # same shares), group-aware split.
 
@@ -269,6 +278,11 @@ my_split.to_csv(_split_csv, index=False)
 print(f"split saved to {_split_csv}")
 
 # %% [markdown]
+# 💡 Look at "copy pairs across train/test": it must be 0. The split is written to `data/cache/my_split.csv`,
+# and **Colab deletes that folder when the session ends**: download it now (Files pane → right-click the
+# file → Download) or copy it to your Drive, or it is gone next week.
+
+# %% [markdown]
 # The checklist in one place, to paste into your project notes:
 
 # %%
@@ -297,10 +311,9 @@ RESULTS["swap_in"] = {"source": my_source, "n_images": int(len(my_files)), "n_cl
 # to read each check and ends with the seven guiding questions.
 
 # %% [markdown]
-# **Q25.** 🟢 Think of what you expect for your dataset: the largest and the smallest class, how many image
-# sizes and colour modes, and whether there are copies. (Think of your answers; there is no need to type
-# them.) Then compare with the checks above. On the sample the folders are cat, dog, bird, horse, sheep and
-# zebra with 20 photos each, plus the three planted problems: which check caught each one?
+# **Q25.** 🟢 On the sample the folders are cat, dog, bird, horse, sheep and zebra with 20 photos each, plus
+# three planted problems (an exact copy of a cat, a mirrored dog, a grayscale bird). Which check caught each
+# one? Then run the checks on your own dataset and compare.
 
 # %% [markdown]
 # <!-- callout: answer | Worked answer (Q25, on the sample) -->
@@ -386,5 +399,6 @@ RESULTS["swap_in"] = {"source": my_source, "n_images": int(len(my_files)), "n_cl
 #   copies, split) before anything else; they take a few minutes.
 # - **When a check lists files** (not RGB, copy pairs, pairs across class folders) → **do** decide per file:
 #   convert, keep one, or fix the label.
-# - **When you leave** → **do** bring your answers to the guiding questions and `data/cache/my_split.csv`
+# - **When you leave** → **do** download `data/cache/my_split.csv` (Colab deletes it) and bring it, with your
+#   answers to the guiding questions,
 #   to next week's training.

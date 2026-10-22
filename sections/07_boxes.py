@@ -42,8 +42,8 @@ if _n_crowd:
 display(annotation_cost)
 
 # %% [markdown]
-# 💡 Same photos, same animals, and the click count climbs with every task: this table is the answer when
-# the park asks for "a quick model that also counts and outlines".
+# 💡 Same photos, same animals, and the click count climbs with every task: outlining every animal costs
+# far more clicks than labelling the photo, so ask for masks only when the park really needs outlines.
 
 # %% [markdown]
 # <!-- callout: go-deeper | Go deeper · What a richer label changes -->
@@ -122,6 +122,31 @@ def show_boxes(rows_df: pd.DataFrame, boxes_df: pd.DataFrame, title: str, captio
     display(fig)
     plt.close(fig)
 
+
+# %% [markdown]
+# Four photos first, so you have seen what the next questions count: a flock of sheep, a lone pet, a flock of
+# small birds and one big horse.
+
+# %%
+# @title Four photos with their boxes: sheep flock, lone pet, bird flock, big horse { display-mode: "form" }
+_ann = annotations[annotations["image_id"].isin(clean_images["id"])]
+_imgs = clean_images.set_index("id")
+_per_photo = _ann.groupby("image_id").agg(n=("class", "size"), cls=("class", "first"),
+                                          area=("area", "median"))
+
+
+def _pick(classes, column, largest=True, alone=False):
+    """The photo of one of `classes` with the largest (or smallest) `column`, or None."""
+    c = _per_photo[_per_photo["cls"].isin(classes)]
+    c = c[c["n"] == 1] if alone else c
+    return None if c.empty else (c[column].idxmax() if largest else c[column].idxmin())
+
+
+_picks = [_pick(["sheep", "zebra"], "n"), _pick(["cat", "dog"], "area", alone=True),
+          _pick(["bird"], "n"), _pick(["horse"], "area", alone=True)]
+_picks = list(dict.fromkeys(i for i in _picks if i is not None))  # skip missing ones, no repeats
+show_boxes(_imgs.loc[_picks].reset_index(), _ann, "same photos, new unit: one box per animal",
+           caption=lambda r: f"{r['class']} · {int(_per_photo.at[r['id'], 'n'])} box(es)")
 
 # %% [markdown]
 # ### Boxes per class vs photos per class
@@ -351,7 +376,8 @@ plt.close(fig)
 #
 # Two sheep standing behind each other give two boxes that share pixels. Overlap is measured with **IoU**
 # (intersection over union): the shared area divided by the area covered by either box. We call two boxes
-# *overlapping* when their IoU is above 0.1. Section 8 uses the same number to compare masks and boxes.
+# *overlapping* when their IoU is above 0.1. **What it is for:** the 🔴 crowding part below counts overlapping
+# boxes with it, and section 8's first mask check uses it to ask "does this mask still match its box?".
 
 # %%
 # @title IoU helper: box_iou_dice (used here and in section 8) { display-mode: "form" }
@@ -525,38 +551,6 @@ park_boxes, HUNT8_KEY = plant_hunt8(boxes, clean_images, SEED)
 print(f"park_boxes: {len(park_boxes)} boxes for {park_boxes['image_id'].nunique()} photos "
       f"(boxes had {len(boxes)}). One box is missing. Find the photo.")
 
-# %% [markdown]
-# **Q19.** 🟡 You have two numbers for every photo: the keeper's headcount (`n_animals`) and the number of
-# boxes the team drew for it (the rows of `park_boxes` with that `image_id`). What simple comparison of
-# the two points straight at the photo with a missing box? Say it in one sentence, then run the cell.
-
-# %%
-# @title Q19 Keeper's headcount vs the team's box count per photo { display-mode: "form" }
-box_counts = park_boxes.groupby("image_id").size()
-headcount = clean_images.set_index("id")["n_animals"]
-missing_boxes = (headcount - box_counts.reindex(headcount.index, fill_value=0))
-suspects = missing_boxes[missing_boxes != 0].sort_index()
-hunt8_found = int(HUNT8_KEY["image_id"] in suspects.index)
-RESULTS["hunt8"] = {"planted": 1, "found": hunt8_found}
-print(f"{len(suspects)} photo(s) where the headcount and the box count differ:")
-for image_id, diff in suspects.items():
-    print(f"  photo {image_id}: headcount {headcount[image_id]}, boxes {int(box_counts.get(image_id, 0))} "
-          f"({'missing' if diff > 0 else 'extra'} {abs(int(diff))})")
-print(f"planted: photo {HUNT8_KEY['image_id']} ({HUNT8_KEY['n_animals']} × {HUNT8_KEY['class']}, one box "
-      f"removed) · found: {'✅' if hunt8_found else '❌'}")
-
-_rows = clean_images.set_index("id").loc[list(suspects.index)].reset_index()
-show_boxes(_rows, park_boxes, "the suspect photo(s): one animal has no box",
-           caption=lambda r: f"{r['class']} · headcount {r['n_animals']} · "
-                             f"{int(box_counts.get(r['id'], 0))} boxes")
-
-# %% [markdown]
-# <!-- callout: answer | Worked answer (Q19) -->
-# Subtract the number of boxes per photo from the keeper's headcount: one photo has
-# one box fewer than animals, and the gallery shows the animal without a frame. Two counts of the same thing
-# from two sources cost nothing, which is why annotation teams are asked for a per-image count. Section 8
-# repeats the idea between masks and boxes, and the Challenge hides another missing box among other faults.
-
 # %%
 # @title What a missing box looks like (toy drawing: headcount 3, boxes 2) { display-mode: "form" }
 fig, ax = plt.subplots(figsize=(6, 2))
@@ -578,6 +572,39 @@ ax.set_title("the toy version: keeper counted 3 · team drew 2 boxes · differen
 fig.tight_layout()
 display(fig)
 plt.close(fig)
+
+# %% [markdown]
+# **Q19.** 🟡 You have two numbers for every photo: the keeper's headcount (`n_animals`) and the number of
+# boxes the team drew for it (the rows of `park_boxes` with that `image_id`). What simple comparison of
+# the two points straight at the photo with a missing box? Say it in one sentence, then run the cell.
+
+# %%
+# @title Q19 Keeper's headcount vs the team's box count per photo { display-mode: "form" }
+box_counts = park_boxes.groupby("image_id").size()
+headcount = clean_images.set_index("id")["n_animals"]
+missing_boxes = (headcount - box_counts.reindex(headcount.index, fill_value=0))
+suspects = missing_boxes[missing_boxes != 0].sort_index()
+hunt8_found = int(HUNT8_KEY["image_id"] in suspects.index)
+RESULTS["hunt8"] = {"planted": 1, "found": hunt8_found}
+print(f"{len(suspects)} photo(s) where the headcount and the box count differ:")
+for image_id, diff in suspects.items():
+    print(f"  photo {image_id}: headcount {headcount[image_id]}, boxes {int(box_counts.get(image_id, 0))} "
+          f"({'missing' if diff > 0 else 'extra'} {abs(int(diff))})")
+
+_rows = clean_images.set_index("id").loc[list(suspects.index)].reset_index()
+show_boxes(_rows, park_boxes, "the suspect photo(s): one animal has no box",
+           caption=lambda r: f"{r['class']} · headcount {r['n_animals']} · "
+                             f"{int(box_counts.get(r['id'], 0))} boxes")
+answer_box("The answer key: the photo whose box was removed",
+           [f"planted: photo {HUNT8_KEY['image_id']} ({HUNT8_KEY['n_animals']} × {HUNT8_KEY['class']}, "
+            f"one box removed) · found by the comparison: {'✅' if hunt8_found else '❌'}"])
+
+# %% [markdown]
+# <!-- callout: answer | Worked answer (Q19) -->
+# Subtract the number of boxes per photo from the keeper's headcount: one photo has
+# one box fewer than animals, and the gallery shows the animal without a frame. Two counts of the same thing
+# from two sources cost nothing, which is why annotation teams are asked for a per-image count. Section 8
+# repeats the idea between masks and boxes, and the Challenge hides another missing box among other faults.
 
 # %% [markdown]
 # <!-- callout: pitfall | Pitfall · Counting different things across tasks -->

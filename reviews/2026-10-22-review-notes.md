@@ -41,3 +41,22 @@ Applied on `cuts/2026-10-22`. Time column ≈ 108 lab min (estimate, **not re-ti
 Not chosen: #4 (merge §1/§2) and #6 (drop "What a label costs").
 Tests: §7's six tests and the detective-beat / rabbit / 8-minute-hunt tests are replaced by C1–C4, R1 and R7 tests
 (`tests/test_cuts.py`); `tests/test_content.py` only renumbered (alert metric now requires section 04).
+
+## Sections 7–11 re-read through the review lens (same day, all applied on Simone's "go for it")
+
+| # | Problem a student would hit | Fix |
+|---|---|---|
+| R8 | §8 mask hunt: the job never stated, the five kinds only in words, suspects gallery did not mark the suspect, IoU's role unclear ("does it work for all the five checks or only some of them?") | The job stated; a toy picture of the five kinds; each check with its "suspect when" rule (IoU = check 1 only, `IOU_MIN` its one threshold); Q22 as reading steps; the flagged mask bright with a solid box, others faint (commit 66aa406) |
+| R9 | §7: no boxed photo before Q16/Q17 | Gallery of four: sheep flock (15 boxes), lone cat (1), bird flock (13 small), big horse |
+| R10 | §7 Q19 printed the planted photo openly | Into an answer toggle |
+| R11 | §7 missing-box toy drawing came after the answer | Moved above Q19 |
+| R12 | §7 IoU taught without a purpose | One line: used by the 🔴 crowding part and §8's check 1 |
+| R13 | §7 cryptic clicks sentence | Plain: masks cost far more clicks, ask for them only when outlines are needed |
+| R14 | §8: no masked photo before Q20/Q21 | Gallery of four: close-up cat (49 %), bird flock (4 %), horses' legs, sheep flock |
+| R15 | §8 Q20 answer ended on a technical aside | Cut |
+| R16 | §9 demo showed one line ("found 14 of 14") | Demo toggle: one line per kind ← check → files |
+| R17 | §9 closing line assumed students hunted | A question for the room |
+| R18 | §9 cryptic "passed every check of sections 5 to 8" | "Every problem was planted in a photo that was clean before" |
+| R19 | §10: check outputs with no hint what to look at in class | One 💡 "look at …" line under each check |
+| R20 | §10: `data/cache/my_split.csv` vanishes with the Colab session | Download/Drive instruction under check 4 and in the Takeaway |
+| R21 | §10 Q25 mixed a no-answer question with the sample question | Only the sample question (it has an answer) |

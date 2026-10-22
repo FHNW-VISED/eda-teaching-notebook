@@ -509,7 +509,7 @@ def test_row1_section_11_in_class_part_then_an_after_the_lab_block(nb):
     assert tree and card, "the folder tree and the report card stay"
     assert max(tree[0], turn, card[0]) < lab, "tree, ✏️ MY_DATASET_DIR and the report card come before it"
     after = {
-        "the dataset question": questions_matching(s11, r"what you expect for your dataset"),
+        "the dataset question": questions_matching(s11, r"which check caught each"),
         "the 'how to read' notes": [
             (i, "") for i in cells_matching(s11, r"how to read the ratio", kinds=("prose",))
         ],

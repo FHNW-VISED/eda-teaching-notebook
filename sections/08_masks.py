@@ -177,6 +177,26 @@ print(f"{len(masks)} masks on {masks['image_id'].nunique()} photos "
 masks.head(3)
 
 # %% [markdown]
+# Four photos with their masks painted, before any number: a close-up pet, a flock of small birds, horses
+# with thin legs, and a flock of sheep.
+
+# %%
+# @title Four photos with their masks: close-up pet, small birds, thin legs, a flock { display-mode: "form" }
+_mimgs = clean_images.set_index("id")
+_mper = masks.groupby("image_id").agg(n=("class", "size"), cls=("class", "first"),
+                                      px=("mask_area", "sum"))
+_mper["share"] = _mper["px"] / (_mimgs.loc[_mper.index, "width"] * _mimgs.loc[_mper.index, "height"])
+_mpicks = []
+for _cls, _how in [(["cat", "dog"], "largest share"), (["bird"], "most masks"),
+                   (["horse"], "largest share"), (["sheep", "zebra"], "most masks")]:
+    _c = _mper[_mper["cls"].isin(_cls) & ~_mper.index.isin(_mpicks)]
+    if len(_c):
+        _key = _c["share"].idxmax() if _how == "largest share" else _c["n"].idxmax()
+        _mpicks.append(_key)
+show_masks(_mimgs.loc[_mpicks].reset_index(), masks, "same photos, third unit: every pixel of every animal",
+           caption=lambda r: f"{r['class']} · animals cover {_mper.at[r['id'], 'share']:.0%} of the photo")
+
+# %% [markdown]
 # ### Pixels per class, background included
 
 # %% [markdown]
@@ -249,8 +269,7 @@ plt.close(fig)
 # Most of them: about 85 % of all pixels are background (the smoke subset gives about
 # 80 %). Bird is rare again: about 1 % of all pixels (6–7 % of the animal pixels), because most birds are far
 # away, while cat and dog come back (a pet photo is a close-up). Photos, boxes, pixels: three rankings of one
-# dataset, so "bird is rare" needs its unit. (The cell merges each photo's masks into one, so a pixel belongs
-# to at most one animal.)
+# dataset, so "bird is rare" needs its unit.
 
 # %% [markdown]
 # ### How big is a mask, and how much of its box does it fill?

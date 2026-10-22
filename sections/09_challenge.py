@@ -310,10 +310,12 @@ show_batch(batch["file"].head(12), "the first dozen files of the batch (frame = 
 # - `mask_shape(decode(rle), bbox)` (section 8): `box_iou`, `fill`, `pieces`, `holes`, `solidity`;
 # - `show_batch(names, title, annotations=True)`: look at any files, with their boxes and masks.
 #
-# The planted problems sit in photos that passed every check of sections 5 to 8 at the default settings.
+# Every problem was planted in a photo that was clean before, so each one the checks find is a planted one,
+# not a real COCO error.
 
 # %% [markdown]
-# Two collapsed cells follow: the scoring helpers, and a reference solution that prints only its score.
+# Two collapsed cells follow: the scoring helpers, and **the demo**: the ten checks run on the batch, one line
+# per kind with the files each found, in a closed toggle the presenter opens.
 
 # %%
 # @title Score helpers: check_findings, reveal_answers { display-mode: "form" }
@@ -370,7 +372,7 @@ def reveal_answers() -> None:
 
 
 # %%
-# @title Reference solution (collapsed) — open its code only if you are stuck { display-mode: "form" }
+# @title Demo: the ten checks run on the batch (open the code only if you are stuck) { display-mode: "form" }
 _REF_HASH_THRESHOLD = 8  # section 5's default
 _REF_IOU_MIN = 0.9  # section 8's default
 _TYPE_OF_COPY = {"exact": "exact duplicate", "flipped": "flipped copy", "rotated": "rotated copy",
@@ -408,8 +410,16 @@ _reference = _reference_findings()
 _reference_score = check_findings(_reference, verbose=False)
 RESULTS["challenge_reference"] = {"found": _reference_score["found"], "planted": _reference_score["planted"],
                                   "unmatched": _reference_score["unmatched"]}
-print(f"reference solution: found {_reference_score['found']} of {_reference_score['planted']} planted "
-      f"problems with {len(_reference)} findings ({_reference_score['unmatched']} false alarms)")
+_TOOL_OF = {"unreadable": "is_readable", "exact duplicate": "find_copies (MD5)",
+            "flipped copy": "find_copies (variant hashes)", "rotated copy": "find_copies (variant hashes)",
+            "recompressed copy": "find_copies (pHash)", "train/test overlap": "a copy pair + batch['split']",
+            "grayscale": "measure_image: mode / colourfulness", "wrong label": "label vs the animals' class",
+            "missing box": "headcount vs boxes", "ugly mask": "mask_shape: box IoU"}
+_demo = [f"{kind:19s} ← {_TOOL_OF[kind]:36s} {', '.join(f for f, k in _reference if k == kind) or '—'}"
+         for kind in CHALLENGE_TYPES]
+answer_box(f"Demo: what the ten checks found ({_reference_score['found']} of {_reference_score['planted']} "
+           f"planted, {_reference_score['unmatched']} false alarms)",
+           ["kind                ← check                                files"] + _demo)
 
 # %% [markdown]
 # ### 🔴 Optional · Run the hunt yourself
@@ -533,7 +543,8 @@ challenge_score = check_findings(findings)
 reveal_answers()
 
 # %% [markdown]
-# 💡 Which problems did you find by looking, and which only by comparing?
+# 💡 For the room: which of these could you have seen by scrolling through the photos, and which only by
+# comparing two sources?
 
 # %% [markdown]
 # <!-- callout: takeaway | Takeaway -->
