@@ -108,9 +108,10 @@ def mask_shape(mask: np.ndarray, bbox) -> dict:
 
 
 def show_masks(rows_df: pd.DataFrame, masks_df: pd.DataFrame, title: str, caption=None, cols: int = 4,
-               size: int = 384, mark_thin: bool = False) -> None:
+               size: int = 384, mark_thin: bool = False, highlight: dict | None = None) -> None:
     """Gallery of the photos in `rows_df` with every mask of `masks_df` (column `rle`) painted in its class
     colour and its annotated box dashed. `mark_thin=True` paints the thin parts dark.
+    `highlight={image_id: mask id}` draws that one mask bright with a solid box and fades the others.
 
     `caption(row) -> str` writes the title above each photo; by default the class and the number of masks.
     """
@@ -128,10 +129,14 @@ def show_masks(rows_df: pd.DataFrame, masks_df: pd.DataFrame, title: str, captio
         scale = thumb.width / row["width"]
         overlay = np.zeros((thumb.height, thumb.width, 4))
         own = masks_df[masks_df["image_id"] == row["id"]]
+        flagged = (highlight or {}).get(row["id"])
+        if flagged is not None:  # the flagged mask goes last, so it is painted on top
+            own = own.assign(_top=own["id"] == flagged).sort_values("_top")
         for _, m in own.iterrows():
             full = decode(m["rle"])
             small = cv2.resize(full, thumb.size, interpolation=cv2.INTER_NEAREST) > 0  # nearest: section 3
-            overlay[small] = (*mpl.colors.to_rgb(CLASS_COLORS[m["class"]]), 0.6)
+            alpha = 0.6 if flagged is None else (0.8 if m["id"] == flagged else 0.15)
+            overlay[small] = (*mpl.colors.to_rgb(CLASS_COLORS[m["class"]]), alpha)
             if mark_thin:
                 thin = cv2.resize(thin_part(full), thumb.size, interpolation=cv2.INTER_NEAREST) > 0
                 overlay[thin] = (*mpl.colors.to_rgb(INK), 0.95)
@@ -140,8 +145,12 @@ def show_masks(rows_df: pd.DataFrame, masks_df: pd.DataFrame, title: str, captio
         ax.imshow(overlay)
         for _, m in own.iterrows():
             x, y, w, h = m["bbox"]
+            if flagged is not None and m["id"] != flagged:
+                continue  # with a highlight, only the suspect's box is drawn
             ax.add_patch(mpl.patches.Rectangle((x * scale, y * scale), w * scale, h * scale, fill=False,
-                                               lw=1.5, ls="--", edgecolor=CLASS_COLORS[m["class"]]))
+                                               lw=2.5 if flagged is not None else 1.5,
+                                               ls="-" if flagged is not None else "--",
+                                               edgecolor=CLASS_COLORS[m["class"]]))
         frame(ax, CLASS_COLORS[row["class"]])
         ax.set_title(caption(row) if caption else f"{row['class']} · {len(own)} masks", fontsize=9)
     fig.suptitle(title, color=INK)
@@ -344,7 +353,8 @@ show_masks(clean_images.set_index("id").loc[list(_ends["image_id"])].reset_index
 # - **another animal's mask** pasted onto this one;
 # - **a crude polygon**: five or six clicks in a hurry.
 #
-# They hide among hundreds of real masks.
+# They hide among hundreds of real masks. **Your job is not to look through hundreds of masks.** It is to
+# know which check catches which kind (Q22), so that a script does the looking and you read its short list.
 
 # %%
 # @title Plant the hunt (five ugly masks, seeded) { display-mode: "form" }
@@ -454,13 +464,66 @@ print(f"park_masks: {len(park_masks)} animal masks on {park_masks['image_id'].nu
       "Five of them are ugly. Find them.")
 
 # %% [markdown]
-# Five checks, all computed from the mask and its annotated box. The picture below draws each on one toy mask:
+# First, what the five kinds look like. The next picture spoils one toy horse in the five ways: the grey line
+# is the real outline, the dashed box is the box the team drew from it, the coloured shape is what they sent.
+
+# %%
+# @title The five kinds of ugly mask, drawn on one toy horse { display-mode: "form" }
+def toy_horse(height: int = 60, width: int = 84) -> np.ndarray:
+    """A toy horse mask (an oval body and four legs), 0/1, used by the two toy pictures of the hunt."""
+    yy, xx = np.mgrid[0:height, 0:width]
+    horse = ((xx - 40) / 24) ** 2 + ((yy - 32) / 13) ** 2 <= 1
+    for lx in (24, 32, 46, 54):
+        horse |= (xx >= lx) & (xx < lx + 5) & (yy >= 38) & (yy < 56)
+    return horse.astype(np.uint8)
+
+
+_horse = toy_horse()
+_kx, _ky, _kw, _kh = cv2.boundingRect(_horse)  # the team's box, drawn from the real outline
+_kyy, _kxx = np.mgrid[0 : _horse.shape[0], 0 : _horse.shape[1]]
+_poly = np.array(_crude_polygon(_horse), np.int32).reshape(-1, 1, 2)
+_bite = ((_kxx - 40) ** 2 + (_kyy - 30) ** 2 <= 36).astype(np.uint8)  # a disc inside the body
+_other = (((_kxx - 66) / 13) ** 2 + ((_kyy - 18) / 9) ** 2 <= 1).astype(np.uint8)  # another animal
+_kinds = {
+    "swollen\n(drawn too generously)": cv2.dilate(_horse, np.ones((7, 7), np.uint8)),
+    "shifted\n(right outline, moved)": np.roll(_horse, (4, 9), axis=(0, 1)),
+    "chunk missing\n(a piece cut out)": _horse & (1 - _bite),
+    "another animal's mask\n(pasted here)": _other,
+    "crude polygon\n(six quick clicks)": cv2.fillPoly(np.zeros_like(_horse), [_poly], 1),
+}
+_outline, _ = cv2.findContours(_horse, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+fig, axes = plt.subplots(1, 5, figsize=(13, 2.7))
+for ax, (kind, spoiled) in zip(axes, _kinds.items(), strict=True):
+    layer = np.zeros((*_horse.shape, 4))
+    layer[spoiled > 0] = (*mpl.colors.to_rgb(CLASS_COLORS["horse"]), 0.85)
+    ax.imshow(layer)
+    for c in _outline:
+        ax.plot(c[:, 0, 0], c[:, 0, 1], color="#9AA5A8", lw=1)
+    ax.add_patch(mpl.patches.Rectangle((_kx - 0.5, _ky - 0.5), _kw, _kh, fill=False, lw=1.5, ls="--",
+                                       edgecolor=INK))
+    ax.set_xlim(-0.5, _horse.shape[1] - 0.5)
+    ax.set_ylim(_horse.shape[0] - 0.5, -0.5)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.grid(False)
+    ax.set_title(kind, fontsize=9)
+fig.suptitle("Five ways a delivered mask goes wrong (grey: real outline · dashed: the team's box)", color=INK)
+fig.tight_layout()
+display(fig)
+plt.close(fig)
+
+# %% [markdown]
+# Then the five checks, all computed from the mask and its annotated box, each with the rule that makes a mask
+# a suspect. The picture after the list draws each check on one toy mask.
 #
-# - **mask–box agreement**: the IoU (section 7) between the tight box around the mask and the annotated box;
-# - **fill ratio**: mask area / box area, from Q21;
-# - **pieces**: separate parts of the mask;
-# - **holes**: gaps fully inside the mask;
-# - **solidity**: mask area / area of its **convex hull**, the "rubber band" around the whole mask.
+# 1. **mask–box agreement** (the only check that uses IoU): draw the tightest box around the mask and compare
+#    it with the team's box; their IoU (section 7) is 1 when they match. Suspect when it is below `IOU_MIN`
+#    (0.9), **the one value you can change**.
+# 2. **fill ratio**: mask area / box area, from Q21. Suspect outside 15–95 %.
+# 3. **pieces**: separate parts of the mask. Suspect with more than 3.
+# 4. **holes**: gaps fully inside the mask. Suspect with any hole.
+# 5. **solidity**: mask area / area of its **convex hull**, the "rubber band" around the whole mask. Suspect
+#    above 0.97: a real animal has dents (between the legs, under the neck).
 #
 # <details><summary>What is normal for a real animal</summary>
 #
@@ -477,9 +540,7 @@ print(f"park_masks: {len(park_masks)} animal masks on {park_masks['image_id'].nu
 # mask_shape() that the hunt uses, so the numbers in the titles are the numbers the checks will compute.
 _H, _W = 60, 84
 _yy, _xx = np.mgrid[0:_H, 0:_W]
-_toy = ((_xx - 40) / 24) ** 2 + ((_yy - 32) / 13) ** 2 <= 1  # the body
-for _lx in (24, 32, 46, 54):  # four legs
-    _toy |= (_xx >= _lx) & (_xx < _lx + 5) & (_yy >= 38) & (_yy < 56)
+_toy = toy_horse(_H, _W).astype(bool)  # the body and four legs
 _toy |= (_xx >= 68) & (_xx < 76) & (_yy >= 30) & (_yy < 38)  # a separate piece, away from the body
 _hole = (_xx - 40) ** 2 + (_yy - 28) ** 2 <= 16
 _toy = (_toy & ~_hole).astype(np.uint8)
@@ -541,10 +602,13 @@ display(fig)
 plt.close(fig)
 
 # %% [markdown]
-# <!-- callout: your-turn | Your turn · Set the thresholds -->
-# Run the hunt with the default `IOU_MIN` first. Then set it to 0.97, rerun this cell and the Q22 cell, and
-# watch how many *real* masks join the suspects: a stricter check flags more real masks, which is more human
-# looking time. Then loosen it (0.5) and see what you lose.
+# <!-- callout: your-turn | Your turn · `IOU_MIN`, the threshold of check 1 only -->
+# `IOU_MIN` tunes **check 1 (mask–box agreement) and nothing else**; checks 2 to 5 keep their fixed rules.
+#
+# - **First run:** leave it at 0.9 and answer Q22.
+# - **After the answer key:** come back, set it to 0.97, rerun this cell, the Q22 cell and the key, and count
+#   how many *real* masks join the suspects (a stricter check costs more human looking time). Then try 0.5
+#   and see which planted mask you lose.
 
 # %%
 # ✏️ YOUR TURN
@@ -554,8 +618,17 @@ if not (isinstance(IOU_MIN, (int, float)) and 0 <= IOU_MIN <= 1):
     raise SystemExit("IOU_MIN is a number between 0 and 1.")
 
 # %% [markdown]
-# **Q22.** 🟡 Which check do you expect to catch each of the five kinds? Some kinds may trip more than one
-# check, and one check may catch none. Write five pairs (kind → check), then run and compare.
+# **Q22.** 🟡 Match each kind (first picture) to the check you expect to catch it (the numbered list):
+# write five pairs, e.g. *shifted → mask–box agreement*. Some kinds trip more than one check, and one check
+# may catch none.
+#
+# Then run the next cell and read its output in this order:
+#
+# 1. **The count per check:** how many masks each check flags. Most of them are real COCO masks, not planted.
+# 2. **The gallery of the strongest suspects** (the masks that tripped the most checks). In each photo the
+#    **bright mask with the solid box** is the suspect; the faint ones are the other animals. Its title gives
+#    the checks that fired and its numbers. For each photo, guess: planted, or a real COCO mask?
+# 3. **The answer key** below: compare it with your five pairs and your guesses.
 
 # %%
 # @title Q22 Measure every judged mask, flag the suspects, score the hunt { display-mode: "form" }
@@ -589,11 +662,18 @@ _cols = ["id", "image_id", "class", "checks", "box_iou", "fill", "pieces", "hole
 display(mask_suspects[_cols].head(12).round(2).set_index("id"))
 
 N_SUSPECTS_SHOW = 4 if SMOKE else 8  # suspect photos to show (N-014)
-_show = mask_suspects.drop_duplicates("image_id").head(N_SUSPECTS_SHOW)
-_checks_of = dict(zip(_show["image_id"], _show["checks"], strict=True))
-show_masks(clean_images.set_index("id").loc[list(_show["image_id"])].reset_index(), park_masks,
-           f"the {len(_show)} strongest suspects (as the team sent them)",
-           caption=lambda r: f"{r['class']} · {_checks_of[r['id']]}")
+_show = mask_suspects.drop_duplicates("image_id").head(N_SUSPECTS_SHOW).set_index("image_id")
+
+
+def _suspect_caption(r) -> str:
+    s = _show.loc[r["id"]]
+    return (f"photo {r['id']} · {s['class']} · {s['checks']}\n"
+            f"box IoU {s['box_iou']:.2f} · fill {s['fill']:.2f}")
+
+
+show_masks(clean_images.set_index("id").loc[list(_show.index)].reset_index(), park_masks,
+           f"the {len(_show)} strongest suspects: bright mask + solid box = suspect, faint = other animals",
+           caption=_suspect_caption, highlight=dict(zip(_show.index, _show["id"], strict=True)))
 
 # %% [markdown]
 # The answer key, closed until you open it: the five planted masks, the checks that fired, and each next to
