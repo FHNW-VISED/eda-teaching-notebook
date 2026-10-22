@@ -157,7 +157,7 @@ Time = participant minutes at lab pace. **Estimate, not re-timed:** ≈ 108 afte
     - a chunk missing;
     - a mask that belongs to another animal;
     - a crude polygon of a few vertices.
-  - Students find them with mask–box agreement (IoU of the mask's own bbox with the annotated bbox), fill ratio (mask area / box area), and pieces, holes and solidity. One ✏️ threshold, `IOU_MIN`; the other four are fixed.
+  - Students find them with mask–box agreement (IoU of the mask's own bbox with the annotated bbox), fill ratio (mask area / box area), and pieces, holes and solidity. The hunt runs with all five rules fixed (check 1 at 0.9), shown in Picture B (healthy and broken horse). One ✏️ threshold, `IOU_MIN`, in a separate "Try it" exercise after the answer key: its own cell prints masks to look at and planted caught next to the hunt's 0.9.
   - Note: COCO has real poor masks too; students may find genuine ones.
 - **09 Data-centric AI in practice: the Challenge**
   - A 📘 Theory Callout on data-centric AI (fix the data before the model) introduces it.

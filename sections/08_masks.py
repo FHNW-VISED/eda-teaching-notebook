@@ -490,8 +490,9 @@ print(f"park_masks: {len(park_masks)} animal masks on {park_masks['image_id'].nu
       "Five of them are ugly. Find them.")
 
 # %% [markdown]
-# First, what the five kinds look like. The next picture spoils one toy horse in the five ways: the grey line
-# is the real outline, the dashed box is the box the team drew from it, the coloured shape is what they sent.
+# **Picture A · Five ways a delivered mask goes wrong.** The next picture spoils one toy horse in the five
+# ways: the grey line is the real outline, the dashed box is the box the team drew from it, the coloured shape
+# is what they sent.
 
 # %%
 # @title The five kinds of ugly mask, drawn on one toy horse { display-mode: "form" }
@@ -533,14 +534,16 @@ for ax, (kind, spoiled) in zip(axes, _kinds.items(), strict=True):
     ax.set_yticks([])
     ax.grid(False)
     ax.set_title(kind, fontsize=9)
-fig.suptitle("Five ways a delivered mask goes wrong (grey: real outline · dashed: the team's box)", color=INK)
+fig.suptitle("Picture A · Five ways a delivered mask goes wrong "
+             "(grey: real outline · dashed: the team's box)", color=INK)
 fig.tight_layout()
 display(fig)
 plt.close(fig)
 
 # %% [markdown]
-# Then the five checks, all computed from the mask and its annotated box, each with the rule that makes a mask
-# a suspect. The picture after the list measures them on the **healthy** horse, so you see the normal values.
+# **Picture B · The five checks.** Each is computed from the mask and its annotated box, with the rule that
+# makes a mask a suspect. Picture B measures them twice: on the healthy horse (top row) and on one broken
+# horse (bottom row: a hole, a stray piece, a box drawn a bit off), so you see what each check reacts to.
 #
 # 1. **mask–box agreement** (the only check that uses IoU): draw the tightest box around the mask and compare
 #    it with the team's box; their IoU (section 7) is 1 when they match. Suspect when it is below `IOU_MIN`
@@ -561,13 +564,25 @@ plt.close(fig)
 # </details>
 
 # %%
-# @title The five checks measured on the healthy toy horse, with their normal ranges { display-mode: "form" }
-# The healthy horse of the first picture (its grey outline there) and the box drawn from it, measured with the
-# same mask_shape() the hunt uses: the normal values. A spoiled mask is a suspect when one leaves its range.
+# @title Picture B · The five checks on a healthy and on a broken horse { display-mode: "form" }
+# Top: the healthy horse of Picture A and the box drawn from it. Bottom: one broken horse (a hole, a stray
+# piece, a box drawn a bit off). Both measured with the same mask_shape() the hunt uses.
 _H, _W = 60, 84
-_toy = toy_horse(_H, _W)
-_box = cv2.boundingRect(_toy)  # the team's box, drawn from the real outline
-_s = mask_shape(_toy, _box)
+_yy, _xx = np.mgrid[0:_H, 0:_W]
+_healthy = toy_horse(_H, _W)
+_hole = (_xx - 40) ** 2 + (_yy - 28) ** 2 <= 16
+_piece = (_xx >= 68) & (_xx < 76) & (_yy >= 30) & (_yy < 38)
+_broken = ((_healthy.astype(bool) | _piece) & ~_hole).astype(np.uint8)
+_rows = {"healthy": (_healthy, cv2.boundingRect(_healthy)), "broken": (_broken, None)}
+_tx, _ty, _tw, _th = cv2.boundingRect(_broken)
+_rows["broken"] = (_broken, (_tx + 5, _ty + 3, _tw, _th))  # the team's box, a bit off
+_CHECK_RULES = [  # (title, rule text, value key, is it suspect?)
+    ("1 · mask–box agreement (IoU)", "suspect below 0.9", "box_iou", lambda v: v < 0.9),
+    ("2 · fill = mask ÷ box", "suspect outside 0.15–0.95", "fill", lambda v: not 0.15 <= v <= 0.95),
+    ("3 · pieces", "suspect above 3", "pieces", lambda v: v > 3),
+    ("4 · holes", "suspect with any hole", "holes", lambda v: v > 0),
+    ("5 · solidity = mask ÷ rubber band", "suspect above 0.97 (no dents)", "solidity", lambda v: v > 0.97),
+]
 
 
 def _layer(mask, color, alpha):
@@ -576,41 +591,54 @@ def _layer(mask, color, alpha):
     return out
 
 
-_contours, _ = cv2.findContours(_toy, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-_hull = cv2.convexHull(np.vstack(_contours))[:, 0, :]
-_titles = [
-    f"1 · mask-box agreement (IoU)\nhere {_s['box_iou']:.2f}\nsuspect below 0.9",
-    f"2 · fill = mask ÷ box\nhere {_s['fill']:.2f}\nsuspect outside 0.15–0.95",
-    f"3 · pieces\nhere {_s['pieces']}\nsuspect above 3",
-    f"4 · holes\nhere {_s['holes']}\nsuspect with any hole",
-    f"5 · solidity = mask ÷ rubber band\nhere {_s['solidity']:.2f}\nsuspect above 0.97 (no dents)",
-]
-fig, axes = plt.subplots(1, 5, figsize=(13, 3.1))
-for k, ax in enumerate(axes):
-    ax.imshow(_layer(_toy, CLASS_COLORS["horse"], 0.85))
-    if k in (0, 1):  # the box the team drew (and, for check 1, the mask's own tight box on top of it)
-        ax.add_patch(mpl.patches.Rectangle((_box[0] - 0.5, _box[1] - 0.5), _box[2], _box[3], fill=False, lw=2,
-                                           ls="--", edgecolor=INK))
-    if k == 4:  # the rubber band around the whole mask
-        ax.add_patch(mpl.patches.Polygon(_hull, closed=True, fill=False, lw=2, ls="--", edgecolor=INK))
-    ax.set_title(_titles[k], fontsize=8)
-    ax.set_xlim(-0.5, _W - 0.5)
-    ax.set_ylim(_H - 0.5, -0.5)
-    ax.set_xticks([])
-    ax.set_yticks([])
-    ax.grid(False)
-fig.suptitle("The five checks on the healthy horse: its numbers are normal. Which spoiled horse would push "
-             "which number out of range?", color=INK, fontsize=10)
+fig, axes = plt.subplots(2, 5, figsize=(13, 5.6))
+for r, (row_name, (mask, box)) in enumerate(_rows.items()):
+    shape = mask_shape(mask, box)
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    hull = cv2.convexHull(np.vstack(contours))[:, 0, :]
+    n_parts, parts = cv2.connectedComponents(mask, connectivity=8)
+    main = max(range(1, n_parts), key=lambda k: int((parts == k).sum()))
+    own = cv2.boundingRect(mask)
+    for k, (name, rule, key, is_suspect) in enumerate(_CHECK_RULES):
+        ax = axes[r, k]
+        ax.imshow(_layer(mask, CLASS_COLORS["horse"], 0.85))
+        if k == 0:  # the mask's own tight box (solid) against the box the team drew (dashed)
+            ax.add_patch(mpl.patches.Rectangle((own[0] - 0.5, own[1] - 0.5), own[2], own[3], fill=False, lw=2,
+                                               edgecolor=INK))
+        if k in (0, 1):
+            ax.add_patch(mpl.patches.Rectangle((box[0] - 0.5, box[1] - 0.5), box[2], box[3], fill=False, lw=2,
+                                               ls="--", edgecolor=CLASS_COLORS["sheep"]))
+        if k == 2:  # extra pieces in dark
+            ax.imshow(_layer((parts > 0) & (parts != main), INK, 1.0))
+        if k == 3 and row_name == "broken":
+            ax.imshow(_layer(_hole, INK, 1.0))
+        if k == 4:
+            ax.add_patch(mpl.patches.Polygon(hull, closed=True, fill=False, lw=2, ls="--", edgecolor=INK))
+        value = shape[key]
+        bad = is_suspect(value)
+        shown = f"{value:.2f}" if isinstance(value, float) else f"{value}"
+        verdict = f"{row_name}: {shown} → {'SUSPECT' if bad else 'normal'}"
+        ax.set_title((f"{name}\n{rule}\n" if r == 0 else "") + verdict, fontsize=8,
+                     color="#B03A2E" if bad else "#1E7B6E")
+        ax.set_xlim(-0.5, _W - 0.5)
+        ax.set_ylim(_H - 0.5, -0.5)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.grid(False)
+    axes[r, 0].set_ylabel(row_name, fontsize=10, color=INK)
+fig.suptitle("Picture B · The five checks: healthy horse (top), broken horse (bottom) "
+             "· solid box: the mask's own · dashed: the team's", color=INK, fontsize=10)
 fig.tight_layout()
 display(fig)
 plt.close(fig)
 
 # %% [markdown]
-# **Q22.** 🟡 Match each kind (first picture) to the check you expect to catch it: imagine each spoiled
-# horse measured like the healthy one above, and ask which number leaves its normal range. Write five pairs
-# in the form *kind → check*. Some kinds trip more than one check, and one check may catch none.
+# **Q22.** 🟡 Match each kind in **Picture A** (the five spoiled horses) to the check in **Picture B** you
+# expect to catch it: which of Picture B's numbers would that spoiled horse push into SUSPECT? Write five
+# pairs in the form *kind → check*. Some kinds trip more than one check, and one check may catch none.
 #
-# Then run the hunt (the cell after the ✏️ box) and read its output in this order:
+# Then run the hunt (the next cell; it uses the five rules exactly as in Picture B) and read its output in
+# this order:
 #
 # 1. **The count per check:** how many masks each check flags. Most of them are real COCO masks, not planted.
 # 2. **The gallery of the strongest suspects** (the masks that tripped the most checks). In each photo the
@@ -618,24 +646,9 @@ plt.close(fig)
 #    the checks that fired and its numbers. For each photo, guess: planted, or a real COCO mask?
 # 3. **The answer key** below: compare it with your five pairs and your guesses.
 
-# %% [markdown]
-# <!-- callout: your-turn | Your turn · `IOU_MIN`, the threshold of check 1 only -->
-# `IOU_MIN` tunes **check 1 (mask–box agreement) and nothing else**; checks 2 to 5 keep their fixed rules.
-#
-# - **First run:** leave it at 0.9 and answer Q22.
-# - **After the answer key:** come back, set it to 0.97, rerun this cell, the Q22 cell and the key, and count
-#   how many *real* masks join the suspects (a stricter check costs more human looking time). Then try 0.5
-#   and see which planted mask you lose.
-
-# %%
-# ✏️ YOUR TURN
-IOU_MIN = 0.9  # suspect when the mask's own box overlaps the annotated box less than this (IoU, 0–1)
-
-if not (isinstance(IOU_MIN, (int, float)) and 0 <= IOU_MIN <= 1):
-    raise SystemExit("IOU_MIN is a number between 0 and 1.")
-
 # %%
 # @title Q22 Measure every judged mask, flag the suspects, score the hunt { display-mode: "form" }
+BOX_IOU_MIN = 0.9  # check 1: suspect when the mask's own box overlaps the annotated box less than this
 FILL_RANGE = (0.15, 0.95)  # suspect when mask area / box area is outside this range
 MAX_PIECES = 3  # suspect with more separate pieces than this
 MAX_HOLES = 0  # suspect with more holes than this
@@ -645,13 +658,23 @@ _judge = park_masks[park_masks["mask_area"] >= MIN_JUDGED_AREA].reset_index(drop
 park_shape = pd.concat([_judge, pd.DataFrame([mask_shape(decode(r), b)
                                               for r, b in zip(_judge["rle"], _judge["bbox"], strict=True)])],
                        axis=1)
-CHECKS = {
-    "box IoU": park_shape["box_iou"] < IOU_MIN,
-    "fill": (park_shape["fill"] < FILL_RANGE[0]) | (park_shape["fill"] > FILL_RANGE[1]),
-    "pieces": park_shape["pieces"] > MAX_PIECES,
-    "holes": park_shape["holes"] > MAX_HOLES,
-    "solidity": park_shape["solidity"] > SOLIDITY_MAX,
-}
+
+
+def run_checks(shape: pd.DataFrame, box_iou_min: float) -> dict[str, pd.Series]:
+    """The five checks as {name: True where a mask is a suspect}; only check 1's threshold is a parameter.
+
+    e.g. run_checks(park_shape, 0.9)["holes"] → a True/False Series, one value per judged mask
+    """
+    return {
+        "box IoU": shape["box_iou"] < box_iou_min,
+        "fill": (shape["fill"] < FILL_RANGE[0]) | (shape["fill"] > FILL_RANGE[1]),
+        "pieces": shape["pieces"] > MAX_PIECES,
+        "holes": shape["holes"] > MAX_HOLES,
+        "solidity": shape["solidity"] > SOLIDITY_MAX,
+    }
+
+
+CHECKS = run_checks(park_shape, BOX_IOU_MIN)
 park_shape["checks"] = [", ".join(name for name, hit in CHECKS.items() if hit.iloc[i])
                         for i in range(len(park_shape))]
 mask_suspects = park_shape[park_shape["checks"] != ""].copy()
@@ -737,6 +760,50 @@ answer_box("The answer key: the five planted masks, the checks that fired, origi
 #
 # Pieces catches none of the five, but flags real animals broken up by a fence or a branch. On a different
 # seed, a kind may trip one check more or less: read the `checks` column of your own run.
+
+# %% [markdown]
+# ### Try it: how strict should check 1 be?
+#
+# Every check has a threshold, and choosing it is a trade: stricter catches more, but also hands a person more
+# real masks to look at. Try it on check 1, the mask–box agreement.
+
+# %% [markdown]
+# <!-- callout: your-turn | Your turn · `IOU_MIN`, the threshold of check 1 -->
+# Set `IOU_MIN`, then run the cell under it. It reruns the five checks with your value (checks 2 to 5 keep
+# their rules) and prints it next to the hunt's 0.9: how many masks a person must look at, and how many of
+# the five planted masks are still caught. Try **0.97** (stricter), then **0.5** (looser).
+
+# %%
+# ✏️ YOUR TURN
+IOU_MIN = 0.97  # check 1: suspect when the mask's own box overlaps the annotated box less than this (0–1)
+
+if not (isinstance(IOU_MIN, (int, float)) and 0 <= IOU_MIN <= 1):
+    raise SystemExit("IOU_MIN is a number between 0 and 1.")
+
+# %%
+# @title Check 1 at your IOU_MIN, next to the hunt's 0.9 { display-mode: "form" }
+_planted = set(HUNT9_KEY["ann_id"])
+_kind_of = dict(zip(HUNT9_KEY["ann_id"], HUNT9_KEY["kind"], strict=True))
+print(f"{'IOU_MIN':>8} · {'masks to look at':>16} · {'real COCO masks':>15} · planted caught · "
+      "planted missed")
+for _value in dict.fromkeys([BOX_IOU_MIN, IOU_MIN]):
+    _hits = run_checks(park_shape, _value)
+    _any = pd.concat(_hits, axis=1).any(axis=1)
+    _ids = set(park_shape.loc[_any, "id"])
+    _missed = sorted(_kind_of[i] for i in _planted - _ids)
+    _caught = f"{len(_planted & _ids)} of {len(_planted)}"
+    print(f"{_value:>8} · {len(_ids):>16} · {len(_ids - _planted):>15} · {_caught:>14} · "
+          f"{', '.join(_missed) or 'none'}" + ("   ← the hunt" if _value == BOX_IOU_MIN else ""))
+
+# %% [markdown]
+# <!-- callout: answer | Worked answer (IOU_MIN) -->
+# - **0.97 (stricter):** the same five planted masks, plus many more real ones to look at: real masks rarely
+#   match their box to 97 %, so a person spends more time for no extra catch.
+# - **0.5 (looser):** fewer masks to look at, but the **shifted** mask slips through: moved by 15 px it still
+#   overlaps its box by about two thirds, and its other numbers are normal. The swollen one is still caught,
+#   by fill (it fills more than its box).
+# - **The habit:** pick a threshold by counting both columns, what you catch and what a person must check,
+#   on data where you planted the answer.
 
 # %% [markdown]
 # <!-- callout: go-deeper | Go deeper · COCO's own masks are not clean -->
