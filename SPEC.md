@@ -87,19 +87,19 @@ Time = participant minutes (~110 total; Susanne may cut sections 1 and the 🔴 
 
 | # | File | Title | Objective (one line) | Level | Time | Status |
 |---|---|---|---|---|---|---|
-| 0 | sections/00_setup.py | Setup & the park | Run setup, meet the park, see the three outcomes | 🟢 | 5 | todo |
-| 1 | sections/01_image_datasets.py | Image datasets | Know where datasets come from and what makes a good one | 🟢 | 5 | todo |
-| 2 | sections/02_become_one.py | Become one with the data 🧾 | Look at many images before computing anything | 🟢 | 8 | todo |
-| 3 | sections/03_image_inspection.py | Image inspection 🧾 | Measure sizes, aspect ratios, colour modes and colour statistics | 🟢🟡 | 8 | todo |
-| 4 | sections/04_labels_distribution.py | Labels & class distribution 🧾 | Count classes and see why imbalance matters for the dog alert | 🟢🟡 | 8 | todo |
-| 5 | sections/05_errors_cleaning.py | Common dataset errors & cleaning 🧾 | Find duplicates, flipped/rotated copies, broken files and suspicious labels; produce a cleaned dataset | 🟡 | 15 | todo |
-| 6 | sections/06_splits_leakage.py | Splits & leakage | Choose a split that does not leak, and understand cross-validation | 🟡 | 12 | todo |
-| 7 | sections/07_metrics.py | Metrics for the park | Pick the metric that matches the use case | 🟡 | 7 | todo |
-| 8 | sections/08_boxes.py | Same data, boxes | See what imbalance, size, position and label quality mean for detection | 🟡 | 10 | todo |
-| 9 | sections/09_masks.py | Same data, masks | See what they mean for segmentation; find ugly masks | 🟡 | 10 | todo |
-| 10 | sections/10_challenge.py | Data-centric AI in practice: the Challenge | Find the planted problems in a new batch with the tools learned | 🟡🔴 | 15 | todo |
-| 11 | sections/11_your_dataset.py | Your project dataset | Run the checklist on your own folder-per-class dataset | 🟢 | 5 | todo |
-| 12 | sections/12_wrap_up.py | Wrap-up & next week | Takeaways and where to go next | 🟢 | 2 | todo |
+| 0 | sections/00_setup.py | Setup & the park | Run setup, meet the park, see the three outcomes | 🟢 | 5 | done |
+| 1 | sections/01_image_datasets.py | Image datasets | Know where datasets come from and what makes a good one | 🟢 | 5 | done |
+| 2 | sections/02_become_one.py | Become one with the data 🧾 | Look at many images before computing anything | 🟢 | 8 | done |
+| 3 | sections/03_image_inspection.py | Image inspection 🧾 | Measure sizes, aspect ratios, colour modes and colour statistics | 🟢🟡 | 8 | done |
+| 4 | sections/04_labels_distribution.py | Labels & class distribution 🧾 | Count classes and see why imbalance matters for the dog alert | 🟢🟡 | 8 | done |
+| 5 | sections/05_errors_cleaning.py | Common dataset errors & cleaning 🧾 | Find duplicates, flipped/rotated copies, broken files and suspicious labels; produce a cleaned dataset | 🟡 | 15 | done |
+| 6 | sections/06_splits_leakage.py | Splits & leakage | Choose a split that does not leak, and understand cross-validation | 🟡 | 12 | done |
+| 7 | sections/07_metrics.py | Metrics for the park | Pick the metric that matches the use case | 🟡 | 7 | done |
+| 8 | sections/08_boxes.py | Same data, boxes | See what imbalance, size, position and label quality mean for detection | 🟡 | 10 | done |
+| 9 | sections/09_masks.py | Same data, masks | See what they mean for segmentation; find ugly masks | 🟡 | 10 | done |
+| 10 | sections/10_challenge.py | Data-centric AI in practice: the Challenge | Find the planted problems in a new batch with the tools learned | 🟡🔴 | 15 | done |
+| 11 | sections/11_your_dataset.py | Your project dataset | Run the checklist on your own folder-per-class dataset | 🟢 | 5 | done |
+| 12 | sections/12_wrap_up.py | Wrap-up & next week | Takeaways and where to go next | 🟢 | 2 | done |
 
 ### Section contents
 - **00 Setup & the park**
