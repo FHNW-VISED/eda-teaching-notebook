@@ -1,5 +1,5 @@
 # %% [markdown]
-# ## 12. Wrap-up & next week
+# ## 11. Wrap-up & next week
 
 # %% [markdown]
 # <!-- callout: objective | Objective -->
@@ -31,8 +31,8 @@ recap = {
     "3 · Split, metric, and the three tasks": [
         f"test photos with a burst sibling in train: random split {RESULTS['sibling_rate_random']:.0%}, "
         f"split by camera {RESULTS['sibling_rate_by_camera']:.0%}",
-        f"prepared predictions: accuracy {RESULTS['accuracy']:.0%}, "
-        f"recall on dog {RESULTS['recall_dog']:.0%}",
+        f"'always sheep' on a paddock week: accuracy {RESULTS['accuracy']:.0%}, "
+        f"recall on dog {RESULTS['recall_dog']:.0%} → the alert is judged on {RESULTS['alert_metric']}",
         f"bird: {_photos['bird'] / sum(_photos.values()):.0%} of photos, "
         f"{_boxes['bird'] / sum(_boxes.values()):.0%} of boxes, {_pixels['bird']:.0%} of pixels",
     ],
@@ -44,30 +44,43 @@ for outcome, lines in recap.items():
 
 # %% [markdown]
 # 💡 Every line is a decision you can now defend: what to fix, how to split, what to measure, and in which
-# unit (photo, box or pixel) to count. In smoke mode the numbers are tiny; the full run gives the park's real
-# ones.
+# unit (photo, box or pixel) to count.
+#
+# <details><summary>About the numbers</summary>
+#
+# In smoke mode the numbers are tiny; the full run gives the park's real ones.
+#
+# </details>
 
 # %% [markdown]
 # <!-- callout: takeaway | Takeaways -->
 # You can now do the three things from the banner:
 #
 # - **1 · Inspect.** **When you see** a new image dataset → **do** look at many photos before computing
-#   anything, then measure sizes, modes, colours and class counts. An outlier points at a bug; a photo the
-#   park's camera would never take points at a poor fit.
+#   anything, then measure sizes, modes, colours and class counts.
 # - **2 · Fix errors.** **When you see** files that may be the same photo → **do** hash the files for exact
-#   copies and the pixels (with flipped and rotated variants) for near copies, open every file once, and let
-#   a human judge the least typical labels and the ugliest masks. Write down "removed N, kept M".
+#   copies and the pixels for near copies, and write down "removed N, kept M".
 # - **3 · Split and measure.** **When you see** photos tied together by a camera or a burst → **do**
-#   deduplicate, then split by that group. Pick the metric from the expensive mistake: recall on dog for the
-#   paddock alert, counting error for the headcount, IoU per class for the outlines. Always say what you
-#   count: photos, boxes or pixels.
+#   deduplicate, then split by that group. Always say what you count: photos, boxes or pixels.
+#
+# <details><summary>How to do each step, with examples</summary>
+#
+# - **1 · Inspect:** an outlier points at a bug; a photo the park's camera would never take points
+#   at a poor fit.
+# - **2 · Fix errors:** flipped and rotated variants are near copies too, so hash the pixels as well
+#   as the bytes;
+#   open every file once, and let a human judge the least typical labels and the ugliest masks.
+# - **3 · Split and measure:** pick the metric from the expensive mistake: recall on dog for the
+#   paddock alert, counting error for the headcount, IoU per class for the outlines.
+#
+# </details>
 
 # %% [markdown]
 # ### Next week: training
 #
 # The cleaned table and the split go into a model: first a dumb end-to-end baseline, then a model that
 # overfits, then regularisation (Karpathy's recipe, continued). **Bring along** your answers to the guiding
-# questions of section 11 and your split (`data/cache/my_split.csv`, or the one you choose by hand).
+# questions of section 10 and your split (`data/cache/my_split.csv`, or the one you choose by hand).
 
 # %% [markdown]
 # <!-- callout: go-deeper | Go deeper · Augmentation and experiment tracking -->

@@ -4,7 +4,7 @@
 
 # %% [markdown]
 # <!-- callout: objective | Objective -->
-# Run the setup once, meet the park, and see the three things you will be able to do at the end.
+# Run the setup once, meet the park, and see what you will be able to do at the end.
 
 # %% [markdown]
 # <!-- callout: banner | Know Your Data: Exploring and Preparing Image Datasets at the Wildwood Farm Park -->
@@ -19,10 +19,15 @@
 # Questions are marked 🟢 beginner · 🟡 intermediate · 🔴 advanced (optional).
 
 # %% [markdown]
-# **Run the next three cells now, one after the other, and read on while they work.** The first installs
-# the one package Colab lacks, fixes the random seed, sets the colours and defines `use()`, the helper that
-# lets you write small functions without ever blocking "Run all". The last downloads the Play Dataset
-# (about 115 MB): **a minute or two the first time**, instant after that.
+# **Run the next three cells now, in order, and read on while they work.** The last downloads the
+# Play Dataset (about 115 MB): **a minute or two the first time**, instant after that.
+#
+# <details><summary>What the three cells do</summary>
+#
+# The first installs the one package Colab lacks, fixes the random seed, sets the colours and defines `use()`,
+# the helper that lets you write small functions without ever blocking "Run all".
+#
+# </details>
 
 # %%
 # @title Setup (run me first) { display-mode: "form" }
@@ -162,6 +167,38 @@ def use(fn, *args, reference, **kwargs):
     else:
         print(f"❌ {name} differs from the reference: {_diff(mine, expected)} · using the reference.")
     return expected
+
+
+# --- answer_box(): a worked answer computed at runtime, closed until opened (N-024, SPEC L-005) ---
+ANSWER_BG, ANSWER_INK = "#F6EFE4", "#5C4027"  # the build's `answer` callout colours
+
+
+def answer_box(title, lines=(), fig=None, table=None):
+    """Draw a collapsed 💡 toggle holding printed lines, a DataFrame and/or matplotlib figure(s)."""
+    import base64
+    import html
+    import io
+
+    from IPython.display import HTML, display
+
+    parts = []
+    if lines:
+        text = html.escape("\n".join(lines))
+        parts.append(f'<pre style="white-space:pre-wrap;margin:6px 0 0 0;font-size:0.92em;">{text}</pre>')
+    if table is not None:
+        parts.append(table.to_html(border=0))
+    for f in fig if isinstance(fig, (list, tuple)) else [fig]:
+        if f is None:
+            continue
+        buf = io.BytesIO()
+        f.savefig(buf, format="png", bbox_inches="tight")
+        plt.close(f)
+        png = base64.b64encode(buf.getvalue()).decode()
+        parts.append(f'<img src="data:image/png;base64,{png}" style="max-width:100%;margin-top:6px;">')
+    box = (f"background:{ANSWER_BG};color:{ANSWER_INK};border-left:6px solid {ANSWER_INK};border-radius:6px;"
+           "padding:12px 14px;line-height:1.5;font-size:14px;width:100%;box-sizing:border-box;margin:2px 0;")
+    display(HTML(f'<div style="{box}"><details style="margin:0;"><summary style="cursor:pointer;'
+                 f'font-weight:bold;">💡 {html.escape(title)}</summary>{"".join(parts)}</details></div>'))
 
 
 print(f"Colab: {IN_COLAB} · smoke mode: {SMOKE} · seed: {SEED} · imagehash: ", end="")
@@ -320,15 +357,20 @@ images.drop(columns="license").head()  # the licence column stays in the table, 
 
 # %% [markdown]
 # <!-- callout: theory | Before you start -->
-# - A Google account (this notebook runs in Colab, a CPU runtime is enough), Python basics and the lecture
-#   on image datasets. No model is trained here; that is next week.
+# - A Google account and Python basics. No model is trained here; that is next week.
 # - When a question says *predict* or *guess*, say or think your answer **before** you run the cell. You do
 #   not need to type it.
-# - Bring your project dataset as one folder per class (section 11): mount Google Drive or upload a zip
+#
+# <details><summary>Your project dataset, and the Karpathy reference</summary>
+#
+# - The notebook runs in Colab, where a CPU runtime is enough, and assumes the lecture on image datasets.
+# - Bring your project dataset as one folder per class (section 10): mount Google Drive or upload a zip
 #   there.
 # - The notebook follows the first part of Karpathy's
 #   [*A Recipe for Training Neural Networks*](https://karpathy.github.io/2019/04/25/recipe/): know your data
 #   before you touch a model.
+#
+# </details>
 
 # %% [markdown]
 # <!-- callout: theory | The Wildwood Farm Park and what it wants from its cameras -->
@@ -337,25 +379,42 @@ images.drop(columns="license").head()  # the licence column stays in the table, 
 #
 # 1. **Recognise** (classification): who is in front of this camera? **A dog in the sheep paddock** triggers
 #    an alert; missing that dog is worse than a false alarm.
-# 2. **Count** (detection): a daily headcount of sheep, zebras and birds. Far-away birds are tiny.
-# 3. **Outline** (segmentation): how much of each enclosure each animal uses. Birds cover few pixels.
+# 2. **Count** (detection): a daily headcount of sheep, zebras and birds.
+# 3. **Outline** (segmentation): how much of each enclosure each animal uses.
+#
+# <details><summary>How big the birds are</summary>
+#
+# Far-away birds are tiny. Birds cover few pixels.
+#
+# </details>
 
 # %% [markdown]
 # The park has no training data yet, so we practise on a **Play Dataset**: COCO 2017 photos of the same six
-# animals, each photo showing one animal class. The cell above gave you two tables: `images` (one row per
-# photo: size, class, number of animals) and `annotations` (one row per animal: its box and mask).
+# animals, each photo showing one animal class.
+#
+# <details><summary>The two tables, and several animals per photo</summary>
+#
+# The cell above gave you two tables: `images` (one row per photo: size, class, number of animals) and
+# `annotations` (one row per animal: its box and mask).
 #
 # Several photos hold more than one animal (`n_animals`), which hints at a question in section 4. Everything
-# you learn here is a checklist you will reuse on your own dataset in section 11.
+# you learn here is a checklist you will reuse on your own dataset in section 10.
+#
+# </details>
 
 # %% [markdown]
 # ### How the ✍️ cells work
 #
-# About four times you write a small function. Each comes with its signature and a
-# `use(my_function, …, reference=…)` line that compares your result with the reference solution and then
-# continues with the reference, so a wrong or unfinished function never stops the notebook.
-# **Run the reference cell first**, then the stub as is; then fill in the body and run it again to see the
-# message change.
+# About four times you write a small function. **Run the reference cell first**, then the stub as is; then
+# fill in the body and run it again to see the message change. A wrong or unfinished function never stops
+# the notebook.
+#
+# <details><summary>What each ✍️ cell comes with</summary>
+#
+# Each comes with its signature and a `use(my_function, …, reference=…)` line that compares your result with
+# the reference solution and then continues with the reference.
+#
+# </details>
 
 # %%
 # @title Reference solution — run this cell; open it only if you are stuck { display-mode: "form" }
@@ -366,7 +425,10 @@ def _ref_double(x):
 # %%
 # ✍️ YOUR CODE
 def double(x):
-    """Return twice x."""
+    """Return twice x.
+
+    e.g. double(21) → 42
+    """
     ...
 
 
