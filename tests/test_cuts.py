@@ -573,3 +573,13 @@ def test_c4_dedupe_before_split_is_said_once(nb):
 def test_r7_trail_camera_bursts_draw_the_animals_box(nb):
     src = "\n".join(c.source for c in section(nb, 6))
     assert "def draw_cct_boxes" in src and src.count("draw_cct_boxes(ax, row, thumb)") >= 2
+
+
+def test_r23_picture_b_text_is_a_name_a_rule_and_a_verdict(nb):
+    cells = [c for c in section(nb, 8) if c.cell_type == "code" and "@title Picture B" in c.source]
+    assert len(cells) == 1, "one Picture B cell in section 8"
+    src = cells[0].source
+    suptitle = re.search(r"fig\.suptitle\((.*?)\)\n", src, re.S).group(1)
+    assert "healthy horse (top), broken horse (bottom)" in suptitle and "solid" not in suptitle
+    assert "solid: tightest box around the mask" in src and "dashed: the box the team drew" in src
+    assert "→" not in src, "the verdict is a word in the panel, not a 'value → verdict' title"

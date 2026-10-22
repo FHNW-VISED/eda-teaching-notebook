@@ -93,3 +93,13 @@ then silently ran on the park sample.
 
 Low items (empty "Exact duplicates" heading, the Challenge's two keys, "checks that claim", a lint for forward
 references) are proposed, not applied. Forward question references after the pass: none.
+
+## Picture B's text (R23)
+
+Simone, on a screenshot of §8 Picture B: *"wtf I do not understand what the description you added is for"*. The
+figure was right; the text was not: three 8-pt lines over every panel, and a suptitle legend ("solid box: the
+mask's own · dashed: the team's") that only concerned column 1, in jargon. Now: column title = the check's name
+(13 pt); one line under each column with its rule; a large green **normal** / red **SUSPECT** inside each panel
+with the value small beside it; plain legends only where a line needs one (column 1: "solid: tightest box around
+the mask · dashed: the box the team drew"; column 5: "dashed: the rubber band"); suptitle names the two rows only.
+Pinned by `test_r23_picture_b_text_is_a_name_a_rule_and_a_verdict`.

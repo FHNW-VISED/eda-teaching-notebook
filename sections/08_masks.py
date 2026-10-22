@@ -576,13 +576,16 @@ _broken = ((_healthy.astype(bool) | _piece) & ~_hole).astype(np.uint8)
 _rows = {"healthy": (_healthy, cv2.boundingRect(_healthy)), "broken": (_broken, None)}
 _tx, _ty, _tw, _th = cv2.boundingRect(_broken)
 _rows["broken"] = (_broken, (_tx + 5, _ty + 3, _tw, _th))  # the team's box, a bit off
-_CHECK_RULES = [  # (title, rule text, value key, is it suspect?)
-    ("1 · mask–box agreement (IoU)", "suspect below 0.9", "box_iou", lambda v: v < 0.9),
-    ("2 · fill = mask ÷ box", "suspect outside 0.15–0.95", "fill", lambda v: not 0.15 <= v <= 0.95),
-    ("3 · pieces", "suspect above 3", "pieces", lambda v: v > 3),
-    ("4 · holes", "suspect with any hole", "holes", lambda v: v > 0),
-    ("5 · solidity = mask ÷ rubber band", "suspect above 0.97 (no dents)", "solidity", lambda v: v > 0.97),
+_CHECK_RULES = [  # (check name, its rule, value key, is it suspect?, how the value is shown)
+    ("1 · Mask–box agreement", "suspect below 0.9", "box_iou", lambda v: v < 0.9, "IoU {:.2f}".format),
+    ("2 · Fill", "suspect outside 0.15–0.95", "fill", lambda v: not 0.15 <= v <= 0.95, "fill {:.2f}".format),
+    ("3 · Pieces", "suspect above 3", "pieces", lambda v: v > 3, lambda v: f"{v} piece" + "s" * (v != 1)),
+    ("4 · Holes", "suspect with any hole", "holes", lambda v: v > 0, lambda v: f"{v} hole" + "s" * (v != 1)),
+    ("5 · Solidity", "suspect above 0.97", "solidity", lambda v: v > 0.97, "solidity {:.2f}".format),
 ]
+_UNDER = {0: "solid: tightest box around the mask\ndashed: the box the team drew",
+          4: "dashed: the rubber band"}
+_RED, _GREEN, _GREY = "#B03A2E", "#1E7B6E", "#6B7B80"
 
 
 def _layer(mask, color, alpha):
@@ -591,7 +594,7 @@ def _layer(mask, color, alpha):
     return out
 
 
-fig, axes = plt.subplots(2, 5, figsize=(13, 5.6))
+fig, axes = plt.subplots(2, 5, figsize=(13, 6.2))
 for r, (row_name, (mask, box)) in enumerate(_rows.items()):
     shape = mask_shape(mask, box)
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -599,7 +602,7 @@ for r, (row_name, (mask, box)) in enumerate(_rows.items()):
     n_parts, parts = cv2.connectedComponents(mask, connectivity=8)
     main = max(range(1, n_parts), key=lambda k: int((parts == k).sum()))
     own = cv2.boundingRect(mask)
-    for k, (name, rule, key, is_suspect) in enumerate(_CHECK_RULES):
+    for k, (name, rule, key, is_suspect, fmt) in enumerate(_CHECK_RULES):
         ax = axes[r, k]
         ax.imshow(_layer(mask, CLASS_COLORS["horse"], 0.85))
         if k == 0:  # the mask's own tight box (solid) against the box the team drew (dashed)
@@ -616,18 +619,23 @@ for r, (row_name, (mask, box)) in enumerate(_rows.items()):
             ax.add_patch(mpl.patches.Polygon(hull, closed=True, fill=False, lw=2, ls="--", edgecolor=INK))
         value = shape[key]
         bad = is_suspect(value)
-        shown = f"{value:.2f}" if isinstance(value, float) else f"{value}"
-        verdict = f"{row_name}: {shown} → {'SUSPECT' if bad else 'normal'}"
-        ax.set_title((f"{name}\n{rule}\n" if r == 0 else "") + verdict, fontsize=8,
-                     color="#B03A2E" if bad else "#1E7B6E")
+        ax.text(0.02, 0.98, "SUSPECT" if bad else "normal", transform=ax.transAxes, ha="left", va="top",
+                fontsize=14, fontweight="bold", color=_RED if bad else _GREEN)
+        ax.text(0.98, 0.97, fmt(value), transform=ax.transAxes, ha="right", va="top", fontsize=9,
+                color=_GREY)
+        if r == 0:
+            ax.set_title(name, fontsize=13, color=INK, pad=10)
+        else:
+            under = rule + (f"\n\n{_UNDER[k]}" if k in _UNDER else "")
+            ax.set_xlabel(under, fontsize=10, color=INK, va="top")
         ax.set_xlim(-0.5, _W - 0.5)
-        ax.set_ylim(_H - 0.5, -0.5)
+        ax.set_ylim(_H + 3.5, -14.5)  # room above the horse for the verdict, below for the team's box
         ax.set_xticks([])
         ax.set_yticks([])
         ax.grid(False)
-    axes[r, 0].set_ylabel(row_name, fontsize=10, color=INK)
-fig.suptitle("Picture B · The five checks: healthy horse (top), broken horse (bottom) "
-             "· solid box: the mask's own · dashed: the team's", color=INK, fontsize=10)
+    axes[r, 0].set_ylabel(row_name, fontsize=12, color=INK)
+fig.suptitle("Picture B · The five checks: healthy horse (top), broken horse (bottom)", color=INK,
+             fontsize=13)
 fig.tight_layout()
 display(fig)
 plt.close(fig)
