@@ -78,3 +78,18 @@ then silently ran on the park sample.
   49/196 split); a typo shows the nearest folder's contents; a messy folder (corrupt file, RGBA png, .txt, empty
   class, copy across classes) is reported check by check.
 - Not testable outside Colab: the Drive sign-in and the Files-pane upload. Simone checks those in Colab.
+
+## Order review under N-052 (same day; Simone: "fix the high and medium right now")
+
+| # | Problem | Fix |
+|---|---|---|
+| O1 | §4 the ✏️ `DOG_SHARE` box came before Q8 and pointed at it | Q8 → ✏️ (leave 0.02) → cell → answer; the 0.2 / 0.5 experiment after the pitfall |
+| O2 | §5 the ✏️ `HASH_THRESHOLD` box came before Q9; "You run it in Q9 below" | Q9 → ✏️ (leave 8) → cell → answer; the 2 / 14 experiment after the answer; no forward reference |
+| O3 | §6 "One bad shuffle" box before Q13 gave its answer away | moved after Q13's answer |
+| O4 | §10 a go-deeper box sat between "paste in the next cell" and the ✏️ cell | moved after the reader output |
+| O5 | §6 the burst diagram and steps before Q14 printed both sibling rates | moved after the Q14 cell, as the "why" |
+| O6 | §5 the flip detector was written before the shoot-out showed why | shoot-out (Q10) → why picture → answer → ✍️ `find_flipped_copies` → key |
+| O7 | §2 Q2 asked about a grid 18 cells back | the question now sits right under the grid in §1 (becomes Q1; the checklist question becomes Q2) |
+
+Low items (empty "Exact duplicates" heading, the Challenge's two keys, "checks that claim", a lint for forward
+references) are proposed, not applied. Forward question references after the pass: none.

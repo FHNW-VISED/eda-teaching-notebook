@@ -112,7 +112,7 @@ Time = participant minutes at lab pace. **Estimate, not re-timed:** ≈ 108 afte
   - Then apply each bullet to the Play Dataset in one line each (e.g. "2–10 classes: ✅ 6").
 - **02 Become one with the data**
   - 🧾 Karpathy: "become one with the data".
-  - One class grid in the lesson: section 1's grid (six photos per class) is reused for Q2, and a single ✏️ grid cell follows (`CLASS_TO_SHOW`, `N_SHOW`).
+  - One class grid in the lesson: section 1's grid (six photos per class), with its question (Q1, least camera-like class) right under it in section 1 (N-052); here a single ✏️ grid cell (`CLASS_TO_SHOW`, `N_SHOW`).
   - Students write down 3 observations, as a markdown cell to fill in.
   - **[PROPOSAL]** A first 💡 insight sentence after every plot (N-004).
 - **03 Image inspection**
@@ -131,7 +131,7 @@ Time = participant minutes at lab pace. **Estimate, not re-timed:** ≈ 108 afte
   - Then:
     - exact duplicates (file hash) and near-duplicates (perceptual hash, ✏️ `HASH_THRESHOLD`), asked together in one question (Q9);
     - **flipped/rotated copies, found by hashing each image's flipped and rotated variants** (**[PROPOSAL]** a shoot-out: plain hashing misses them, variant hashing catches them);
-  - **Guided hunt** (G-25): a planted batch with exact duplicates + a flipped + a rotated + a recompressed copy. ✍️ `find_flipped_copies(image, candidates) -> list[str]`. The hunt's answer key (copy → kind → source) sits in its own toggle under Q10's worked answer; there is no separate scoring cell (R2).
+  - **Guided hunt** (G-25): a planted batch with exact duplicates + a flipped + a rotated + a recompressed copy. ✍️ `find_flipped_copies(image, candidates) -> list[str]`, written after the shoot-out has shown why it is needed (N-052). The hunt's answer key (copy → kind → source) sits in its own toggle under Q10's worked answer; there is no separate scoring cell (R2).
   - One 🔴 optional part, "Suspicious labels": each class's least typical images for a human to judge (Q11), then model-based near-duplicate and outlier search on precomputed embeddings (Q12), with a short note that teams use embeddings this way at scale.
   - Ends with `clean_images`, the cleaned table, and a summary "removed N, kept M". The ⚠️ Pitfall "split after cleaning" is the notebook's only statement of dedupe-before-split (C4).
 - **06 Splits & leakage**

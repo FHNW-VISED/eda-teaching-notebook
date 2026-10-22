@@ -177,7 +177,7 @@ def test_question_count_per_section_after_all_merges_and_cuts(nb):
     """Merges and cuts together: Q10 into Q11, Q16, Q20, Q21, Q30, Q33 cut, Q31 into Q32 → 35 become 28;
     then (2026-10-22, C1/C3) the metrics section's question and the detective beat's Q5 → 26.
     Counted by section, never by number (the numbers are renumbered continuously)."""
-    expected = {0: 0, 1: 1, 2: 2, 3: 2, 4: 3, 5: 4, 6: 3, 7: 4, 8: 4, 9: 1, 10: 2, 11: 0}
+    expected = {0: 0, 1: 2, 2: 1, 3: 2, 4: 3, 5: 4, 6: 3, 7: 4, 8: 4, 9: 1, 10: 2, 11: 0}
     got = {n: len(question_paragraphs(section(nb, n))) for n in expected}
     assert got == expected, f"questions per section: {got}"
     assert sum(got.values()) == 26
@@ -186,18 +186,16 @@ def test_question_count_per_section_after_all_merges_and_cuts(nb):
 # ---- section 1, 2 (row 16) --------------------------------------------------------------------------
 
 
-def test_row16_one_class_grid_section_2_reuses_the_one_from_section_1(nb):
+def test_row16_one_class_grid_and_its_question_sits_right_under_it_in_section_1(nb):
+    """Cut row 16 kept one class grid; N-052 (2026-10-22) moved its question next to it, out of section 2."""
     assert not any("show_all_classes" in c.source for c in nb.cells), "the second class grid is gone"
-    s2 = section(nb, 2)
-    q = questions_matching(s2, r"park camera")
-    assert q, "the question about the fixed park camera's view stays in section 2"
-    q_idx = q[0][0]
-    next_turn = next(
-        i for i in range(q_idx, len(s2)) if is_callout(s2[i]) and s2[i].metadata["callout"] == "your-turn"
-    )
-    assert not any(image_outputs(c) for c in s2[q_idx:next_turn]), (
-        "no second grid between the question and 'Your turn'"
-    )
+    s1, s2 = section(nb, 1), section(nb, 2)
+    assert not questions_matching(s2, r"park camera"), "section 2 no longer asks about a grid 18 cells back"
+    q = questions_matching(s1, r"park camera")
+    assert q, "the camera-view question is in section 1"
+    grid = next(i for i, c in enumerate(s1) if c.cell_type == "code" and "Six example photos" in c.source)
+    between = [c for c in s1[grid + 1 : q[0][0]] if c.cell_type == "code" and not is_callout(c)]
+    assert not between, "nothing runs between the grid and its question"
 
 
 def test_row16_section_1_grid_before_the_first_question_shows_six_photos_per_class(nb):

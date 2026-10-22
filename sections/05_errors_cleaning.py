@@ -33,7 +33,8 @@
 # ### Exact duplicates: the same bytes twice
 #
 # The cheapest check first. Two files that are byte-for-byte identical have the same **MD5 hash**, so one
-# pass over the files finds every exact copy, whatever its name. You run it in Q9 below.
+# pass over the files finds every exact copy, whatever its name. It runs together with the near-duplicate
+# check further down.
 
 # %%
 # @title Hash helpers (MD5, perceptual hash, flipped and rotated variants) { display-mode: "form" }
@@ -195,11 +196,18 @@ display(fig)
 plt.close(fig)
 
 # %% [markdown]
+# **Q9.** 🟡 Two guesses, then run the next two cells.
+#
+# - Exact copies: COCO val2017 is a curated benchmark that thousands of papers evaluate on. How many
+#   byte-identical pairs are in the Play Dataset:
+#   none, a handful or many?
+# - Near copies: with the default threshold (`8`, in the ✏️ cell below), how many pairs do you expect to be
+#   flagged, and will the closest ones be true copies or two photos of the same kind of scene?
+
+# %% [markdown]
 # <!-- callout: your-turn | Your turn · The duplicate threshold -->
 # `HASH_THRESHOLD` is the largest Hamming distance (0–64) at which two photos count as near-duplicates.
-# Keep the default `8` for Q9 and look at the closest pairs. Then edit the value (a strict `2`, a loose
-# `14`), run this cell, and re-run the Q9 cell below to see what enters the list. Set it back to `8`
-# before going on: later cells use it too.
+# **Leave the default `8` for now** and run the cell; you will try other values after the answer.
 
 # %%
 # ✏️ YOUR TURN
@@ -207,15 +215,6 @@ HASH_THRESHOLD = 8
 
 if not isinstance(HASH_THRESHOLD, int) or not 0 <= HASH_THRESHOLD <= 64:
     raise SystemExit(f"HASH_THRESHOLD must be a whole number between 0 and 64, not {HASH_THRESHOLD!r}")
-
-# %% [markdown]
-# **Q9.** 🟡 Two guesses, then run the cell below.
-#
-# - Exact copies: COCO val2017 is a curated benchmark that thousands of papers evaluate on. How many
-#   byte-identical pairs are in the Play Dataset:
-#   none, a handful or many?
-# - Near copies: with your threshold, how many pairs do you expect to be flagged, and will the closest ones
-#   be true copies or two photos of the same kind of scene?
 
 # %%
 # @title Q9 MD5 of every file (exact copies), then pHash of every photo + variants { display-mode: "form" }
@@ -280,6 +279,11 @@ show_rows(_rows, "closest pairs by perceptual hash (each pair side by side)",
 # the full Play Dataset: two frames of the same tabby in front of one brick wall (the smoke sample may lack
 # it). A loose threshold adds non-copies, a strict one misses re-compressed copies, so read the list by eye
 # before deleting.
+
+# %% [markdown]
+# 💡 **Now try other thresholds:** set `HASH_THRESHOLD` to a strict `2`, then a loose `14`, rerun the ✏️ cell
+# and the Q9 cell, and see what enters and leaves the list. **Set it back to `8`** before going on: later
+# cells use it too.
 
 # %% [markdown]
 # <!-- callout: pitfall | Pitfall · A hash distance is not a similarity score -->
@@ -367,56 +371,9 @@ print(f"{len(hunt_files)} files on the card in {HUNT_DIR}/ · {len(HUNT5_KEY)} o
       f"file on the card")
 
 # %% [markdown]
-# ### ✍️ Write the flip detector yourself
-
-# %% [markdown]
-# A mirrored or rotated copy has moved every pixel, so its plain hash is far from the original's. Before the
-# shoot-out, write the one piece plain hashing lacks.
-
-# %%
-# @title Reference solution — run this cell; open it only if you are stuck { display-mode: "form" }
-def _ref_find_flipped_copies(image, candidates):
-    flipped_hashes = [phash(im) for name, im in variants(image).items() if name != "original"]
-    found = []
-    for name, cand in candidates.items():
-        h = phash(cand)
-        if min(h - fh for fh in flipped_hashes) <= HASH_THRESHOLD:
-            found.append(name)
-    return sorted(found)
-
-
-# %% [markdown]
-# <!-- callout: your-turn | Your turn · `find_flipped_copies` -->
-# Fill in the function below: given one photo and a dictionary of candidate photos, return the names of the
-# candidates that are a flipped or rotated copy of it, by comparing the photo's hash with the hashes of the
-# candidates' flipped and rotated versions. You have `variants(image)`, `phash(image)`, `h1 - h2` for the
-# distance and `HASH_THRESHOLD`. The `use()` line checks your answer against the reference and continues
-# with the reference either way.
-
-# %%
-# ✍️ YOUR CODE
-def find_flipped_copies(image, candidates):
-    """Return the names of the candidates that are a flipped or rotated copy of `image`.
-
-    image: a PIL image. candidates: dict {name: PIL image} (the image itself is not among them).
-    Returns a sorted list of names whose pHash is within HASH_THRESHOLD bits of the pHash of one of
-    image's flipped or rotated variants (every variant except "original").
-
-    e.g. ["card_017.jpg", "card_031.jpg"]
-    """
-    ...
-
-
-_flip_source = next(k["source"] for k in HUNT5_KEY if k["kind"] == "flipped")
-_others = {name: im for name, im in hunt_images.items() if name != _flip_source}
-flipped_copies = use(find_flipped_copies, hunt_images[_flip_source], _others,
-                     reference=_ref_find_flipped_copies)
-print(f"flipped/rotated copies of {_flip_source}: {flipped_copies}")
-
-# %% [markdown]
-# **Q10.** 🟡 The shoot-out: plain hashing (MD5 plus pHash) against *variant* hashing, the idea you just
-# wrote. Which of the first four things that happened to the card (twice, smaller, mirrored, rotated) does
-# each one catch? Predict, then run.
+# **Q10.** 🟡 The shoot-out: plain hashing (MD5 plus pHash) against *variant* hashing, which also hashes each
+# photo's flipped and rotated versions. Which of the first four things that happened to the card (twice,
+# smaller, mirrored, rotated) does each one catch? Predict, then run.
 
 # %%
 # @title Copy finder: plain hashing vs variant hashing { display-mode: "form" }
@@ -516,6 +473,54 @@ plt.close(fig)
 # moves the hash by dozens of bits. Variant hashing catches them too, because one of the six variants of the
 # source hashes like the copy. The price: six hashes per photo instead of one, still seconds for thousands.
 
+
+# %% [markdown]
+# ### ✍️ Write the flip detector yourself
+
+# %% [markdown]
+# The shoot-out showed it: a mirrored or rotated copy has moved every pixel, so its plain hash is far from
+# the original's, and only variant hashing found it. Now write the core of variant hashing yourself, for one
+# photo.
+
+# %%
+# @title Reference solution — run this cell; open it only if you are stuck { display-mode: "form" }
+def _ref_find_flipped_copies(image, candidates):
+    flipped_hashes = [phash(im) for name, im in variants(image).items() if name != "original"]
+    found = []
+    for name, cand in candidates.items():
+        h = phash(cand)
+        if min(h - fh for fh in flipped_hashes) <= HASH_THRESHOLD:
+            found.append(name)
+    return sorted(found)
+
+
+# %% [markdown]
+# <!-- callout: your-turn | Your turn · `find_flipped_copies` -->
+# Fill in the function below: given one photo and a dictionary of candidate photos, return the names of the
+# candidates that are a flipped or rotated copy of it, by comparing the photo's hash with the hashes of the
+# candidates' flipped and rotated versions. You have `variants(image)`, `phash(image)`, `h1 - h2` for the
+# distance and `HASH_THRESHOLD`. The `use()` line checks your answer against the reference and continues
+# with the reference either way.
+
+# %%
+# ✍️ YOUR CODE
+def find_flipped_copies(image, candidates):
+    """Return the names of the candidates that are a flipped or rotated copy of `image`.
+
+    image: a PIL image. candidates: dict {name: PIL image} (the image itself is not among them).
+    Returns a sorted list of names whose pHash is within HASH_THRESHOLD bits of the pHash of one of
+    image's flipped or rotated variants (every variant except "original").
+
+    e.g. ["card_017.jpg", "card_031.jpg"]
+    """
+    ...
+
+
+_flip_source = next(k["source"] for k in HUNT5_KEY if k["kind"] == "flipped")
+_others = {name: im for name, im in hunt_images.items() if name != _flip_source}
+flipped_copies = use(find_flipped_copies, hunt_images[_flip_source], _others,
+                     reference=_ref_find_flipped_copies)
+print(f"flipped/rotated copies of {_flip_source}: {flipped_copies}")
 
 # %%
 # @title The memory card's answer key: which file is a copy of which { display-mode: "form" }

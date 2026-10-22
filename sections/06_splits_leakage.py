@@ -33,12 +33,6 @@
 # photos in that set (30 cats among 100 = 30 %).
 
 # %% [markdown]
-# <!-- callout: go-deeper | Go deeper · One bad shuffle, in numbers -->
-# Picture 100 cats and 20 sheep, and a random test set of 24 photos (20 %). On average it holds 20 cats and
-# 4 sheep (shares 83 % and 17 %). A bad shuffle gives 22 cats and 2 sheep (92 % and 8 %): the cat share moved
-# by 9 points, the sheep share was cut in half.
-
-# %% [markdown]
 # **Q13.** 🟡 On the Play Dataset's random 80 / 20 split, for each class compare its share in the test set
 # with its share overall. Which class is off by the biggest fraction of itself: the biggest or the smallest?
 # Does the stratified split fix that completely, or only mostly? Decide, then run.
@@ -104,6 +98,12 @@ RESULTS["split_drift_stratified_pp"] = float(_drift["stratified · test"].max())
 # a small share (grey bars = whole table, coloured = test set), and if that class is the dog, the alert is
 # scored on a handful of photos. Stratifying fixes it up to rounding (you cannot put 10.6 sheep in test), but
 # says nothing about *what is in* the photos: that is the rest of this section.
+
+# %% [markdown]
+# <!-- callout: go-deeper | Go deeper · One bad shuffle, in numbers -->
+# Picture 100 cats and 20 sheep, and a random test set of 24 photos (20 %). On average it holds 20 cats and
+# 4 sheep (shares 83 % and 17 %). A bad shuffle gives 22 cats and 2 sheep (92 % and 8 %): the cat share moved
+# by 9 points, the sheep share was cut in half.
 
 # %% [markdown]
 # ### Cross-validation: four ways to reuse one dataset
@@ -360,41 +360,6 @@ show_bursts(cct, n_bursts=3)
 #
 # The **sibling rate** is the share of test photos that have a burst sibling (another frame with the same
 # `seq_id`) in training. 0 % means no leak; no training is needed to see it.
-#
-# 1. A burst of three frames from camera A meets a random split: frames 1 and 3 go to train, frame 2 to test.
-# 2. Frame 2 has two siblings in training, so it counts toward the sibling rate.
-# 3. The model has seen this tree and this raccoon: frame 2 is easy, the score too good.
-# 4. A split **by camera** keeps all three frames on one side: nothing leaks.
-
-# %%
-# @title Diagram: three bursts under a random split and a split by camera { display-mode: "form" }
-_demo = {  # three cameras, one burst of three frames each; where does every frame land?
-    "random split": [["train", "test", "train"], ["train", "train", "test"], ["test", "train", "train"]],
-    "split by camera": [["train"] * 3, ["train"] * 3, ["test"] * 3],
-}
-fig, axes = plt.subplots(1, 2, figsize=(9, 2.9))
-for ax, (name, grid) in zip(axes, _demo.items(), strict=True):
-    n_test = sum(f == "test" for burst in grid for f in burst)
-    n_leaky = sum(f == "test" for burst in grid if "train" in burst for f in burst)
-    for i, burst in enumerate(grid):
-        for j, where in enumerate(burst):
-            ax.add_patch(mpl.patches.FancyBboxPatch((j + 0.08, i + 0.08), 0.84, 0.84,
-                                                    boxstyle="round,pad=0.02",
-                                                    facecolor=SPLIT_COLORS[where], edgecolor="none"))
-            ax.text(j + 0.5, i + 0.5, f"frame {j + 1}\n{where}", ha="center", va="center", fontsize=8,
-                    color="white")
-    ax.set_xlim(0, 3)
-    ax.set_ylim(3, 0)
-    ax.set_xticks([])
-    ax.set_yticks([0.5, 1.5, 2.5], ["camera A", "camera B", "camera C"])
-    ax.grid(False)
-    for spine in ax.spines.values():
-        spine.set_visible(False)
-    ax.set_title(f"{name}: sibling rate {n_leaky / n_test:.0%}", fontsize=10, color=INK)
-fig.suptitle("One burst per camera: every frame is coloured by the set it lands in", color=INK)
-fig.tight_layout()
-display(fig)
-plt.close(fig)
 
 # %% [markdown]
 # **Q14.** 🟡 Take 100 trail-camera photos in bursts of three and a random 80 / 20 split (20 photos in test).
@@ -431,6 +396,44 @@ ax.set_ylim(0, 1)
 ax.yaxis.set_major_formatter(mpl.ticker.PercentFormatter(1.0))
 plt.tight_layout()
 plt.show()
+
+# %% [markdown]
+# Why, step by step, then drawn on three bursts:
+#
+# 1. A burst of three frames from camera A meets a random split: frames 1 and 3 go to train, frame 2 to test.
+# 2. Frame 2 has two siblings in training, so it counts toward the sibling rate.
+# 3. The model has seen this tree and this raccoon: frame 2 is easy, the score too good.
+# 4. A split **by camera** keeps all three frames on one side: nothing leaks.
+
+# %%
+# @title Diagram: three bursts under a random split and a split by camera { display-mode: "form" }
+_demo = {  # three cameras, one burst of three frames each; where does every frame land?
+    "random split": [["train", "test", "train"], ["train", "train", "test"], ["test", "train", "train"]],
+    "split by camera": [["train"] * 3, ["train"] * 3, ["test"] * 3],
+}
+fig, axes = plt.subplots(1, 2, figsize=(9, 2.9))
+for ax, (name, grid) in zip(axes, _demo.items(), strict=True):
+    n_test = sum(f == "test" for burst in grid for f in burst)
+    n_leaky = sum(f == "test" for burst in grid if "train" in burst for f in burst)
+    for i, burst in enumerate(grid):
+        for j, where in enumerate(burst):
+            ax.add_patch(mpl.patches.FancyBboxPatch((j + 0.08, i + 0.08), 0.84, 0.84,
+                                                    boxstyle="round,pad=0.02",
+                                                    facecolor=SPLIT_COLORS[where], edgecolor="none"))
+            ax.text(j + 0.5, i + 0.5, f"frame {j + 1}\n{where}", ha="center", va="center", fontsize=8,
+                    color="white")
+    ax.set_xlim(0, 3)
+    ax.set_ylim(3, 0)
+    ax.set_xticks([])
+    ax.set_yticks([0.5, 1.5, 2.5], ["camera A", "camera B", "camera C"])
+    ax.grid(False)
+    for spine in ax.spines.values():
+        spine.set_visible(False)
+    ax.set_title(f"{name}: sibling rate {n_leaky / n_test:.0%}", fontsize=10, color=INK)
+fig.suptitle("One burst per camera: every frame is coloured by the set it lands in", color=INK)
+fig.tight_layout()
+display(fig)
+plt.close(fig)
 
 # %% [markdown]
 # The same random split on real photos: a test frame (magenta) next to its siblings in training (grey-blue).

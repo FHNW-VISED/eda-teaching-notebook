@@ -128,18 +128,6 @@ show_rows(_crowded, "the most crowded photos", lambda r: f"{r['n_animals']} × {
 # the time and a dog very rarely.
 
 # %% [markdown]
-# <!-- callout: your-turn | Your turn · A paddock day -->
-# `DOG_SHARE` is the fraction of the paddock camera's frames that show a dog (the rest show sheep). Keep
-# `0.02` for Q8. Afterwards: edit the value (try `0.2`, then `0.5`), run this cell, then re-run the Q8 cell.
-
-# %%
-# ✏️ YOUR TURN
-DOG_SHARE = 0.02
-
-if not isinstance(DOG_SHARE, (int, float)) or not 0 <= DOG_SHARE <= 1:
-    raise SystemExit(f"DOG_SHARE must be a number between 0 and 1, not {DOG_SHARE!r}")
-
-# %% [markdown]
 # **Q8.** 🟡 No model is trained here; this is a thought experiment about the *dataset*. Two lazy rules that
 # ignore the photo, one question each. **Accuracy** is the share of photos answered correctly; **recall on
 # dog** is, of the real dogs, how many the rule gets right. Guess both numbers for each rule, then run:
@@ -148,6 +136,18 @@ if not isinstance(DOG_SHARE, (int, float)) or not 0 <= DOG_SHARE <= 1:
 #   its accuracy and its recall on dog?
 # - **Rule B, on a paddock week:** 1000 frames, 20 of them with a dog (`DOG_SHARE = 0.02`), and the rule
 #   always answers "sheep". What are its accuracy and its recall on dog?
+
+# %% [markdown]
+# <!-- callout: your-turn | Your turn · A paddock day -->
+# `DOG_SHARE` is the fraction of the paddock camera's frames that show a dog (the rest show sheep). **Leave it
+# at `0.02` for now** and run the cell; you will come back to it after the answer.
+
+# %%
+# ✏️ YOUR TURN
+DOG_SHARE = 0.02
+
+if not isinstance(DOG_SHARE, (int, float)) or not 0 <= DOG_SHARE <= 1:
+    raise SystemExit(f"DOG_SHARE must be a number between 0 and 1, not {DOG_SHARE!r}")
 
 # %%
 # @title Q8 A lazy model stamps "sheep" on every frame: accuracy and dog recall { display-mode: "form" }
@@ -215,6 +215,10 @@ answer_box("Q8 · the lazy model's numbers and a strip of real frames (open afte
 # dog, the better "always sheep" looks. For a rare class, watch its **recall**. A balanced-looking Play
 # Dataset says nothing about the imbalance of the *deployment*. Class weights and oversampling are next
 # week's topic.
+
+# %% [markdown]
+# 💡 **Now come back to `DOG_SHARE`:** set it to `0.2`, then `0.5`, and rerun the ✏️ cell and the Q8 cell
+# each time. Accuracy falls as dogs get common; recall on dog stays at 0 % whatever you choose.
 
 # %% [markdown]
 # ### ✍️ Pick the alert metric

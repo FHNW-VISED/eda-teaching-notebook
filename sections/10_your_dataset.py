@@ -64,13 +64,6 @@
 #
 # Leave it at `None` to see the whole section on a small park sample first.
 
-# %% [markdown]
-# <!-- callout: go-deeper | Go deeper · Detection or segmentation project, and big datasets -->
-# Put all images in one folder inside `MY_DATASET_DIR` (e.g. `…/project/all/`). The class counts then say
-# nothing, but sizes, modes, copies and the split still do (the box and mask checks are sections 7 and 8).
-# Images deeper inside a class folder count, other files are listed and skipped. Datasets above
-# `MY_MAX_IMAGES` photos are sampled down, keeping the class shares, so the checks stay at a minute or two.
-
 # %%
 # ✏️ YOUR TURN
 MY_DATASET_DIR = None  # paste your path between quotes, e.g. "/content/my_dataset.zip"
@@ -350,6 +343,13 @@ for r, c in enumerate(_shown):
 fig.suptitle("A first look: are these your images and your classes?", color=INK)
 fig.tight_layout()
 plt.show()
+
+# %% [markdown]
+# <!-- callout: go-deeper | Go deeper · Detection or segmentation project, and big datasets -->
+# Put all images in one folder inside `MY_DATASET_DIR` (e.g. `…/project/all/`). The class counts then say
+# nothing, but sizes, modes, copies and the split still do (the box and mask checks are sections 7 and 8).
+# Images deeper inside a class folder count, other files are listed and skipped. Datasets above
+# `MY_MAX_IMAGES` photos are sampled down, keeping the class shares, so the checks stay at a minute or two.
 
 # %% [markdown]
 # Four checks run next and end in one report card. Check 1 counts the images per folder, as section 4 did for

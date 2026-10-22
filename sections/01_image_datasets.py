@@ -89,6 +89,20 @@ fig.tight_layout()
 plt.show()
 
 # %% [markdown]
+# <!-- callout: questions | Questions -->
+# The park's cameras are fixed, outdoors, and often far from the animal.
+
+# %% [markdown]
+# **Q1.** 🟢 Look at the grid above. Which class looks *least* like a fixed park camera's view, and why?
+# One line.
+
+# %% [markdown]
+# <!-- callout: answer | Worked answer (Q1) -->
+# Holiday snapshots, not camera-trap frames. Cats and dogs are the farthest from a
+# park camera: indoors, up close, with people and sofas. Sheep, horses and zebras are at least outdoors and
+# sometimes far away, closer to what the paddock and savanna cameras will see.
+
+# %% [markdown]
 # Having a dataset is not the same as having a *good* one. This is the checklist from the lecture:
 
 # %% [markdown]
@@ -138,13 +152,13 @@ plt.show()
 # Predict before you run: the park wants to recognise, count and outline six animals from fixed cameras.
 
 # %% [markdown]
-# **Q1.** 🟢 Which bullets do you expect the Play Dataset to pass (✅) as it is, and which one worries you
+# **Q2.** 🟢 Which bullets do you expect the Play Dataset to pass (✅) as it is, and which one worries you
 # most for the dog-in-the-paddock alert? Write one line, then run the next cell. It goes through the
 # checklist: where the tables from section 0 can answer a bullet it computes the answer (✅ fine, ⚠️ needs
 # attention); where only your eyes can, it says so (👀).
 
 # %%
-# @title Q1 Apply the checklist to the Play Dataset { display-mode: "form" }
+# @title Q2 Apply the checklist to the Play Dataset { display-mode: "form" }
 # Every number comes from the `images` table of section 0.
 n_images = len(images)
 counts = images["class"].value_counts().reindex(CLASSES).fillna(0).astype(int)
@@ -207,7 +221,7 @@ for status, bullet, finding in checklist:
 # Every ⚠️ and 👀 names the later section that settles it; that is the order we follow.
 
 # %% [markdown]
-# <!-- callout: answer | Worked answer (Q1) -->
+# <!-- callout: answer | Worked answer (Q2) -->
 # Sample size, class count and resolution pass without work. The two that matter for
 # the alert are *fit* (holiday photos of dogs are not a camera on a paddock) and *imbalance* (the biggest
 # class has over twice the images of the smallest, so a model can score well while ignoring a rare animal).

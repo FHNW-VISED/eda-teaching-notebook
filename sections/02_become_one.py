@@ -26,8 +26,8 @@
 # - 👀 Are the animals **identifiable by eye**?
 
 # %% [markdown]
-# We will not spend hours, but we will spend a few minutes. Scroll back to the class grid of section 1 (six
-# photos per class, framed in the class colour used in every plot of this notebook) and look at:
+# We will not spend hours, but we will spend a few minutes, one class at a time (each photo is framed in its
+# class colour, the same in every plot of this notebook). While you look, watch:
 #
 # - the backgrounds and the lighting,
 # - the distance to the animal,
@@ -88,20 +88,6 @@ def show_grid(class_name: str, n: int, cols: int = 6, label_animals: bool = True
     display(fig)
     plt.close(fig)
 
-
-# %% [markdown]
-# <!-- callout: questions | Questions -->
-# The park's cameras are fixed, outdoors, and often far from the animal.
-
-# %% [markdown]
-# **Q2.** 🟢 Look at the class grid above (section 1). Which class looks *least* like a fixed park camera's
-# view, and why? One line.
-
-# %% [markdown]
-# <!-- callout: answer | Worked answer (Q2) -->
-# Holiday snapshots, not camera-trap frames. Cats and dogs are the farthest from a
-# park camera: indoors, up close, with people and sofas. Sheep, horses and zebras are at least outdoors and
-# sometimes far away, closer to what the paddock and savanna cameras will see.
 
 # %% [markdown]
 # <!-- callout: your-turn | Your turn · Pick a class -->
