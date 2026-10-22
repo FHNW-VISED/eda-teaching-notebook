@@ -7,6 +7,8 @@ the right layout must be read, and every wrong one must stop with a message that
 
 from __future__ import annotations
 
+import io
+import urllib.error
 import zipfile
 from collections import Counter
 from pathlib import Path
@@ -22,10 +24,18 @@ SECTION = Path(__file__).resolve().parent.parent / "sections" / "10_your_dataset
 @pytest.fixture(scope="module")
 def reader(tmp_path_factory):
     """The functions of the 'Dataset reader' cell, with the few notebook globals it needs."""
-    cell = next(c.source for c in jupytext.read(SECTION, fmt="py:percent").cells
-                if c.source.startswith("# @title Dataset reader"))
-    ns = {"Path": Path, "pd": pd, "Counter": Counter, "IN_COLAB": False,
-          "DATA_DIR": tmp_path_factory.mktemp("data")}
+    cell = next(
+        c.source
+        for c in jupytext.read(SECTION, fmt="py:percent").cells
+        if c.source.startswith("# @title Dataset reader")
+    )
+    ns = {
+        "Path": Path,
+        "pd": pd,
+        "Counter": Counter,
+        "IN_COLAB": False,
+        "DATA_DIR": tmp_path_factory.mktemp("data"),
+    }
     exec(cell, ns)  # noqa: S102 (our own notebook source)
     return ns
 
@@ -119,3 +129,92 @@ def test_notes_list_what_was_skipped(reader, tmp_path):
     notes = "\n".join(reader["folder_notes"](root, files))
     for expected in ("1 images sit directly", ".csv", ".heic", "with no images: bees", "only one class"):
         assert expected in notes, f"'{expected}' missing from: {notes}"
+
+
+# ---- Google Drive share links (Simone, 2026-10-22: "make it work with personal drive urls") ----------
+
+
+LINK = "https://drive.google.com/file/d/1I9DeB93yWQwYSAsdzJfBGWq9bhAYBpil/view?usp=drive_link"
+
+
+class _Answer(io.BytesIO):
+    """What urllib.request.urlopen returns, enough for the reader: read() and a context manager."""
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+
+def drive_answers(monkeypatch, reader, body: bytes | None):
+    """Make 'Drive' answer every download with `body` (None: a 404, like a wrong id)."""
+
+    def fake_urlopen(url, timeout=None):
+        assert "id=1I9DeB93yWQwYSAsdzJfBGWq9bhAYBpil" in url
+        if body is None:
+            raise urllib.error.HTTPError(url, 404, "Not Found", None, None)
+        return _Answer(body)
+
+    monkeypatch.setattr(reader["urllib"].request, "urlopen", fake_urlopen)
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        LINK,
+        "https://drive.google.com/file/d/1I9DeB93yWQwYSAsdzJfBGWq9bhAYBpil/view",
+        "https://drive.google.com/open?id=1I9DeB93yWQwYSAsdzJfBGWq9bhAYBpil",
+        "https://drive.google.com/uc?export=download&id=1I9DeB93yWQwYSAsdzJfBGWq9bhAYBpil",
+    ],
+)
+def test_the_file_id_is_read_from_every_kind_of_share_link(reader, url):
+    assert reader["drive_file_id"](url) == "1I9DeB93yWQwYSAsdzJfBGWq9bhAYBpil"
+
+
+def test_a_folder_link_or_another_site_says_what_to_do(reader):
+    folder = "https://drive.google.com/drive/folders/1AbC?usp=sharing"
+    stops(reader, folder, "Drive *folder*", "Zip the folder")
+    stops(reader, "https://www.dropbox.com/s/abc/flowers.zip", "Google Drive file", "option A")
+
+
+def test_a_public_link_is_downloaded_unzipped_and_read(reader, tmp_path, monkeypatch):
+    classes(tmp_path / "src" / "flowers")
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as z:
+        for f in (tmp_path / "src").rglob("*.jpg"):
+            z.write(f, f.relative_to(tmp_path / "src"))
+    drive_answers(monkeypatch, reader, buf.getvalue())
+    root = reader["find_dataset"](f'"{LINK}"')
+    assert sorted(d.name for d in root.iterdir()) == ["ants", "bees"]
+    assert reader["find_dataset"](LINK) == root, "the second run reuses the download"
+
+
+def test_a_private_link_outside_colab_says_how_to_share_it(reader, monkeypatch):
+    drive_answers(monkeypatch, reader, b"<!doctype html><html>Sign in - Google Accounts")
+    reader["DATA_DIR"] = reader["DATA_DIR"] / "fresh-private"  # no earlier download to reuse
+    stops(reader, LINK, "private", "Anyone with the link")
+
+
+def test_a_wrong_id_stops_too(reader, monkeypatch):
+    drive_answers(monkeypatch, reader, None)
+    reader["DATA_DIR"] = reader["DATA_DIR"] / "fresh-404"
+    stops(reader, LINK, "private (or the link is wrong)")
+
+
+def test_a_download_cut_halfway_is_not_reused(reader, monkeypatch):
+    class _Cut(_Answer):
+        def read(self, n=-1):
+            if self.tell() >= 4:
+                raise ConnectionResetError("network dropped")
+            return super().read(n)
+
+    monkeypatch.setattr(
+        reader["urllib"].request, "urlopen", lambda url, timeout=None: _Cut(b"PK\x03\x04" + b"x" * 99)
+    )
+    reader["DATA_DIR"] = reader["DATA_DIR"] / "fresh-cut"
+    stops(reader, LINK, "stopped halfway", "Run the cell again")
+    folder = reader["DATA_DIR"] / "cache" / "my_upload" / "drive_1I9DeB93yWQwYSAsdzJfBGWq9bhAYBpil"
+    assert not list(folder.glob("*.zip")), (
+        "a cut download must not be left as a .zip the next run would reuse"
+    )

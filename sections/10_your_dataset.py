@@ -21,7 +21,7 @@
 # %% [markdown]
 # <!-- callout: your-turn | Your turn · Point the notebook at your dataset (you change one line) -->
 # Colab cannot see your laptop's folders, so the dataset first goes where Colab can read it. Pick **one** of
-# the two options, then do the last step.
+# the three options, then do the last step.
 #
 # **Option A · Upload it to this Colab session** (fastest; gone when the session ends)
 #
@@ -43,12 +43,22 @@
 # 3. Open `drive/MyDrive/`, find the folder whose sub-folders are your classes (or the zip), **right-click →
 #    Copy path.** It looks like `/content/drive/MyDrive/project/my_dataset`.
 #
-# **Last step, both options:** paste the path between the quotes in the next cell, click into that cell, and
+# **Option C · Paste a Google Drive link to a zip** (no mounting, no browsing)
+#
+# 1. In Drive, right-click the **zip** → *Share* → *Copy link*. It looks like
+#    `https://drive.google.com/file/d/1I9D…/view?usp=drive_link`.
+# 2. Paste the whole link as the path. If the zip is shared as *Anyone with the link*, it downloads straight
+#    away; if it is private, Colab asks you to sign in with the Google account that can open it.
+#
+# Links to a Drive *folder* do not work: zip the folder first, or use option B.
+#
+# **Last step, all options:** paste the path between the quotes in the next cell, click into that cell, and
 # run everything from there: **Runtime → Run cell and below**. If the path is not right, the cell after it
 # stops with a plain message that says what to change.
 #
-# - ✅ `/content/my_dataset.zip` (option A) or `/content/drive/MyDrive/project/my_dataset` (option B): the
-#   folder that holds `daisy/`, `rose/`, `tulip/`, or a zip of it.
+# - ✅ `/content/my_dataset.zip` (A), `/content/drive/MyDrive/project/my_dataset` (B) or
+#   `https://drive.google.com/file/d/…/view` (C): the folder that holds `daisy/`, `rose/`, `tulip/`, or a zip
+#   of it.
 # - ❌ `…/my_dataset/daisy`: one class folder, one level too deep.
 # - ❌ a folder that holds `train/` and `val/`: point at `…/train` instead (then at `…/val`, if you like).
 #
@@ -67,6 +77,9 @@ MY_DATASET_DIR = None  # paste your path between quotes, e.g. "/content/my_datas
 
 # %%
 # @title Dataset reader: finds your class folders, or says exactly what to change { display-mode: "form" }
+import re
+import urllib.error
+import urllib.request
 import zipfile
 
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tif", ".tiff", ".webp"}
@@ -93,13 +106,98 @@ def _contents(folder: Path, limit: int = 8) -> str:
     return "\n".join(lines + ([f"    … and {more} more"] if more > 0 else [])) or "    (empty)"
 
 
+def drive_file_id(url: str) -> str:
+    """The file id in a Google Drive share link; stops with advice for a folder link or another site.
+
+    e.g. drive_file_id("https://drive.google.com/file/d/1I9De…/view?usp=drive_link") → "1I9De…"
+    """
+    if "drive.google.com/drive/folders" in url:
+        raise SystemExit("❌ MY_DATASET_DIR: this is a link to a Drive *folder*. Zip the folder, upload the "
+                         "zip to Drive and share the zip's link, or use option B (Mount Drive, Copy path).")
+    found = re.search(r"/file/d/([\w-]+)", url) or re.search(r"[?&]id=([\w-]+)", url)
+    if "drive.google.com" not in url or not found:
+        raise SystemExit("❌ MY_DATASET_DIR: links work only for a Google Drive file, like "
+                         "https://drive.google.com/file/d/<id>/view. For anything else, download it and use "
+                         "option A.")
+    return found[1]
+
+
+def _drive_public_download(file_id: str, dest: Path) -> bool:
+    """Download a file shared as 'Anyone with the link'. False if Drive answers with a page, not the file."""
+    url = f"https://drive.usercontent.google.com/download?id={file_id}&export=download&confirm=t"
+    try:
+        with urllib.request.urlopen(url, timeout=60) as r:
+            first = r.read(4)
+            if first[:2] != b"PK":  # not a zip: the sign-in page (private file) or a 'not found' page
+                return False
+            part = dest.with_suffix(".part")  # renamed only when complete, so a cut download is not reused
+            with open(part, "wb") as f:
+                f.write(first)
+                while chunk := r.read(1 << 20):
+                    f.write(chunk)
+                    if f.tell() % (25 << 20) < (1 << 20):
+                        print(f"\r  downloading {dest.name}: {f.tell() / 1e6:.0f} MB", end="", flush=True)
+            part.rename(dest)
+        print(f"\r  downloaded {dest.name}: {dest.stat().st_size / 1e6:.0f} MB")
+        return True
+    except urllib.error.HTTPError:  # 404: a wrong id, or a file that is gone
+        return False
+    except OSError as err:  # the connection dropped: say so, and start over next time
+        dest.with_suffix(".part").unlink(missing_ok=True)
+        raise SystemExit(f"❌ the download from Drive stopped halfway ({err}). Run the cell again: it starts "
+                         "over.") from None
+
+
+def _drive_signed_in_download(file_id: str, folder: Path) -> Path:
+    """Colab only: sign in with Google and download a private file through the Drive API."""
+    from google.colab import auth
+    from googleapiclient.discovery import build
+    from googleapiclient.http import MediaIoBaseDownload
+
+    print("ℹ️ the file is not shared publicly: sign in with the Google account that can open it.")
+    auth.authenticate_user()
+    drive = build("drive", "v3")
+    meta = drive.files().get(fileId=file_id, fields="name,mimeType", supportsAllDrives=True).execute()
+    if meta["mimeType"] == "application/vnd.google-apps.folder":
+        drive_file_id("drive.google.com/drive/folders/")  # stops with the folder advice
+    dest = folder / meta["name"]
+    part = dest.with_suffix(".part")  # renamed only when complete, so a cut download is not reused
+    with open(part, "wb") as f:
+        download = MediaIoBaseDownload(f, drive.files().get_media(fileId=file_id, supportsAllDrives=True))
+        done = False
+        while not done:
+            status, done = download.next_chunk()
+            print(f"\r  downloading {dest.name}: {status.progress():.0%}", end="", flush=True)
+    part.rename(dest)
+    print()
+    return dest
+
+
+def fetch_drive_link(url: str) -> Path:
+    """Download the zip behind a Google Drive share link (once per session) and return its local path."""
+    file_id = drive_file_id(url)
+    folder = DATA_DIR / "cache" / "my_upload" / f"drive_{file_id}"
+    done = sorted(folder.glob("*.zip")) if folder.exists() else []
+    if done:
+        return done[0].resolve()
+    folder.mkdir(parents=True, exist_ok=True)
+    if _drive_public_download(file_id, folder / "dataset.zip"):
+        return (folder / "dataset.zip").resolve()
+    if IN_COLAB:
+        return _drive_signed_in_download(file_id, folder).resolve()
+    raise SystemExit("❌ MY_DATASET_DIR: Drive did not hand out this file without a sign-in, so it is "
+                     "private (or the link is wrong). In Colab the notebook asks you to sign in; elsewhere, "
+                     "open the file in Drive → Share → General access → 'Anyone with the link'.")
+
+
 def find_dataset(path) -> Path:
     """The folder that holds the class folders. Stops with a plain message saying what to change if the
     path cannot be used; unzips a .zip and steps into a lone wrapper folder on its own.
 
     e.g. find_dataset("/content/flowers.zip") → Path("data/cache/my_upload/flowers/flowers")
     """
-    p = Path(str(path).strip().strip("'\"")).expanduser()
+    text = str(path).strip().strip("'\"")
+    p = fetch_drive_link(text) if text.startswith(("http://", "https://")) else Path(text).expanduser()
     if str(p).startswith("/content/drive") and IN_COLAB and not Path("/content/drive/MyDrive").exists():
         from google.colab import drive  # Step 1, Drive route: connect it on first use
 
