@@ -13,3 +13,5 @@ Flickr licences and are downloaded at runtime) and the trail-camera part is a sl
 **For maintainers.** `eda-teaching-notebook.ipynb` is built from `sections/` and is never edited directly.
 `SPEC.md` describes what the notebook does, `RULES.md` the rules it follows, and `AGENTS.md` how to
 work on it. `just check` is the gate. `scripts/night.sh` runs the open `night` issues unattended.
+Every version of the notebook and its SPEC is kept in [`versions/`](versions/README.md); the newest folder is
+always what is on `main`. Make the next one with `just version "what changed"` before merging.
