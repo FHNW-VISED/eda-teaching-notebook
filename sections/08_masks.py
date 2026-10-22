@@ -540,7 +540,7 @@ plt.close(fig)
 
 # %% [markdown]
 # Then the five checks, all computed from the mask and its annotated box, each with the rule that makes a mask
-# a suspect. The picture after the list draws each check on one toy mask.
+# a suspect. The picture after the list measures them on the **healthy** horse, so you see the normal values.
 #
 # 1. **mask–box agreement** (the only check that uses IoU): draw the tightest box around the mask and compare
 #    it with the team's box; their IoU (section 7) is 1 when they match. Suspect when it is below `IOU_MIN`
@@ -561,18 +561,13 @@ plt.close(fig)
 # </details>
 
 # %%
-# @title The five checks drawn on one toy mask { display-mode: "form" }
-# A toy "horse" (body, four legs, a hole, a separate piece) and its sloppily drawn box, measured with the same
-# mask_shape() that the hunt uses, so the numbers in the titles are the numbers the checks will compute.
+# @title The five checks measured on the healthy toy horse, with their normal ranges { display-mode: "form" }
+# The healthy horse of the first picture (its grey outline there) and the box drawn from it, measured with the
+# same mask_shape() the hunt uses: the normal values. A spoiled mask is a suspect when one leaves its range.
 _H, _W = 60, 84
-_yy, _xx = np.mgrid[0:_H, 0:_W]
-_toy = toy_horse(_H, _W).astype(bool)  # the body and four legs
-_toy |= (_xx >= 68) & (_xx < 76) & (_yy >= 30) & (_yy < 38)  # a separate piece, away from the body
-_hole = (_xx - 40) ** 2 + (_yy - 28) ** 2 <= 16
-_toy = (_toy & ~_hole).astype(np.uint8)
-_tx, _ty, _tw, _th = cv2.boundingRect(_toy)  # the mask's own tight box
-_drawn = (_tx + 5, _ty + 3, _tw, _th)  # the annotator's box, a bit off
-_s = mask_shape(_toy, _drawn)
+_toy = toy_horse(_H, _W)
+_box = cv2.boundingRect(_toy)  # the team's box, drawn from the real outline
+_s = mask_shape(_toy, _box)
 
 
 def _layer(mask, color, alpha):
@@ -581,56 +576,39 @@ def _layer(mask, color, alpha):
     return out
 
 
-_n_parts, _parts_lab = cv2.connectedComponents(_toy, connectivity=8)
-_part_sizes = {k: int((_parts_lab == k).sum()) for k in range(1, _n_parts)}
-_main_part = max(_part_sizes, key=_part_sizes.get)
 _contours, _ = cv2.findContours(_toy, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 _hull = cv2.convexHull(np.vstack(_contours))[:, 0, :]
-
-fig, axes = plt.subplots(1, 5, figsize=(13, 2.9))
-for ax in axes:
-    ax.imshow(_layer(_toy, CLASS_COLORS["horse"], 0.35))
+_titles = [
+    f"1 · mask-box agreement (IoU)\nhere {_s['box_iou']:.2f}\nsuspect below 0.9",
+    f"2 · fill = mask ÷ box\nhere {_s['fill']:.2f}\nsuspect outside 0.15–0.95",
+    f"3 · pieces\nhere {_s['pieces']}\nsuspect above 3",
+    f"4 · holes\nhere {_s['holes']}\nsuspect with any hole",
+    f"5 · solidity = mask ÷ rubber band\nhere {_s['solidity']:.2f}\nsuspect above 0.97 (no dents)",
+]
+fig, axes = plt.subplots(1, 5, figsize=(13, 3.1))
+for k, ax in enumerate(axes):
+    ax.imshow(_layer(_toy, CLASS_COLORS["horse"], 0.85))
+    if k in (0, 1):  # the box the team drew (and, for check 1, the mask's own tight box on top of it)
+        ax.add_patch(mpl.patches.Rectangle((_box[0] - 0.5, _box[1] - 0.5), _box[2], _box[3], fill=False, lw=2,
+                                           ls="--", edgecolor=INK))
+    if k == 4:  # the rubber band around the whole mask
+        ax.add_patch(mpl.patches.Polygon(_hull, closed=True, fill=False, lw=2, ls="--", edgecolor=INK))
+    ax.set_title(_titles[k], fontsize=8)
+    ax.set_xlim(-0.5, _W - 0.5)
+    ax.set_ylim(_H - 0.5, -0.5)
     ax.set_xticks([])
     ax.set_yticks([])
     ax.grid(False)
-ax = axes[0]  # 1 · mask-box agreement: the mask's own box (solid) against the drawn box (dashed)
-ax.add_patch(mpl.patches.Rectangle((_tx - 0.5, _ty - 0.5), _tw, _th, fill=False, lw=2, edgecolor=INK))
-ax.add_patch(mpl.patches.Rectangle((_drawn[0] - 0.5, _drawn[1] - 0.5), _drawn[2], _drawn[3], fill=False, lw=2,
-                                   ls="--", edgecolor=CLASS_COLORS["sheep"]))
-ax.set_title(f"1 · mask-box agreement\nsolid: mask's own box · dashed: drawn\nIoU = {_s['box_iou']:.2f}",
-             fontsize=8)
-ax = axes[1]  # 2 · fill: mask pixels out of the drawn box's pixels
-ax.imshow(_layer(_toy, CLASS_COLORS["horse"], 0.9))
-ax.add_patch(mpl.patches.Rectangle((_drawn[0] - 0.5, _drawn[1] - 0.5), _drawn[2], _drawn[3], fill=False, lw=2,
-                                   ls="--", edgecolor=CLASS_COLORS["sheep"]))
-ax.set_title(f"2 · fill = mask ÷ drawn box\n{int(_toy.sum()):,} ÷ {_drawn[2] * _drawn[3]:,} "
-             f"= {_s['fill']:.2f}", fontsize=8)
-ax = axes[2]  # 3 · pieces: each connected part, the main one in colour, the others dark
-for k in _part_sizes:
-    ax.imshow(_layer(_parts_lab == k, CLASS_COLORS["horse"] if k == _main_part else INK, 0.9))
-ax.set_title(f"3 · pieces\nseparate parts (dark = extra)\n= {_s['pieces']}", fontsize=8)
-ax = axes[3]  # 4 · holes: the enclosed gaps
-ax.imshow(_layer(_toy, CLASS_COLORS["horse"], 0.9))
-ax.imshow(_layer(_hole, INK, 1.0))
-ax.annotate("hole", xy=(40, 28), xytext=(40, 6), ha="center", fontsize=8, color=INK,
-            arrowprops={"arrowstyle": "->", "color": INK})
-ax.set_title(f"4 · holes\ngaps fully inside the mask\n= {_s['holes']}", fontsize=8)
-ax = axes[4]  # 5 · solidity: mask area over the area of its convex hull (the rubber band)
-ax.add_patch(mpl.patches.Polygon(_hull, closed=True, fill=False, lw=2, ls="--", edgecolor=INK))
-ax.imshow(_layer(_toy, CLASS_COLORS["horse"], 0.9))
-ax.set_title(f"5 · solidity = mask ÷ rubber band\n(dashed: the rubber band)\n= {_s['solidity']:.2f}",
-             fontsize=8)
-for ax in axes:
-    ax.set_xlim(-0.5, _W - 0.5)
-    ax.set_ylim(_H - 0.5, -0.5)
+fig.suptitle("The five checks on the healthy horse: its numbers are normal. Which spoiled horse would push "
+             "which number out of range?", color=INK, fontsize=10)
 fig.tight_layout()
 display(fig)
 plt.close(fig)
 
 # %% [markdown]
-# **Q22.** 🟡 Match each kind (first picture) to the check you expect to catch it (the numbered list):
-# write five pairs, e.g. *shifted → mask–box agreement*. Some kinds trip more than one check, and one check
-# may catch none.
+# **Q22.** 🟡 Match each kind (first picture) to the check you expect to catch it: imagine each spoiled
+# horse measured like the healthy one above, and ask which number leaves its normal range. Write five pairs
+# in the form *kind → check*. Some kinds trip more than one check, and one check may catch none.
 #
 # Then run the hunt (the cell after the ✏️ box) and read its output in this order:
 #
