@@ -25,3 +25,19 @@ under Q11's (the key is computed at runtime, so it cannot live inside the static
 
 N-024 tightened (medium), N-050 (lint) and N-051 (review) added to the vault ledger on 2026-10-22, and
 `RULES.md` was synced on this branch.
+
+## Cuts decided the same day (Simone, after an honest repetition review; N-047 consent given per item)
+
+Applied on `cuts/2026-10-22`. Time column ≈ 108 lab min (estimate, **not re-timed**; was ≈ 144).
+
+| # | Repetition found | Decision | Effect |
+|---|---|---|---|
+| C1 | "A lazy model ignores the rare class" taught four times (§1 example, §4 Q9, §7's 1000-frame "always sheep" toy, §9's "background everywhere" demo) | **Remove**: §7 Metrics deleted; ✍️ `ALERT_METRIC` (accuracy / recall / precision on dog, each defined in one line) moved to the end of §4; `box_iou_dice` + one go-deeper (counting error, IoU, Dice, mAP) moved into boxes; §9's background demo cut; §1's example no longer pre-empts Q9 | Sections renumbered: boxes 7, masks 8, Challenge 9, your dataset 10, wrap-up 11. Q17 gone |
+| C2 | The Challenge re-runs the hunts of §5, boxes and masks | **Optional**: in class a demo (batch → reference score → answer-key toggles); the Q24 hunt sits under "🔴 Optional · Run the hunt yourself" | FACILITATION row 9: 7 min, demo |
+| C3 | Q5 (detective beat) found what Q4's answer already says (longest side capped at 640) | **Remove** the beat and its question | Q5 gone; questions now 1–26 |
+| C4 | "Deduplicate before splitting" said four times | **Keep only §5's pitfall**; §5's burst go-deeper, §6's across-tasks line and §10's pitfall go | — |
+| R7 | "can you please show the box of the animal, if there is one? since they are hard to see" (trail-camera bursts) | The 512 px copy stores the camera's original size in its JPEG comment; `draw_cct_boxes` draws the manifest's `bbox` in the class colour on the burst gallery and on Q14's real-photo leak figure; the gallery prefers bursts with a box on every frame | Old cached copies without the comment are re-downloaded once |
+
+Not chosen: #4 (merge §1/§2) and #6 (drop "What a label costs").
+Tests: §7's six tests and the detective-beat / rabbit / 8-minute-hunt tests are replaced by C1–C4, R1 and R7 tests
+(`tests/test_cuts.py`); `tests/test_content.py` only renumbered (alert metric now requires section 04).

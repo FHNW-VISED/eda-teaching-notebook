@@ -39,12 +39,12 @@
 # by 9 points, the sheep share was cut in half.
 
 # %% [markdown]
-# **Q14.** 🟡 On the Play Dataset's random 80 / 20 split, for each class compare its share in the test set
+# **Q13.** 🟡 On the Play Dataset's random 80 / 20 split, for each class compare its share in the test set
 # with its share overall. Which class is off by the biggest fraction of itself: the biggest or the smallest?
 # Does the stratified split fix that completely, or only mostly? Decide, then run.
 
 # %%
-# @title Q14 Random vs stratified 80 / 20 split and the class share of each test set { display-mode: "form" }
+# @title Q13 Random vs stratified 80 / 20 split and the class share of each test set { display-mode: "form" }
 from sklearn.model_selection import (
     GroupKFold,
     GroupShuffleSplit,
@@ -99,7 +99,7 @@ RESULTS["split_drift_random_pp"] = float(_drift["random · test"].max())
 RESULTS["split_drift_stratified_pp"] = float(_drift["stratified · test"].max())
 
 # %% [markdown]
-# <!-- callout: answer | Worked answer (Q14) -->
+# <!-- callout: answer | Worked answer (Q13) -->
 # The smallest class moves the most relative to its own size: one photo can halve
 # a small share (grey bars = whole table, coloured = test set), and if that class is the dog, the alert is
 # scored on a handful of photos. Stratifying fixes it up to rounding (you cannot put 10.6 sheep in test), but
@@ -223,6 +223,8 @@ cv_schemes = [r["scheme"] for r in cv_rows]
 
 # %%
 # @title Trail-camera helpers (manifest, download + resize to 512 px, burst gallery) { display-mode: "form" }
+import re
+
 CCT_DIR = DATA_DIR / "cache" / "cct20"
 CCT_SIDE = 512
 CCT_CLASSES = ["opossum", "raccoon", "coyote", "bobcat", "rabbit"]
@@ -249,19 +251,27 @@ def select_cct_rows(table: pd.DataFrame) -> pd.DataFrame:
     return pd.concat(keep).reset_index(drop=True)
 
 
+def cct_original_size(path: Path) -> tuple[int, int] | None:
+    """The camera's (width, height), stored in the 512 px copy's JPEG comment; None for an older copy."""
+    with Image.open(path) as im:
+        found = re.match(rb"original (\d+)x(\d+)", im.info.get("comment", b""))
+    return (int(found[1]), int(found[2])) if found else None
+
+
 def fetch_cct_image(row: dict) -> tuple[str, Path | None]:
     """Download one trail-camera photo and store a 512 px copy; returns (file_name, path or None)."""
     dest = CCT_DIR / row["file_name"]
-    if dest.exists() and dest.stat().st_size > 0:
+    if dest.exists() and dest.stat().st_size > 0 and cct_original_size(dest):
         return row["file_name"], dest
     raw = download_file(row["url"], CCT_DIR / "raw" / row["file_name"])
     if raw is None:
         return row["file_name"], None
     with Image.open(raw) as im:
+        width, height = im.size  # the boxes in the manifest are in these pixels
         im.draft("RGB", (CCT_SIDE, CCT_SIDE))
         small = im.convert("RGB")
         small.thumbnail((CCT_SIDE, CCT_SIDE))
-        small.save(dest, "JPEG", quality=90)
+        small.save(dest, "JPEG", quality=90, comment=f"original {width}x{height}".encode())
     raw.unlink(missing_ok=True)
     return row["file_name"], dest
 
@@ -282,12 +292,25 @@ def download_cct(table: pd.DataFrame, workers: int = 16) -> pd.DataFrame:
     return out.sort_values(["location", "seq_id", "frame_num"]).reset_index(drop=True)
 
 
+def draw_cct_boxes(ax, row, thumb) -> None:
+    """Draw the animal's box(es) from the manifest on a thumbnail, in the class colour (none when empty)."""
+    original = cct_original_size(Path(row["path"]))
+    if not isinstance(row["bbox"], str) or original is None:
+        return
+    scale = thumb.width / original[0]
+    for x, y, w, h in json.loads(row["bbox"]):
+        ax.add_patch(mpl.patches.Rectangle((x * scale, y * scale), w * scale, h * scale, fill=False, lw=2,
+                                           edgecolor=CCT_COLORS[row["label"]]))
+
+
 def show_bursts(table: pd.DataFrame, n_bursts: int, size: int = 256) -> None:
     """One row per burst: its frames side by side, framed in the class colour, titled with the location.
 
-    Picks bursts of different animals at different cameras where the table allows it.
+    Picks bursts of different animals at different cameras, with a box on every frame, where the table
+    allows it.
     """
     candidates = [b for _, b in table.groupby("seq_id", sort=True) if len(b) > 1]
+    candidates.sort(key=lambda b: not b["bbox"].notna().all())  # fully boxed bursts first (stable sort)
     bursts, seen_labels, seen_locations = [], set(), set()
     for b in candidates:
         label, location = b["label"].iloc[0], b["location"].iloc[0]
@@ -304,7 +327,9 @@ def show_bursts(table: pd.DataFrame, n_bursts: int, size: int = 256) -> None:
             ax = axes[r, c]
             if c < len(burst):
                 row = burst.iloc[c]
-                ax.imshow(load_thumb(row["path"], size))
+                thumb = load_thumb(row["path"], size)
+                ax.imshow(thumb)
+                draw_cct_boxes(ax, row, thumb)
                 frame(ax, CCT_COLORS[row["label"]])
                 ax.set_title(f"camera {row['location']} · {row['label']} · frame {row['frame_num']}",
                              fontsize=8)
@@ -372,12 +397,12 @@ display(fig)
 plt.close(fig)
 
 # %% [markdown]
-# **Q15.** 🟡 Take 100 trail-camera photos in bursts of three and a random 80 / 20 split (20 photos in test).
+# **Q14.** 🟡 Take 100 trail-camera photos in bursts of three and a random 80 / 20 split (20 photos in test).
 # For one test photo, each of its two siblings lands in training with probability 0.8. Predict the sibling
 # rate of the random split: about 0 %, about 20 %, or most of the test photos? And of a split by camera?
 
 # %%
-# @title Q15 Test photos with a burst sibling in training: random vs by camera { display-mode: "form" }
+# @title Q14 Test photos with a burst sibling in training: random vs by camera { display-mode: "form" }
 def sibling_rate(train: pd.DataFrame, test: pd.DataFrame) -> float:
     """Share of test photos whose seq_id (burst) also appears in the training table (0 = no leak)."""
     if len(test) == 0:
@@ -411,7 +436,7 @@ plt.show()
 # The same random split on real photos: a test frame (magenta) next to its siblings in training (grey-blue).
 
 # %%
-# @title Q15 on real photos: a test frame next to its siblings in training { display-mode: "form" }
+# @title Q14 on real photos: a test frame next to its siblings in training { display-mode: "form" }
 def show_leaks(table: pd.DataFrame, train_idx, test_idx, n_examples: int = 2, size: int = 256) -> None:
     """For a few test photos that have siblings in training, show the whole burst: test vs train frames."""
     in_test = set(test_idx)
@@ -432,7 +457,9 @@ def show_leaks(table: pd.DataFrame, train_idx, test_idx, n_examples: int = 2, si
                 continue
             row = burst.iloc[c]
             part = "test" if burst.index[c] in in_test else "train"
-            ax.imshow(load_thumb(row["path"], size))
+            thumb = load_thumb(row["path"], size)
+            ax.imshow(thumb)
+            draw_cct_boxes(ax, row, thumb)
             frame(ax, SPLIT_COLORS[part])
             ax.set_title(f"camera {row['location']} · frame {row['frame_num']} · {part}", fontsize=8)
     fig.suptitle("Random split: the test frame and its siblings in training", color=INK)
@@ -444,7 +471,7 @@ def show_leaks(table: pd.DataFrame, train_idx, test_idx, n_examples: int = 2, si
 show_leaks(cct, _tr, _te)
 
 # %% [markdown]
-# <!-- callout: answer | Worked answer (Q15) -->
+# <!-- callout: answer | Worked answer (Q14) -->
 # Random split: **most test photos**, about 96 of 100. Split by camera: **0 %**,
 # because a burst never spans two cameras.
 #
@@ -485,11 +512,11 @@ show_leaks(cct, _tr, _te)
 # - **Detection:** the unit is still the *image*, never the box. A paddock photo with 3 sheep and 1 horse
 #   cannot have its sheep in train and its horse in test. One photo carries several labels, so plain
 #   stratification does not apply: *iterative stratification* balances the box counts per class across folds
-#   (section 8).
+#   (section 7).
 # - **Segmentation:** the same, with pixel shares instead of box counts. A rare class with a few large masks,
-#   the aviary's birds, can end up entirely in one fold if you do not check (section 9).
+#   the aviary's birds, can end up entirely in one fold if you do not check (section 8).
 #
-# In all three: deduplicate first (section 5), then split, then never look at the test set again.
+# In all three: split once, then never look at the test set again.
 
 # %% [markdown]
 # <!-- callout: takeaway | Takeaway -->
@@ -499,8 +526,7 @@ show_leaks(cct, _tr, _te)
 #   group and measure the sibling rate (it should be 0 %) before any model.
 # - **When you see** a tiny dataset → **do** use LOO only if every photo counts, and LOGO if the photos come
 #   in groups.
-# - **When you see** a test score that looks too good → **do** ask what train and test share. Section 7 picks
-#   the metric to compute on that test set.
+# - **When you see** a test score that looks too good → **do** ask what train and test share.
 
 
 # %% [markdown]
@@ -620,11 +646,11 @@ if _absent:
 # It measures the same thing twice: with k-fold (random, leaks across bursts) and with LOGO (one camera out).
 
 # %% [markdown]
-# **Q16.** 🔴 With 5 animals, guessing scores 20 %. Will the ruler score higher with k-fold or with LOGO, and
+# **Q15.** 🔴 With 5 animals, guessing scores 20 %. Will the ruler score higher with k-fold or with LOGO, and
 # roughly by how much? Predict, then run.
 
 # %%
-# @title Q16 Colour-histogram ruler: 1-NN accuracy, k-fold vs LOGO (one camera out) { display-mode: "form" }
+# @title Q15 Colour-histogram ruler: 1-NN accuracy, k-fold vs LOGO (one camera out) { display-mode: "form" }
 from sklearn.neighbors import KNeighborsClassifier
 
 RULER_THUMB = 64
@@ -662,7 +688,7 @@ plt.tight_layout()
 plt.show()
 
 # %% [markdown]
-# <!-- callout: answer | Worked answer (Q16) -->
+# <!-- callout: answer | Worked answer (Q15) -->
 # K-fold scores higher, by a large gap: on the full slice the ruler roughly
 # doubles its accuracy when its neighbours may be burst siblings (same animal, same tree), while under LOGO
 # it must find a similar photo at another camera and falls towards chance. Read the direction and the size of

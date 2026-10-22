@@ -159,7 +159,7 @@ show_grid(CLASS_TO_SHOW, n_show)
 # 2. **People:** a person, hand or leash is in many photos: "person + leash = dog" is a shortcut to learn.
 # 3. **Odd photos:** two or three dogs, a costume, a screen: labelling decisions (sections 4 and 5).
 #
-# Keep your three lines: section 11 asks for the same three on your own dataset.
+# Keep your three lines: section 10 asks for the same three on your own dataset.
 
 # %% [markdown]
 # <!-- callout: takeaway | Takeaway -->

@@ -1,5 +1,5 @@
 # %% [markdown]
-# ## 11. Your project dataset
+# ## 10. Your project dataset
 
 # %% [markdown]
 # <!-- callout: objective | Objective -->
@@ -33,7 +33,7 @@
 # %% [markdown]
 # <!-- callout: go-deeper | Go deeper · Detection or segmentation project, and big datasets -->
 # Put all images in one folder inside `MY_DATASET_DIR`. The class counts then say nothing, but sizes, modes,
-# copies and the split still do (the box and mask checks are sections 8 and 9). Images deeper inside a class
+# copies and the split still do (the box and mask checks are sections 7 and 8). Images deeper inside a class
 # folder count, other files are ignored. Datasets above `MY_MAX_IMAGES` photos are sampled down, keeping the
 # class shares, so the checks stay at a minute or two.
 
@@ -297,13 +297,13 @@ RESULTS["swap_in"] = {"source": my_source, "n_images": int(len(my_files)), "n_cl
 # to read each check and ends with the seven guiding questions.
 
 # %% [markdown]
-# **Q27.** 🟢 Think of what you expect for your dataset: the largest and the smallest class, how many image
+# **Q25.** 🟢 Think of what you expect for your dataset: the largest and the smallest class, how many image
 # sizes and colour modes, and whether there are copies. (Think of your answers; there is no need to type
 # them.) Then compare with the checks above. On the sample the folders are cat, dog, bird, horse, sheep and
 # zebra with 20 photos each, plus the three planted problems: which check caught each one?
 
 # %% [markdown]
-# <!-- callout: answer | Worked answer (Q27, on the sample) -->
+# <!-- callout: answer | Worked answer (Q25, on the sample) -->
 # - **Check 1:** every folder holds the same number of photos, plus the planted copies in cat and dog, so
 #   the ratio is close to 1 : 1. That is a property of the sample, not of the park.
 # - **Check 2:** all sizes fall in the Play Dataset's few clusters (long side 640 or 500 px). The grayscale
@@ -324,7 +324,7 @@ RESULTS["swap_in"] = {"source": my_source, "n_images": int(len(my_files)), "n_cl
 #
 # - **One tight cluster of sizes:** one source.
 # - **A second cluster, or one class sitting apart:** a second source, and the model may learn the source
-#   instead of the animal (section 3's detective beat).
+#   instead of the animal.
 # - **Every file that is not RGB** is listed in check 2: decide whether to convert it or drop it.
 
 # %% [markdown]
@@ -334,12 +334,6 @@ RESULTS["swap_in"] = {"source": my_source, "n_images": int(len(my_files)), "n_cl
 # - **Look twice at pairs from different class folders:** one of the two labels is wrong.
 # - **Many pairs on near-identical shots** (a fixed camera, a microscope) are genuinely different photos:
 #   lower `HASH_THRESHOLD` in section 5 and rerun.
-
-# %% [markdown]
-# <!-- callout: pitfall | Pitfall · Splitting before deduplicating -->
-# If the two files of a copy pair land on different sides of the split, the test set contains photos the
-# model has already seen, and the score is too good (section 6). Check 4 therefore keeps every copy group
-# together, even before you have removed the copies.
 
 # %% [markdown]
 # <!-- callout: go-deeper | Go deeper · The split is only a suggestion -->
@@ -353,13 +347,13 @@ RESULTS["swap_in"] = {"source": my_source, "n_images": int(len(my_files)), "n_cl
 #
 # These questions are the notebook in short. Each one has the park's answer, and an empty line for yours.
 #
-# **Q28.** 🟢 Double-click the next cell and answer each guiding question for your project dataset, using
+# **Q26.** 🟢 Double-click the next cell and answer each guiding question for your project dataset, using
 # the output of the checklist above and what you know about where the data comes from.
 
 # %% [markdown]
 # 1. **What is the task, and which mistake is the expensive one?**
 #    - *The park:* classification of who is in front of the camera; the expensive mistake is a missed dog
-#      in the sheep paddock, so the metric is recall on dog (section 7).
+#      in the sheep paddock, so the metric is recall on dog (section 4).
 #    - *Your dataset:*
 # 2. **Do the images look like what the model will see in use?**
 #    - *The park:* only partly. COCO has close-ups, sofas and people; a fixed paddock camera sees small

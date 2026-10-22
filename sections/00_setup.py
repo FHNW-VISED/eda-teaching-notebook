@@ -364,7 +364,7 @@ images.drop(columns="license").head()  # the licence column stays in the table, 
 # <details><summary>Your project dataset, and the Karpathy reference</summary>
 #
 # - The notebook runs in Colab, where a CPU runtime is enough, and assumes the lecture on image datasets.
-# - Bring your project dataset as one folder per class (section 11): mount Google Drive or upload a zip
+# - Bring your project dataset as one folder per class (section 10): mount Google Drive or upload a zip
 #   there.
 # - The notebook follows the first part of Karpathy's
 #   [*A Recipe for Training Neural Networks*](https://karpathy.github.io/2019/04/25/recipe/): know your data
@@ -398,7 +398,7 @@ images.drop(columns="license").head()  # the licence column stays in the table, 
 # `annotations` (one row per animal: its box and mask).
 #
 # Several photos hold more than one animal (`n_animals`), which hints at a question in section 4. Everything
-# you learn here is a checklist you will reuse on your own dataset in section 11.
+# you learn here is a checklist you will reuse on your own dataset in section 10.
 #
 # </details>
 

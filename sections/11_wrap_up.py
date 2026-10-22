@@ -1,5 +1,5 @@
 # %% [markdown]
-# ## 12. Wrap-up & next week
+# ## 11. Wrap-up & next week
 
 # %% [markdown]
 # <!-- callout: objective | Objective -->
@@ -31,8 +31,8 @@ recap = {
     "3 · Split, metric, and the three tasks": [
         f"test photos with a burst sibling in train: random split {RESULTS['sibling_rate_random']:.0%}, "
         f"split by camera {RESULTS['sibling_rate_by_camera']:.0%}",
-        f"prepared predictions: accuracy {RESULTS['accuracy']:.0%}, "
-        f"recall on dog {RESULTS['recall_dog']:.0%}",
+        f"'always sheep' on a paddock week: accuracy {RESULTS['accuracy']:.0%}, "
+        f"recall on dog {RESULTS['recall_dog']:.0%} → the alert is judged on {RESULTS['alert_metric']}",
         f"bird: {_photos['bird'] / sum(_photos.values()):.0%} of photos, "
         f"{_boxes['bird'] / sum(_boxes.values()):.0%} of boxes, {_pixels['bird']:.0%} of pixels",
     ],
@@ -80,7 +80,7 @@ for outcome, lines in recap.items():
 #
 # The cleaned table and the split go into a model: first a dumb end-to-end baseline, then a model that
 # overfits, then regularisation (Karpathy's recipe, continued). **Bring along** your answers to the guiding
-# questions of section 11 and your split (`data/cache/my_split.csv`, or the one you choose by hand).
+# questions of section 10 and your split (`data/cache/my_split.csv`, or the one you choose by hand).
 
 # %% [markdown]
 # <!-- callout: go-deeper | Go deeper · Augmentation and experiment tracking -->

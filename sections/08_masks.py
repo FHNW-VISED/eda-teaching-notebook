@@ -1,5 +1,5 @@
 # %% [markdown]
-# ## 9. Same data, masks
+# ## 8. Same data, masks
 
 # %% [markdown]
 # <!-- callout: objective | Objective -->
@@ -175,11 +175,11 @@ masks.head(3)
 # Every pixel that is not an animal is *background*, a class like any other for the model.
 
 # %% [markdown]
-# **Q22.** 🟢 What share of all pixels do you expect to be background: a quarter, a half, or most? Is bird
+# **Q20.** 🟢 What share of all pixels do you expect to be background: a quarter, a half, or most? Is bird
 # frequent or rare by pixels? Guess both, then run.
 
 # %%
-# @title Q22 Pixels per class including background, next to the photo and box shares { display-mode: "form" }
+# @title Q20 Pixels per class including background, next to the photo and box shares { display-mode: "form" }
 photo_rle = {}  # one merged mask per photo, reused by the heatmaps below
 _animal_px = dict.fromkeys(CLASSES, 0)
 for image_id, own in masks.groupby("image_id"):
@@ -236,47 +236,12 @@ display(fig)
 plt.close(fig)
 
 # %% [markdown]
-# <!-- callout: answer | Worked answer (Q22) -->
+# <!-- callout: answer | Worked answer (Q20) -->
 # Most of them: about 85 % of all pixels are background (the smoke subset gives about
 # 80 %). Bird is rare again: about 1 % of all pixels (6–7 % of the animal pixels), because most birds are far
 # away, while cat and dog come back (a pet photo is a close-up). Photos, boxes, pixels: three rankings of one
 # dataset, so "bird is rare" needs its unit. (The cell merges each photo's masks into one, so a pixel belongs
 # to at most one animal.)
-
-# %% [markdown]
-# <!-- callout: pitfall | Pitfall · A model that answers "background" everywhere -->
-# It is right on about 85 % of the pixels: the pixel version of section 4's "always sheep". The number looks
-# great, and every animal is missed. The cell below plays that model on one dog photo.
-
-# %%
-# @title Pitfall demo: the fake model that says "background" everywhere { display-mode: "form" }
-_dog = clean_images[(clean_images["class"] == "dog") & clean_images["id"].isin(list(photo_rle))]
-_dog = _dog.iloc[0] if len(_dog) else clean_images[clean_images["id"].isin(list(photo_rle))].iloc[0]
-_truth = decode(photo_rle[_dog["id"]])
-_acc = 1 - float(_truth.mean())
-_thumb = load_thumb(_dog["path"], 384)
-_t_small = cv2.resize(_truth, _thumb.size, interpolation=cv2.INTER_NEAREST) > 0
-fig, axes = plt.subplots(1, 3, figsize=(10, 3))
-_ov = np.zeros((_thumb.height, _thumb.width, 4))
-_ov[_t_small] = (*mpl.colors.to_rgb(CLASS_COLORS[_dog["class"]]), 0.6)
-axes[0].imshow(_thumb)
-axes[0].imshow(_ov)
-axes[0].set_title(f"truth: the {_dog['class']} is {1 - _acc:.0%} of the pixels", fontsize=9)
-axes[1].imshow(_thumb)
-axes[1].imshow(np.full((_thumb.height, _thumb.width, 4), (*mpl.colors.to_rgb(BACKGROUND_COLOR), 0.8)))
-axes[1].set_title("fake model: everything is background", fontsize=9)
-for ax in axes[:2]:
-    frame(ax, INK)
-axes[2].bar(["pixel\naccuracy", f"{_dog['class']}\nIoU"], [_acc, 0.0],
-            color=[BACKGROUND_COLOR, CLASS_COLORS[_dog["class"]]])
-axes[2].text(0, _acc + 0.02, f"{_acc:.0%}", ha="center", fontsize=9)
-axes[2].text(1, 0.02, "0%", ha="center", fontsize=9)
-axes[2].set_ylim(0, 1.1)
-axes[2].yaxis.set_major_formatter(mpl.ticker.PercentFormatter(1.0))
-axes[2].set_title("looks great, finds nothing", fontsize=9)
-fig.tight_layout()
-display(fig)
-plt.close(fig)
 
 # %% [markdown]
 # ### How big is a mask, and how much of its box does it fill?
@@ -287,11 +252,11 @@ plt.close(fig)
 # (median) and the highest fill ratio.
 
 # %% [markdown]
-# **Q23.** 🟡 What fraction of its box does a typical animal fill: about 25 %, 50 % or 80 %? Which class do
+# **Q21.** 🟡 What fraction of its box does a typical animal fill: about 25 %, 50 % or 80 %? Which class do
 # you expect to fill its box least? Guess, then run.
 
 # %%
-# @title Q23 Shape numbers of every mask, then mask area and fill ratio per class { display-mode: "form" }
+# @title Q21 Shape numbers of every mask, then mask area and fill ratio per class { display-mode: "form" }
 animals = masks[masks["iscrowd"] == 0].reset_index(drop=True)
 _shape = pd.DataFrame([mask_shape(decode(r), b)
                        for r, b in zip(animals["rle"], animals["bbox"], strict=True)])
@@ -344,7 +309,7 @@ show_masks(clean_images.set_index("id").loc[list(_ends["image_id"])].reset_index
            cols=len(_ends))
 
 # %% [markdown]
-# <!-- callout: answer | Worked answer (Q23) -->
+# <!-- callout: answer | Worked answer (Q21) -->
 # About half, in a narrow band of roughly 40–60 % for every class: near 45 % for bird
 # and horse (wings, legs, necks), near 55 % for cat and sheep (compact shapes). The low end of the gallery
 # shows spread wings and diagonal poses, the high end close-ups cut by the photo's edge. That band is what
@@ -492,7 +457,7 @@ print(f"park_masks: {len(park_masks)} animal masks on {park_masks['image_id'].nu
 # Five checks, all computed from the mask and its annotated box. The picture below draws each on one toy mask:
 #
 # - **mask–box agreement**: the IoU (section 7) between the tight box around the mask and the annotated box;
-# - **fill ratio**: mask area / box area, from Q23;
+# - **fill ratio**: mask area / box area, from Q21;
 # - **pieces**: separate parts of the mask;
 # - **holes**: gaps fully inside the mask;
 # - **solidity**: mask area / area of its **convex hull**, the "rubber band" around the whole mask.
@@ -577,7 +542,7 @@ plt.close(fig)
 
 # %% [markdown]
 # <!-- callout: your-turn | Your turn · Set the thresholds -->
-# Run the hunt with the default `IOU_MIN` first. Then set it to 0.97, rerun this cell and the Q24 cell, and
+# Run the hunt with the default `IOU_MIN` first. Then set it to 0.97, rerun this cell and the Q22 cell, and
 # watch how many *real* masks join the suspects: a stricter check flags more real masks, which is more human
 # looking time. Then loosen it (0.5) and see what you lose.
 
@@ -589,11 +554,11 @@ if not (isinstance(IOU_MIN, (int, float)) and 0 <= IOU_MIN <= 1):
     raise SystemExit("IOU_MIN is a number between 0 and 1.")
 
 # %% [markdown]
-# **Q24.** 🟡 Which check do you expect to catch each of the five kinds? Some kinds may trip more than one
+# **Q22.** 🟡 Which check do you expect to catch each of the five kinds? Some kinds may trip more than one
 # check, and one check may catch none. Write five pairs (kind → check), then run and compare.
 
 # %%
-# @title Q24 Measure every judged mask, flag the suspects, score the hunt { display-mode: "form" }
+# @title Q22 Measure every judged mask, flag the suspects, score the hunt { display-mode: "form" }
 FILL_RANGE = (0.15, 0.95)  # suspect when mask area / box area is outside this range
 MAX_PIECES = 3  # suspect with more separate pieces than this
 MAX_HOLES = 0  # suspect with more holes than this
@@ -674,7 +639,7 @@ fig.tight_layout()
 answer_box("The answer key: the five planted masks, the checks that fired, original vs planted", _lines, fig)
 
 # %% [markdown]
-# <!-- callout: answer | Worked answer (Q24) -->
+# <!-- callout: answer | Worked answer (Q22) -->
 # No check catches everything; together they catch all five, plus a few dozen real
 # masks (about 5 % of those judged: a list a person can look through in ten minutes). The box check does most
 # of the work because COCO built its boxes *from* the masks, so a mask that moved, grew or belongs elsewhere
@@ -714,7 +679,7 @@ answer_box("The answer key: the five planted masks, the checks that fired, origi
 # %% [markdown]
 # #### Where the animal pixels are: one heatmap per class
 #
-# Section 8 drew where the box *centres* are. A mask says more: which pixels of the frame are animal. The
+# Section 7 drew where the box *centres* are. A mask says more: which pixels of the frame are animal. The
 # next cell shrinks every photo's merged mask to the same small square and averages them per class, so a
 # dark spot means "in many of this class's photos, this spot is animal".
 
@@ -765,11 +730,11 @@ plt.close(fig)
 # The next cell marks, in every mask, the pixels in parts narrower than `THIN_PX` = 7 px.
 
 # %% [markdown]
-# **Q25.** 🔴 Which class has the most masks with thin parts, and is it for the same reason as the
+# **Q23.** 🔴 Which class has the most masks with thin parts, and is it for the same reason as the
 # runner-up? Pick one, then run.
 
 # %%
-# @title Q25 Share of each class's masks with thin parts, and the thinnest masks { display-mode: "form" }
+# @title Q23 Share of each class's masks with thin parts, and the thinnest masks { display-mode: "form" }
 THIN_SHARE = 0.05  # a mask "has thin parts" when at least this share of its pixels is thin
 _big = animals["mask_area"] >= MIN_JUDGED_AREA
 _has_thin = animals["thin"] >= THIN_SHARE
@@ -805,7 +770,7 @@ show_masks(clean_images.set_index("id").loc[list(_most_thin["image_id"])].reset_
            cols=N_THIN_SHOW)
 
 # %% [markdown]
-# <!-- callout: answer | Worked answer (Q25) -->
+# <!-- callout: answer | Worked answer (Q23) -->
 # Bird, by far, on all masks (about two thirds on the full set), but not because
 # birds have long legs: most birds are so small that the *whole bird* is a thin part. Among the masks large
 # enough to judge, horse leads (legs), then bird, sheep and zebra, and cat almost never has one: tiny objects

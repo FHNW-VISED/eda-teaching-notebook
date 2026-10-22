@@ -33,7 +33,7 @@
 # ### Exact duplicates: the same bytes twice
 #
 # The cheapest check first. Two files that are byte-for-byte identical have the same **MD5 hash**, so one
-# pass over the files finds every exact copy, whatever its name. You run it in Q10 below.
+# pass over the files finds every exact copy, whatever its name. You run it in Q9 below.
 
 # %%
 # @title Hash helpers (MD5, perceptual hash, flipped and rotated variants) { display-mode: "form" }
@@ -89,7 +89,7 @@ def exact_duplicate_groups(paths: list) -> list[list]:
 
 
 def is_readable(path) -> bool:
-    """True if PIL can open and fully decode the file (sections 10 and 11 use it)."""
+    """True if PIL can open and fully decode the file (sections 9 and 10 use it)."""
     try:
         with Image.open(path) as im:
             im.draft("RGB", (THUMB_FOR_HASH, THUMB_FOR_HASH))  # a reduced decode still reads every byte
@@ -197,8 +197,8 @@ plt.close(fig)
 # %% [markdown]
 # <!-- callout: your-turn | Your turn · The duplicate threshold -->
 # `HASH_THRESHOLD` is the largest Hamming distance (0–64) at which two photos count as near-duplicates.
-# Keep the default `8` for Q10 and look at the closest pairs. Then edit the value (a strict `2`, a loose
-# `14`), run this cell, and re-run the Q10 cell below to see what enters the list. Set it back to `8`
+# Keep the default `8` for Q9 and look at the closest pairs. Then edit the value (a strict `2`, a loose
+# `14`), run this cell, and re-run the Q9 cell below to see what enters the list. Set it back to `8`
 # before going on: later cells use it too.
 
 # %%
@@ -209,7 +209,7 @@ if not isinstance(HASH_THRESHOLD, int) or not 0 <= HASH_THRESHOLD <= 64:
     raise SystemExit(f"HASH_THRESHOLD must be a whole number between 0 and 64, not {HASH_THRESHOLD!r}")
 
 # %% [markdown]
-# **Q10.** 🟡 Two guesses, then run the cell below.
+# **Q9.** 🟡 Two guesses, then run the cell below.
 #
 # - Exact copies: COCO val2017 is a curated benchmark that thousands of papers evaluate on. How many
 #   byte-identical pairs are in the Play Dataset:
@@ -218,7 +218,7 @@ if not isinstance(HASH_THRESHOLD, int) or not 0 <= HASH_THRESHOLD <= 64:
 #   be true copies or two photos of the same kind of scene?
 
 # %%
-# @title Q10 MD5 of every file (exact copies), then pHash of every photo + variants { display-mode: "form" }
+# @title Q9 MD5 of every file (exact copies), then pHash of every photo + variants { display-mode: "form" }
 exact_groups = exact_duplicate_groups(images["path"].tolist())
 print(f"{len(images)} files · {len(exact_groups)} groups of byte-identical files")
 for _group in exact_groups[:5]:
@@ -269,7 +269,7 @@ show_rows(_rows, "closest pairs by perceptual hash (each pair side by side)",
           lambda r: f"{r['class']} · {_dist_of[r['id']]} bits apart", cols=2)
 
 # %% [markdown]
-# <!-- callout: answer | Worked answer (Q10) -->
+# <!-- callout: answer | Worked answer (Q9) -->
 # Exact copies: COCO val2017 was deduplicated by its authors, so expect none or
 # close to it. The park's re-exported cards will not be so tidy, so run the MD5 check on every folder you get.
 # But MD5 only sees identical bytes: re-save a photo at another JPEG quality and the hash changes completely,
@@ -414,7 +414,7 @@ flipped_copies = use(find_flipped_copies, hunt_images[_flip_source], _others,
 print(f"flipped/rotated copies of {_flip_source}: {flipped_copies}")
 
 # %% [markdown]
-# **Q11.** 🟡 The shoot-out: plain hashing (MD5 plus pHash) against *variant* hashing, the idea you just
+# **Q10.** 🟡 The shoot-out: plain hashing (MD5 plus pHash) against *variant* hashing, the idea you just
 # wrote. Which of the first four things that happened to the card (twice, smaller, mirrored, rotated) does
 # each one catch? Predict, then run.
 
@@ -459,7 +459,7 @@ def score_hunt(found: pd.DataFrame, key: list[dict]) -> int:
 
 
 # %%
-# @title Q11 Plain hashing, then variant hashing, on the same card and threshold { display-mode: "form" }
+# @title Q10 Plain hashing, then variant hashing, on the same card and threshold { display-mode: "form" }
 plain_found = find_copies(hunt_files, HASH_THRESHOLD, use_variants=False)
 variant_found = find_copies(hunt_files, HASH_THRESHOLD, use_variants=True)
 print(f"plain hashing   : {len(plain_found)} pairs → {dict(Counter(plain_found['kind']))}")
@@ -510,7 +510,7 @@ display(fig)
 plt.close(fig)
 
 # %% [markdown]
-# <!-- callout: answer | Worked answer (Q11) -->
+# <!-- callout: answer | Worked answer (Q10) -->
 # Plain hashing catches the byte-identical copies (MD5) and the smaller,
 # re-compressed one (pHash survives both), but files the mirrored and rotated copies as new photos: a flip
 # moves the hash by dozens of bits. Variant hashing catches them too, because one of the six variants of the
@@ -563,14 +563,14 @@ show_rows(least_typical, "least typical photos per class: does the label fit?",
           lambda r: f"{r['class']} · {r['atypicality']:.1f}", cols=6)
 
 # %% [markdown]
-# **Q12.** 🔴 Look at the gallery. For each photo, is the label right? Is the animal even visible? Note the
+# **Q11.** 🔴 Look at the gallery. For each photo, is the label right? Is the animal even visible? Note the
 # ones you would send back to the annotator.
 
 # %% [markdown]
-# <!-- callout: answer | Worked answer (Q12) -->
+# <!-- callout: answer | Worked answer (Q11) -->
 # Colour cannot tell a cat from a dog, so this list finds photos that are
 # *unusual*, not *wrong*: close-ups, night shots, an animal filling a tenth of the frame. Real label errors in
-# COCO val are rare at image level (more common in the masks, section 9), so an honest answer is "nothing to
+# COCO val are rare at image level (more common in the masks, section 8), so an honest answer is "nothing to
 # send back, two to keep an eye on". On a crowd-sourced dataset, this list is where the wrong labels live.
 
 # %%
@@ -623,11 +623,11 @@ def cosine_similarity_matrix(vectors: np.ndarray) -> np.ndarray:
 # content does not match their label. Teams use them this way at scale: nobody can check a million photos by
 # eye, so the computer lists the closest pairs and the oddest photos and a person looks at those few.
 #
-# **Q13.** 🔴 Will the closest pairs be the same ones the hash found, and will the outliers overlap with the
-# colour-based list from Q12? Guess, then run.
+# **Q12.** 🔴 Will the closest pairs be the same ones the hash found, and will the outliers overlap with the
+# colour-based list from Q11? Guess, then run.
 
 # %%
-# @title Q13 Nearest pairs and per-class outliers in embedding space { display-mode: "form" }
+# @title Q12 Nearest pairs and per-class outliers in embedding space { display-mode: "form" }
 embeddings, embedding_source = load_embeddings()
 print(f"vectors: {embeddings.shape[0]} × {embeddings.shape[1]} from {embedding_source}")
 RESULTS["embedding_source"] = embedding_source
@@ -651,7 +651,7 @@ _overlap = len(set(embedding_outliers["id"]) & set(least_typical["id"]))
 print(f"{_overlap} of {len(embedding_outliers)} embedding outliers are also in the colour-based list")
 
 # %% [markdown]
-# <!-- callout: answer | Worked answer (Q13) -->
+# <!-- callout: answer | Worked answer (Q12) -->
 # The hash finds copies of the same *picture*; the embedding finds photos of the
 # same *thing*. The two pair lists overlap on exact and near copies and differ elsewhere, and the two outlier
 # lists overlap only partly: colour and content are different notions of "typical".
@@ -663,7 +663,7 @@ print(f"{_overlap} of {len(embedding_outliers)} embedding outliers are also in t
 # With real embeddings the closest pairs are *semantic* near-duplicates (the same dog, another angle), which
 # a hash cannot find, and the outliers are photos whose content does not match the label. With the stand-in
 # they are colour matches. To get real embeddings, compute them once on a GPU (any pretrained image model),
-# save `ids` and `embeddings` to `data/coco_animals_embeddings.npz`, and the Q13 cell picks them up.
+# save `ids` and `embeddings` to `data/coco_animals_embeddings.npz`, and the Q12 cell picks them up.
 # </details>
 
 # %% [markdown]
@@ -706,7 +706,7 @@ _unreadable = _odd.loc[_odd["flags"].str.contains("unreadable"), "id"]
 _drop.update({int(i): "unreadable" for i in _unreadable})
 
 clean_images = images[~images["id"].isin(_drop)].copy()
-# the non-fatal flags (grayscale, extreme size) stay in a column that sections 10 and 11 read
+# the non-fatal flags (grayscale, extreme size) stay in a column that sections 9 and 10 read
 clean_images["flags"] = clean_images["id"].map(_odd.set_index("id")["flags"]).fillna("")
 removed = pd.DataFrame({"id": list(_drop), "reason": list(_drop.values())})
 RESULTS["n_clean"] = int(len(clean_images))
@@ -722,28 +722,15 @@ for _, _r in variant_found.sort_values(["a", "b"]).iterrows():
 print(f"memory card : removed {len(_card_drop)}, kept {len(hunt_files) - len(_card_drop)}")
 
 # %% [markdown]
-# <!-- callout: go-deeper | Go deeper · Why cleaning decides whether you can trust the test score -->
-# <details><summary>A burst of sheep photos on the park's cameras</summary>
-#
-# On a curated benchmark the "removed" number is small and the lesson is in the tooling. On the park's own
-# uploads, the same cells decide whether you can trust your test score:
-#
-# 1. A camera fires a burst: three frames of the same sheep, saved as three files.
-# 2. A random split puts two frames in train and one in test.
-# 3. The test frame is almost a photo the model has already seen, so it scores well by *remembering*.
-# 4. In the field it meets new sheep and does worse. Cleaning first would have kept the burst on one side.
-# </details>
-
-# %% [markdown]
 # <!-- callout: across-tasks | Across tasks · The same errors, three shapes -->
 # - **Classification:** the same dog photo is stored twice, once labelled "dog", once "sheep". Whichever
 #   copy lands in the test set, one of them is wrong.
 # - **Detection:** a mirrored copy of a photo of two sheep whose boxes were not mirrored (`x' = W − x − w`):
-#   both boxes now point at grass (section 8).
+#   both boxes now point at grass (section 7).
 # - **Segmentation:** a copied photo whose mask outlines the other animal, or a mask that is swollen or
-#   shifted while the label is right (section 9).
+#   shifted while the label is right (section 8).
 #
-# Deduplicate once, before splitting, for all three; the label checks differ per task.
+# Deduplicate once for all three; the label checks differ per task.
 
 # %% [markdown]
 # <!-- callout: takeaway | Takeaway -->

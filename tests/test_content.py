@@ -137,36 +137,36 @@ def test_s06_leakage_shown_without_a_model(R):
     assert {"kfold", "stratified_kfold", "loo", "logo"} <= set(need(R, "cv_schemes")), "G-27: 4 CV schemes"
 
 
-@requires("07")
-def test_s07_alert_metric(R):
+@requires("04")
+def test_s04_alert_metric(R):
     assert need(R, "alert_metric") == "recall"
 
 
-@requires("08")
-def test_s08_box_counts_add_up_and_hunt_solvable(R):
+@requires("07")
+def test_s07_box_counts_add_up_and_hunt_solvable(R):
     boxes = need(R, "boxes_per_class")
     assert set(boxes) == CLASSES
     assert sum(boxes.values()) == need(R, "n_boxes")
     hunt = need(R, "hunt8")
-    assert hunt["planted"] >= 1 and hunt["found"] == hunt["planted"], f"section 8 hunt: {hunt}"
+    assert hunt["planted"] >= 1 and hunt["found"] == hunt["planted"], f"section 7 hunt: {hunt}"
 
 
-@requires("09")
-def test_s09_pixel_shares_and_ugly_masks(R):
+@requires("08")
+def test_s08_pixel_shares_and_ugly_masks(R):
     px = need(R, "pixels_per_class")
     assert "background" in px and CLASSES <= set(px)
     assert abs(sum(px.values()) - 1.0) < 1e-3, "pixel shares must sum to 1 (including background)"
     hunt = need(R, "hunt9")
-    assert hunt["planted"] == 5 and hunt["found"] == 5, f"section 9 hunt (5 ugly-mask kinds): {hunt}"
+    assert hunt["planted"] == 5 and hunt["found"] == 5, f"section 8 hunt (5 ugly-mask kinds): {hunt}"
 
 
-@requires("10")
-def test_s10_challenge_reference_scores_100_percent(R):
+@requires("09")
+def test_s09_challenge_reference_scores_100_percent(R):
     ch = need(R, "challenge_reference")
     assert ch["planted"] >= 10 and ch["found"] == ch["planted"], f"challenge with reference solution: {ch}"
     assert need(R, "challenge_types") >= 8
 
 
-@requires("11")
-def test_s11_swap_in_cell_runs_on_folder_per_class(R):
+@requires("10")
+def test_s10_swap_in_cell_runs_on_folder_per_class(R):
     assert need(R, "swap_in_ok") is True

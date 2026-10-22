@@ -174,12 +174,13 @@ def facilitation_row(prefix: str) -> str:
 
 
 def test_question_count_per_section_after_all_merges_and_cuts(nb):
-    """Merges and cuts together: Q10 into Q11, Q16, Q20, Q21, Q30, Q33 cut, Q31 into Q32 → 35 become 28.
+    """Merges and cuts together: Q10 into Q11, Q16, Q20, Q21, Q30, Q33 cut, Q31 into Q32 → 35 become 28;
+    then (2026-10-22, C1/C3) the metrics section's question and the detective beat's Q5 → 26.
     Counted by section, never by number (the numbers are renumbered continuously)."""
-    expected = {0: 0, 1: 1, 2: 2, 3: 3, 4: 3, 5: 4, 6: 3, 7: 1, 8: 4, 9: 4, 10: 1, 11: 2, 12: 0}
+    expected = {0: 0, 1: 1, 2: 2, 3: 2, 4: 3, 5: 4, 6: 3, 7: 4, 8: 4, 9: 1, 10: 2, 11: 0}
     got = {n: len(question_paragraphs(section(nb, n))) for n in expected}
     assert got == expected, f"questions per section: {got}"
-    assert sum(got.values()) == 28
+    assert sum(got.values()) == 26
 
 
 # ---- section 1, 2 (row 16) --------------------------------------------------------------------------
@@ -214,27 +215,11 @@ def test_row16_section_1_grid_before_the_first_question_shows_six_photos_per_cla
 # ---- section 3 (rows 11, 14; keep 12, 31) -----------------------------------------------------------
 
 
-def test_row11_detective_beat_keeps_three_steps_without_the_toy_figure(nb):
+def test_c3_detective_beat_and_its_question_are_cut(nb):
     s3 = section(nb, 3)
-    start = find_heading(s3, r"detective beat")
-    assert start is not None, "the detective beat stays"
-    # the beat runs from its heading to the questions that follow it (the questions callout or Q5's cell);
-    # what comes after belongs to the question, whose gallery is a real figure, not the toy
-    nxt = next(
-        (
-            i
-            for i in range(start + 1, len(s3))
-            if (is_callout(s3[i]) and s3[i].metadata["callout"] == "questions") or Q_RE.search(s3[i].source)
-        ),
-        len(s3),
-    )
-    region = s3[start:nxt]
-    assert not any(image_outputs(c) for c in region), "no toy figure inside the detective beat"
-    assert not re.search(r"toy (picture|figure|example)", prose(s3), re.I), (
-        "no text still points at the toy figure"
-    )
-    text = "\n".join(c.source for c in region if c.cell_type == "markdown")
-    assert all(re.search(rf"^\s*{n}\.\s", text, re.M) for n in (1, 2, 3)), "the three numbered steps stay"
+    assert find_heading(s3, r"detective beat") is None, "the detective beat is cut (C3, 2026-10-22)"
+    assert not questions_matching(s3, r"longest.side value do most photos share"), "its question is cut"
+    assert not any("detective" in plain(c) for c in nb.cells if is_prose(c)), "nothing points at it any more"
 
 
 def test_row14_brightness_violin_is_a_red_optional_part(nb):
@@ -245,11 +230,9 @@ def test_row14_brightness_violin_is_a_red_optional_part(nb):
     assert all(flags[i] for i in violin), "every cell about the violin sits under a '### 🔴 Optional' heading"
 
 
-def test_keep_row12_q5_odd_sizes_and_row31_colour_half_stay_in_the_lesson(nb):
+def test_keep_row31_colour_half_stays_in_the_lesson(nb):
     s3 = section(nb, 3)
     flags = optional_flags(s3)
-    q5 = questions_matching(s3, r"longest.side")
-    assert q5 and not flags[q5[0][0]], "the odd-sizes question stays in the lesson"
     colour = find_heading(s3, r"colour modes and colours")
     assert colour is not None and not flags[colour], "the colour half stays in the lesson"
 
@@ -257,8 +240,8 @@ def test_keep_row12_q5_odd_sizes_and_row31_colour_half_stay_in_the_lesson(nb):
 # ---- section 4 and 8 (row 15; keep row 23) ----------------------------------------------------------
 
 
-def test_row15_what_a_label_costs_moved_from_section_4_to_the_start_of_section_8(nb):
-    s4, s8 = section(nb, 4), section(nb, 8)
+def test_row15_what_a_label_costs_moved_from_section_4_to_the_start_of_section_7(nb):
+    s4, s8 = section(nb, 4), section(nb, 7)
     assert not re.search(r"what a label costs", prose(s4), re.I), (
         "section 4 no longer has the clicks table's heading"
     )
@@ -341,62 +324,49 @@ def test_keep_row28_ruler_question_stays_red_optional_in_section_6(nb):
     assert "🔴" in para and optional_flags(s6)[idx]
 
 
-# ---- section 7 (rows 4, 8, 17; keep rows 13, 20) ----------------------------------------------------
+# ---- C1 (2026-10-22): one lazy-model demo, the alert metric in section 4, no metrics section ----------
 
 
-def test_row4_rabbit_quiz_and_quiz_answer_are_gone(nb):
-    assert not any("QUIZ_ANSWER" in c.source for c in nb.cells), "no QUIZ_ANSWER anywhere"
-    assert not re.search(r"rabbits?", prose(section(nb, 7)), re.I), "no rabbit quiz text in section 7"
+def test_c1_metrics_section_is_gone_and_the_alert_metric_is_chosen_in_section_4(nb):
+    assert not any(
+        t for c in nb.cells for _, _, t in headings([c]) if re.search(r"metrics for the park", t, re.I)
+    )
+    s4 = section(nb, 4)
+    q8 = questions_matching(s4, r"lazy rules")
+    alert = next((i for i, c in enumerate(s4) if re.search(r"^ALERT_METRIC\s*=", c.source, re.M)), None)
+    assert q8 and alert is not None and alert > q8[0][0], (
+        "✍️ ALERT_METRIC sits in section 4, after the lazy rules"
+    )
+    assert re.search(r"precision", prose(s4), re.I), "precision is defined where it is offered as a choice"
 
 
-def test_row8_counting_vs_box_mistakes_question_gone_and_section_7_ends_on_the_alert_metric(nb):
-    s7 = section(nb, 7)
-    assert not questions_matching(s7, r"counting error"), "the counting-error question is cut"
-    alert = next(i for i, c in enumerate(s7) if re.search(r"^ALERT_METRIC\s*=", c.source, re.M))
-    assert not [i for i, _ in question_paragraphs(s7) if i > alert], "no question after the alert-metric cell"
-
-
-def test_row8_iou_dice_figure_sits_in_a_go_deeper_box_next_to_map(nb):
-    s7 = section(nb, 7)
-    fig = next((i for i, c in enumerate(s7) if image_outputs(c) and "Dice" in c.source), None)
-    assert fig is not None, "the IoU/Dice figure stays"
-    box = next((j for j in range(fig - 1, -1, -1) if is_callout(s7[j])), None)
-    assert box is not None and s7[box].metadata["callout"] == "go-deeper", "…inside a go-deeper box"
-    assert re.search(r"IoU", plain(s7[box])) and re.search(r"Dice", plain(s7[box]))
-    near = s7[max(0, box - 3) : box]
-    assert any(is_callout(c) and c.metadata["callout"] == "go-deeper" and "mAP" in plain(c) for c in near), (
-        "next to the mAP go-deeper box"
+def test_c1_one_always_the_big_class_demo(nb):
+    assert not any("prepared predictions" in plain(c).lower() for c in nb.cells if is_prose(c))
+    assert not any(re.search(r"background.{0,3}everywhere", plain(c), re.I) for c in nb.cells if is_prose(c))
+    assert not re.search(r"always answers .sheep", prose(section(nb, 1)), re.I), (
+        "section 1 does not pre-empt Q8"
+    )
+    assert not any(
+        "Pet-food shop" in outputs_text(c) or "pet-food shop" in plain(c).lower()
+        for c in nb.cells
+        if is_prose(c) or c.cell_type == "code"
     )
 
 
-def test_row17_shop_cell_cut_paragraph_stays_with_the_numbers_inline(nb):
+def test_c1_scoring_metrics_are_a_go_deeper_box_in_section_7(nb):
     s7 = section(nb, 7)
-    assert not any("Pet-food shop, same predictions" in outputs_text(c) for c in s7), "the shop cell is gone"
-    shop = [plain(c) for c in s7 if is_prose(c) and re.search(r"pet-food shop", plain(c), re.I)]
-    assert shop, "the paragraph stays"
-    assert any(re.search(r"\d+\s?%", t) for t in shop), "with the numbers inline (precision and recall in %)"
-
-
-def test_keep_row20_prepared_predictions_table_still_shown(nb):
-    s7 = section(nb, 7)
-    cell = next(c for c in s7 if "predictions written to" in outputs_text(c))
-    assert any(o.get("output_type") == "execute_result" for o in cell.outputs), (
-        "predictions.head() is displayed"
+    assert any("def box_iou_dice" in c.source for c in s7), "box_iou_dice now lives in section 7 (boxes)"
+    deeper = [plain(c) for c in s7 if is_callout(c) and c.metadata["callout"] == "go-deeper"]
+    assert any(all(w in t for w in ("mAP", "Dice", "IoU")) for t in deeper), (
+        "mAP, IoU and Dice in a go-deeper"
     )
 
 
-def test_keep_row13_toy_2x2_confusion_matrices_stay(nb):
-    s7 = section(nb, 7)
-    assert re.search(r"always sheep", prose(s7), re.I) and re.search(r"decent classifier", prose(s7), re.I)
-    toy = [c for c in s7 if "always sheep" in c.source and image_outputs(c)]
-    assert toy, "the figure with the two toy matrices stays"
-
-
-# ---- section 8 (rows 10, 19; keep row 30) -----------------------------------------------------------
+# ---- section 7, boxes (rows 10, 19; keep row 30) -----------------------------------------------------------
 
 
 def test_row10_crowding_is_a_red_optional_part_and_the_iou_drawing_stays(nb):
-    s8 = section(nb, 8)
+    s8 = section(nb, 7)
     flags = optional_flags(s8)
     q = questions_matching(s8, r"overlapping pairs")
     assert q and flags[q[0][0]] and "🔴" in q[0][1], (
@@ -409,13 +379,13 @@ def test_row10_crowding_is_a_red_optional_part_and_the_iou_drawing_stays(nb):
 
 
 def test_row19_box_size_table_stays_but_the_stacked_share_bars_are_dropped(nb):
-    s8 = section(nb, 8)
+    s8 = section(nb, 7)
     assert any("small / medium / large" in outputs_text(c) for c in s8), "the table of shares stays"
     assert not any("Share of small (solid)" in c.source for c in s8), "the stacked share bars are dropped"
 
 
 def test_keep_row30_box_centre_heatmap_and_missing_box_hunt_stay_in_the_lesson(nb):
-    s8 = section(nb, 8)
+    s8 = section(nb, 7)
     flags = optional_flags(s8)
     for pattern in (r"box-centre heatmap", r"the box that is not there"):
         h = find_heading(s8, pattern)
@@ -428,7 +398,7 @@ def test_keep_row30_box_centre_heatmap_and_missing_box_hunt_stay_in_the_lesson(n
 
 
 def test_row2_more_about_masks_is_one_red_optional_part_with_heatmaps_and_thin_parts(nb):
-    s9 = section(nb, 9)
+    s9 = section(nb, 8)
     flags = optional_flags(s9)
     more = find_heading(s9, r"more about masks")
     assert more is not None and flags[more], "a '### 🔴 Optional · More about masks' part exists"
@@ -443,7 +413,7 @@ def test_row2_more_about_masks_is_one_red_optional_part_with_heatmaps_and_thin_p
 
 
 def test_row21_section_9_has_exactly_one_pencil_knob_iou_min(nb):
-    s9 = section(nb, 9)
+    s9 = section(nb, 8)
     turns = your_turn_cells(s9)
     assert len(turns) == 1, f"section 9 has {len(turns)} ✏️ cells, expected exactly one"
     knobs = set(re.findall(r"^([A-Z][A-Z_]*)\s*=", s9[turns[0]].source, re.M))
@@ -451,7 +421,7 @@ def test_row21_section_9_has_exactly_one_pencil_knob_iou_min(nb):
 
 
 def test_row26_edge_alignment_question_is_removed(nb):
-    s9 = section(nb, 9)
+    s9 = section(nb, 8)
     text = prose(s9) + "\n" + "\n".join(c.source for c in s9 if c.cell_type == "code" and not is_callout(c))
     assert not re.search(r"edge alignment|canny|outline follow", text, re.I), "no edge-alignment part remains"
     heads = [t for _, _, t in headings(s9) if "🔴" in t]
@@ -470,7 +440,7 @@ def _hunt_cell(s10) -> str:
 
 
 def test_row6_challenge_plan_is_inside_the_hunt_cell_not_a_separate_question(nb):
-    s10 = section(nb, 10)
+    s10 = section(nb, 9)
     assert not questions_matching(s10, r"plan the hunt|kind → tool"), "no separate written-plan question"
     assert len(question_paragraphs(s10)) == 1, "one question in the Challenge: the hunt"
     kinds = _KIND_HDR.findall(_hunt_cell(s10))
@@ -478,7 +448,7 @@ def test_row6_challenge_plan_is_inside_the_hunt_cell_not_a_separate_question(nb)
 
 
 def test_row7_copy_and_grayscale_checks_are_prewritten_the_four_disagreement_checks_are_not(nb):
-    src = _hunt_cell(section(nb, 10))
+    src = _hunt_cell(section(nb, 9))
     parts = list(_KIND_HDR.finditer(src))
     bodies = {}
     for k, m in enumerate(parts):
@@ -507,18 +477,30 @@ def test_row7_copy_and_grayscale_checks_are_prewritten_the_four_disagreement_che
 
 
 def test_row27_challenge_ruler_part_is_removed(nb):
-    s10 = section(nb, 10)
+    s10 = section(nb, 9)
     assert not re.search(r"\bruler\b", prose(s10), re.I), (
-        "no ruler in section 10 (the ruler stays in section 6)"
+        "no ruler in the Challenge (the ruler stays in section 6)"
     )
-    assert not [t for _, _, t in headings(s10) if "🔴" in t], "no 🔴 part left in section 10"
+    red = [t for _, _, t in headings(s10) if "🔴" in t]
+    assert len(red) == 1 and re.search(r"hunt", red[0], re.I), "the only 🔴 part is the hunt (C2)"
+
+
+def test_c2_challenge_is_a_demo_and_the_hunt_is_optional(nb):
+    s9 = section(nb, 9)
+    flags = optional_flags(s9)
+    hunt = questions_matching(s9, r"the hunt")
+    assert hunt and flags[hunt[0][0]] and "🔴" in hunt[0][1], "the hunt question is 🔴 optional"
+    key = find_heading(s9, r"answer key")
+    assert key is not None and not flags[key], "the answer key stays in class, for the demo"
+    ref = cells_matching(s9, r"_reference_findings\(\)", kinds=("code",))
+    assert ref and not flags[ref[0]], "the reference solution runs in class"
 
 
 # ---- section 11 (row 1) -----------------------------------------------------------------------------
 
 
 def test_row1_section_11_in_class_part_then_an_after_the_lab_block(nb):
-    s11 = section(nb, 11)
+    s11 = section(nb, 10)
     lab = find_heading(s11, r"after the lab")
     assert lab is not None, "section 11 has an 'After the lab' heading"
     tree = cells_matching(s11, r"├──", kinds=("prose",))
@@ -549,17 +531,47 @@ def test_keep_row29_section_1_has_no_optional_or_after_the_lab_part(nb):
 # ---- FACILITATION.md (rows 4, 24, 1) ----------------------------------------------------------------
 
 
-def test_row4_facilitation_asks_the_rabbit_question_as_a_show_of_hands():
-    row = facilitation_row("7 ·")
-    assert "QUIZ_ANSWER" not in row
-    assert re.search(r"show of hands.{0,150}rabbit|rabbit.{0,150}show of hands", row, re.I | re.S), (
-        "the row for section 7 asks the rabbit question aloud as a show of hands"
+def test_c2_facilitation_runs_the_challenge_as_a_demo():
+    row = facilitation_row("9 ·")
+    assert re.search(r"demo", row, re.I) and re.search(r"optional", row, re.I), (
+        "the Challenge row says demo in class, hunt optional"
     )
 
 
-def test_row24_facilitation_time_boxes_the_challenge_hunt_to_8_minutes():
-    assert re.search(r"\b8[ -]?min", facilitation_row("10 ·"), re.I), "the Challenge row has the 8-minute box"
-
-
 def test_row1_facilitation_names_the_after_the_lab_block():
-    assert re.search(r"after the lab", facilitation_row("11 ·"), re.I)
+    assert re.search(r"after the lab", facilitation_row("10 ·"), re.I)
+
+
+# ---- review 2026-10-22 (R1, R7) and C4 ------------------------------------------------------------------
+
+
+def test_r1_every_worked_answer_is_a_closed_toggle(nb):
+    plain_answers = [
+        c
+        for c in nb.cells
+        if c.cell_type == "markdown"
+        and re.search(r"worked answer", c.source, re.I)
+        and not re.search(r"open the worked answer", c.source, re.I)
+    ]
+    assert not plain_answers, "no worked answer left in an open markdown cell"
+    boxes = [c for c in nb.cells if is_callout(c) and c.metadata["callout"] == "answer"]
+    assert len(boxes) >= 26 and all(
+        "<details" in c.source and not re.search(r"<details[^>]*\bopen\b", c.source) for c in boxes
+    )
+
+
+def test_c4_dedupe_before_split_is_said_once(nb):
+    pitfalls = [
+        plain(c)
+        for c in nb.cells
+        if is_callout(c)
+        and c.metadata["callout"] == "pitfall"
+        and re.search(r"dedup|split after cleaning", plain(c), re.I)
+    ]
+    assert len(pitfalls) == 1, f"one pitfall on deduplicating before splitting, found {len(pitfalls)}"
+    assert not any(re.search(r"why cleaning decides", plain(c), re.I) for c in nb.cells if is_prose(c))
+
+
+def test_r7_trail_camera_bursts_draw_the_animals_box(nb):
+    src = "\n".join(c.source for c in section(nb, 6))
+    assert "def draw_cct_boxes" in src and src.count("draw_cct_boxes(ax, row, thumb)") >= 2

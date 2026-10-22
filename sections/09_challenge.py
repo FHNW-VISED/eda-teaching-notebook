@@ -1,9 +1,10 @@
 # %% [markdown]
-# ## 10. Data-centric AI in practice: the Challenge
+# ## 9. Data-centric AI in practice: the Challenge
 
 # %% [markdown]
 # <!-- callout: objective | Objective -->
-# Find the problems planted in a new batch of park photos, using only the tools of sections 3 to 9.
+# See the problems planted in a new batch of park photos found with the tools of sections 3 to 8 alone, and
+# (optional) run the hunt yourself.
 
 # %% [markdown]
 # <!-- callout: theory | Theory · Data-centric AI -->
@@ -33,7 +34,7 @@
 # 3. **The keeper counted the animals per photo.**
 #    - **missing box**: an animal the keeper counted, but the annotation team did not annotate.
 # 4. **The annotation team drew a box and a mask per animal.**
-#    - **ugly mask**: a mask that does not match its animal (section 9).
+#    - **ugly mask**: a mask that does not match its animal (section 8).
 # 5. **Cameras and uploads saved the files.**
 #    - **exact duplicate**: the same file twice.
 #    - **flipped copy**: a photo mirrored and saved again.
@@ -55,11 +56,11 @@ COPY_KIND = {"exact duplicate": "exact", "flipped copy": "flipped", "rotated cop
 N_COPIES = {"exact duplicate": 1 if SMOKE else 2, "flipped copy": 1, "rotated copy": 1,
             "recompressed copy": 1, "train/test overlap": 1}
 N_WRONG_LABELS = 2 if SMOKE else 3
-UGLY_MASK_KINDS = ["shifted", "swollen"]  # two of section 9's five kinds
+UGLY_MASK_KINDS = ["shifted", "swollen"]  # two of section 8's five kinds
 
 
 def challenge_pool() -> pd.DataFrame:
-    """Rows of clean_images that pass every check of sections 3–9 at the default settings: no flag, colourful,
+    """Rows of clean_images that pass every check of sections 3–8 at the default settings: no flag, colourful,
     no crowd region, headcount = boxes, and every judged mask agrees with its box and has a plain shape."""
     judged = animals[animals["mask_area"] >= MIN_JUDGED_AREA]
     bad_mask = judged[(judged["box_iou"] < 0.93) | (judged["fill"] < 0.15) | (judged["fill"] > 0.95)
@@ -143,7 +144,7 @@ def plant_challenge(dest: Path, n_originals: int, seed: int):
     dropped = rng.choice(sorted(anns.index[anns["image_id"] == i]))
     in_place.append(("missing box", i, f"the keeper counted {chosen.at[i, 'n_animals']}, "
                                        f"the team annotated {chosen.at[i, 'n_animals'] - 1}"))
-    # Ugly masks: section 9's planting on the photos still free, two of its five kinds kept.
+    # Ugly masks: section 8's planting on the photos still free, two of its five kinds kept.
     free_anns = anns[~anns["image_id"].isin(used)].reset_index()
     spoiled, spoil_key = plant_hunt9(free_anns, chosen.reset_index(), seed)
     spoiled_rle = spoiled.set_index("id")["rle"]
@@ -305,11 +306,11 @@ show_batch(batch["file"].head(12), "the first dozen files of the batch (frame = 
 # - `is_readable(path)` (helper defined in section 5's toolbox): does the file open at all? (`False` for a
 #   file PIL cannot decode);
 # - `measure_image(path, thumb)[0]` (section 3): `mode` and `colourfulness` of a photo (0 for grayscale);
-# - `batch["n_animals"]` against the number of rows per file in `batch_animals` (section 8);
-# - `mask_shape(decode(rle), bbox)` (section 9): `box_iou`, `fill`, `pieces`, `holes`, `solidity`;
+# - `batch["n_animals"]` against the number of rows per file in `batch_animals` (section 7);
+# - `mask_shape(decode(rle), bbox)` (section 8): `box_iou`, `fill`, `pieces`, `holes`, `solidity`;
 # - `show_batch(names, title, annotations=True)`: look at any files, with their boxes and masks.
 #
-# The planted problems sit in photos that passed every check of sections 5 to 9 at the default settings.
+# The planted problems sit in photos that passed every check of sections 5 to 8 at the default settings.
 
 # %% [markdown]
 # Two collapsed cells follow: the scoring helpers, and a reference solution that prints only its score.
@@ -371,13 +372,13 @@ def reveal_answers() -> None:
 # %%
 # @title Reference solution (collapsed) — open its code only if you are stuck { display-mode: "form" }
 _REF_HASH_THRESHOLD = 8  # section 5's default
-_REF_IOU_MIN = 0.9  # section 9's default
+_REF_IOU_MIN = 0.9  # section 8's default
 _TYPE_OF_COPY = {"exact": "exact duplicate", "flipped": "flipped copy", "rotated": "rotated copy",
                  "recompressed": "recompressed copy"}
 
 
 def _reference_findings() -> list[tuple[str, str]]:
-    """One check per kind, with the tools of sections 3–9; returns (file, kind) pairs."""
+    """One check per kind, with the tools of sections 3–8; returns (file, kind) pairs."""
     found = []
     readable = {n: p for n, p in batch_files.items() if is_readable(p)}
     found += [(n, "unreadable") for n in batch_files if n not in readable]
@@ -411,17 +412,23 @@ print(f"reference solution: found {_reference_score['found']} of {_reference_sco
       f"problems with {len(_reference)} findings ({_reference_score['unmatched']} false alarms)")
 
 # %% [markdown]
+# ### 🔴 Optional · Run the hunt yourself
+#
+# In class, the reference solution above is the demo: it found every planted problem, and the answer key
+# below shows which check found which. On your own (or in a fast group), do the hunt yourself.
+
+# %% [markdown]
 # <!-- callout: questions | Questions -->
 # The ten headers in the next cell are your plan: one per kind, with its tool and what it reads.
 
 # %% [markdown]
-# **Q26.** 🟡 The hunt. Six checks are written for you: kinds 1 to 5 and 7. Write the other four under their
+# **Q24.** 🔴 The hunt. Six checks are written for you: kinds 1 to 5 and 7. Write the other four under their
 # headers: the kinds where two sources disagree. Before you do, predict: which kinds could you never spot in
 # the photo itself, however long you looked? Then collect what you find in `findings` and run the score.
 # Rerun both as often as you like.
 
 # %%
-# Q26  Your hunt: one header per kind = the plan. Kinds 1-5 and 7 are written; write 6, 8, 9 and 10.
+# Q24  Your hunt: one header per kind = the plan. Kinds 1-5 and 7 are written; write 6, 8, 9 and 10.
 
 # 1. unreadable — tool: is_readable — reads: the files (written for you)
 cant_open = sorted(name for name, path in batch_files.items() if not is_readable(path))
@@ -483,7 +490,7 @@ findings = [
 challenge_score = check_findings(findings)
 
 # %% [markdown]
-# 💡 Read the ⬜ lines as a to-do list: each is a kind you have not caught yet, and its header in the Q26
+# 💡 Read the ⬜ lines as a to-do list: each is a kind you have not caught yet, and its header in the Q24
 # cell names a tool. The reference solution above found every problem with this notebook's tools alone.
 
 # %% [markdown]
@@ -492,7 +499,7 @@ challenge_score = check_findings(findings)
 # Open the worked answer, then run the next cell to see the files of your batch.
 
 # %% [markdown]
-# <!-- callout: answer | Worked answer (Q26): which check finds which kind -->
+# <!-- callout: answer | Worked answer (Q24): which check finds which kind -->
 # - **Unreadable**: `is_readable(path)` on every file. Run it first, because every other check that opens the
 #   photo stumbles on this file.
 # - **Exact, flipped, rotated and recompressed copies**: `find_copies(..., use_variants=True)` on the files
@@ -506,8 +513,8 @@ challenge_score = check_findings(findings)
 #   carry their own class, so a file whose label disagrees with the class of its animals is a wrong label
 #   (or a wrong annotation; a human decides).
 # - **Missing box**: the keeper's headcount `n_animals` vs the number of animals annotated per file
-#   (section 8).
-# - **Ugly mask**: `mask_shape(...)["box_iou"]` below 0.9 (section 9). The two planted kinds, a shifted and a
+#   (section 7).
+# - **Ugly mask**: `mask_shape(...)["box_iou"]` below 0.9 (section 8). The two planted kinds, a shifted and a
 #   swollen mask, both stop matching their box.
 #
 # The four kinds that cannot be seen in the pixels are train/test overlap, wrong label, missing box and ugly
@@ -536,4 +543,4 @@ reveal_answers()
 # - **When you see** a problem that no pixel shows (wrong label, missing box, ugly mask, overlap) → **do** get
 #   a second source and compare the two.
 # - **When you remove files** → **do** write down "removed N, kept M" and why.
-# - **When you finish here** → **do** run the same list on your own dataset in section 11.
+# - **When you finish here** → **do** run the same list on your own dataset in section 10.

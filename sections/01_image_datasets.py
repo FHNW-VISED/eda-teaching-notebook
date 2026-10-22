@@ -99,8 +99,8 @@ plt.show()
 # - **Enough samples**, **2–10 classes** and **about 500×500 px**: the numbers to check, explained below.
 # - **Classes, distributions, imbalance, bias.** Know them, and take them into account in training (for
 #   example with a weighted loss).<br>
-#   *Park example:* if 70 % of the photos are sheep and 3 % are dogs, a model that always answers "sheep" is
-#   right 70 % of the time and never raises the dog alert.
+#   *Park example:* if 70 % of the photos are sheep and 3 % are dogs, the model sees few dogs to learn from,
+#   and the dog is the animal the alert exists for (section 4).
 # - **Variability matches the target population**, and **labels are present and validated**: every image has
 #   a label, and someone checked a sample of them.<br>
 #   *Park example:* a photo of a zebra labelled "horse" teaches the model the wrong thing, and nobody notices
@@ -186,7 +186,7 @@ checklist = [
     (
         "⚠️",
         "Labels validated",
-        "COCO-ReM (Singh et al., 2024) found ~2.4 % of val masks poor, plus duplicate masks → sections 5, 9",
+        "COCO-ReM (Singh et al., 2024) found ~2.4 % of val masks poor, plus duplicate masks → sections 5, 8",
     ),
     (
         "👀",
@@ -211,7 +211,7 @@ for status, bullet, finding in checklist:
 # Sample size, class count and resolution pass without work. The two that matter for
 # the alert are *fit* (holiday photos of dogs are not a camera on a paddock) and *imbalance* (the biggest
 # class has over twice the images of the smallest, so a model can score well while ignoring a rare animal).
-# Section 4 makes that concrete for the dog, section 7 picks the metric.
+# Section 4 makes that concrete for the dog and picks the alert's metric.
 
 # %% [markdown]
 # <!-- callout: go-deeper | Go deeper · Find a dataset, or label your own -->

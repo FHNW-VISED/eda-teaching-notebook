@@ -8,7 +8,7 @@
 
 # %% [markdown]
 # Now the computer measures every photo once. No label is needed, so this is the first check you can run on
-# *any* folder of images, including your own in section 11.
+# *any* folder of images, including your own in section 10.
 
 # %% [markdown]
 # <!-- callout: recipe | Recipe · Step 1, continued: search, filter, sort -->
@@ -453,51 +453,6 @@ plt.close(fig)
 # park's cameras also run at dusk and at night, which this data cannot teach.
 
 # %% [markdown]
-# ### The detective beat: a cluster is a clue
-#
-# One camera or download script gives one size and one mode, so a **group of odd sizes or modes points to a
-# different source**. At the park:
-#
-# 1. **Two camera models** → two clusters in the width-vs-height scatter. Check every class is in both.
-# 2. **An infrared night mode** → a group of grayscale frames among colour ones. A colour-only model has never
-#    seen those, and may fail exactly at night.
-# 3. **What to do** → decide per group: keep it, convert it to RGB, or drop it.
-
-# %% [markdown]
-# <!-- callout: questions | Questions -->
-# Look back at the real scatter from Q4 before you run the next cell.
-
-# %% [markdown]
-# **Q5.** 🟡 Which longest-side value do most photos share, and how many photos do you think do *not* share
-# it? Write down a guess, then run the cell: it counts them, lists their sizes and shows them.
-
-# %%
-# @title Q5 Find the common longest side and show the photos that break the pattern { display-mode: "form" }
-COMMON_LONG_SIDE = int(image_stats["long_side"].mode().iloc[0])
-odd_size = image_stats[image_stats["long_side"] != COMMON_LONG_SIDE].sort_values("long_side")
-
-print(
-    f"{len(image_stats) - len(odd_size)} of {len(image_stats)} photos have a longest side of "
-    f"{COMMON_LONG_SIDE} px; {len(odd_size)} do not."
-)
-if len(odd_size):
-    _sizes = odd_size.apply(lambda r: f"{r['width']}×{r['height']}", axis=1).value_counts()
-    print("odd sizes: " + " · ".join(f"{s} ×{n}" for s, n in _sizes.items()))
-else:
-    print("every photo in this sample went through the same resize step.")
-
-N_ODD = 6 if SMOKE else 12  # how many of the odd ones to show (N-014)
-show_rows(odd_size.head(N_ODD), f"photos whose longest side is not {COMMON_LONG_SIDE} px")
-
-# %% [markdown]
-# <!-- callout: answer | Worked answer (Q5) -->
-# On the full Play Dataset almost every photo has a longest side of 640 px
-# (Flickr's "640 px" rendition); a handful are smaller, never larger: old uploads, low-resolution cameras,
-# screenshots (a small sample may show none). Like the grayscale photos they are a group with another source,
-# and section 5 keeps them (only extreme sizes get a note in `flags`). The habit: one dominant value → ask
-# "what made the others different?".
-
-# %% [markdown]
 # ### Across tasks: what resizing does to boxes and masks
 #
 # Everything above was about the photo. The park's second and third jobs (count, outline) attach **boxes** and
@@ -518,14 +473,14 @@ show_rows(odd_size.head(N_ODD), f"photos whose longest side is not {COMMON_LONG_
 # and "all the boxes sit in the top-left corner".
 
 # %% [markdown]
-# **Q6.** 🟡 A 640×427 photo is resized to 224×224. Answer both parts, then run the cell to check them:
+# **Q5.** 🟡 A 640×427 photo is resized to 224×224. Answer both parts, then run the cell to check them:
 #
 # - **(a) Box:** the photo holds a box `(x, y, w, h) = (100, 50, 200, 150)` in pixels. What is the new box?
 # - **(b) Mask:** its mask holds only 0 (background) and 1 (animal). How many distinct values does it hold
 #   after a nearest-neighbour resize, and after a bilinear one?
 
 # %%
-# @title Q6 Rescale a box, resize a mask two ways and show both as heatmaps { display-mode: "form" }
+# @title Q5 Rescale a box, resize a mask two ways and show both as heatmaps { display-mode: "form" }
 TARGET = 224
 _w0, _h0, _box0 = 640, 427, (100, 50, 200, 150)  # the numbers of the question
 _new0 = (_box0[0] * TARGET / _w0, _box0[1] * TARGET / _h0, _box0[2] * TARGET / _w0, _box0[3] * TARGET / _h0)
@@ -598,7 +553,7 @@ if len(_edge):
     plt.close(fig)
 
 # %% [markdown]
-# <!-- callout: answer | Worked answer (Q6) -->
+# <!-- callout: answer | Worked answer (Q5) -->
 # **(a)** New box = `(x · 224/W, y · 224/H, w · 224/W, h · 224/H)`: here x and w
 # times 224/640 = 0.35, y and h times 224/427 = 0.525, giving `(35, 26.2, 70, 78.7)`, squashed like the photo.
 # **(b)** Nearest-neighbour keeps the two values (0 and 1); bilinear invents many in-between values along

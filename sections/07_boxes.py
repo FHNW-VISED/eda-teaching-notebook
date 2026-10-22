@@ -1,5 +1,5 @@
 # %% [markdown]
-# ## 8. Same data, boxes
+# ## 7. Same data, boxes
 
 # %% [markdown]
 # <!-- callout: objective | Objective -->
@@ -10,7 +10,7 @@
 # ### What a label costs
 #
 # The park's second job, **count** the sheep, zebras and birds every day, needs a **box per animal**
-# instead of one label per photo, and the same photos now tell a different story. Boxes (and, in section 9,
+# instead of one label per photo, and the same photos now tell a different story. Boxes (and, in section 8,
 # masks) are richer labels, and richer labels cost more. The cell below counts them in the crudest unit
 # there is: clicks a labeller had to make.
 
@@ -50,7 +50,7 @@ display(annotation_cost)
 # This section looks at the boxes of the photos in `clean_images`. Classification cannot say "how many" or
 # "where". Detection needs a decision for every animal (is that blur a bird?), and imbalance is now counted
 # in *boxes* (this section). Segmentation gives every pixel a class,
-# so imbalance is counted in *pixels*, and birds end up with a few per cent of them (section 9). Each task
+# so imbalance is counted in *pixels*, and birds end up with a few per cent of them (section 8). Each task
 # costs several times more than the one before, which is why real datasets have many more image labels than
 # boxes, and many more boxes than masks.
 
@@ -133,7 +133,7 @@ def show_boxes(rows_df: pd.DataFrame, boxes_df: pd.DataFrame, title: str, captio
 # count.
 
 # %% [markdown]
-# **Q18.** 🟡 Will the ranking by *boxes* be the same as the ranking by *photos*? Name the class you expect to
+# **Q16.** 🟡 Will the ranking by *boxes* be the same as the ranking by *photos*? Name the class you expect to
 # climb most, then run the cell. It needs your first function of the section.
 
 # %% [markdown]
@@ -166,7 +166,7 @@ boxes = annotations[annotations["image_id"].isin(clean_images["id"])].reset_inde
 boxes_per_class = use(count_boxes_per_class, boxes, reference=_ref_count_boxes_per_class)
 
 # %%
-# @title Q18 Boxes per class next to photos per class, both ranked { display-mode: "form" }
+# @title Q16 Boxes per class next to photos per class, both ranked { display-mode: "form" }
 photos_per_class = {c: int((clean_images["class"] == c).sum()) for c in CLASSES}
 RESULTS["boxes_per_class"] = boxes_per_class
 RESULTS["n_boxes"] = int(len(boxes))
@@ -195,7 +195,7 @@ display(fig)
 plt.close(fig)
 
 # %% [markdown]
-# <!-- callout: answer | Worked answer (Q18) -->
+# <!-- callout: answer | Worked answer (Q16) -->
 # No. The flock classes climb because one photo holds many animals: on the full set
 # bird goes from 4th by photos to 1st by boxes and sheep from last to 2nd, while the lone cat and dog drop to
 # the bottom.
@@ -212,11 +212,11 @@ plt.close(fig)
 # fence). The plots use the box's **side** = √(w·h), the side of a square with the same area.
 
 # %% [markdown]
-# **Q19.** 🟢 Which of the six classes do you expect to have the smallest boxes? Pick one, then run the cell:
+# **Q17.** 🟢 Which of the six classes do you expect to have the smallest boxes? Pick one, then run the cell:
 # it shows the smallest, a typical (median) and the largest box of the set.
 
 # %%
-# @title Q19 Box size per class, COCO buckets, smallest · median · largest box { display-mode: "form" }
+# @title Q17 Box size per class, COCO buckets, smallest · median · largest box { display-mode: "form" }
 boxes["w"] = boxes["bbox"].map(lambda b: b[2])
 boxes["h"] = boxes["bbox"].map(lambda b: b[3])
 boxes["box_area"] = boxes["w"] * boxes["h"]
@@ -289,7 +289,7 @@ display(fig)
 plt.close(fig)
 
 # %% [markdown]
-# <!-- callout: answer | Worked answer (Q19) -->
+# <!-- callout: answer | Worked answer (Q17) -->
 # Bird, by a wide margin: a large share of its boxes is *small*, while cat, dog and
 # horse are mostly *large*. The **small share** is the number to watch: small boxes are what every detector
 # misses first, and here they are the far-away birds the headcount needs.
@@ -351,7 +351,18 @@ plt.close(fig)
 #
 # Two sheep standing behind each other give two boxes that share pixels. Overlap is measured with **IoU**
 # (intersection over union): the shared area divided by the area covered by either box. We call two boxes
-# *overlapping* when their IoU is above 0.1. Section 9 uses the same number to compare masks and boxes.
+# *overlapping* when their IoU is above 0.1. Section 8 uses the same number to compare masks and boxes.
+
+# %%
+# @title IoU helper: box_iou_dice (used here and in section 8) { display-mode: "form" }
+def box_iou_dice(a: tuple, b: tuple) -> tuple[float, float]:
+    """IoU and Dice of two boxes given as (x, y, w, h)."""
+    ix = max(0, min(a[0] + a[2], b[0] + b[2]) - max(a[0], b[0]))
+    iy = max(0, min(a[1] + a[3], b[1] + b[3]) - max(a[1], b[1]))
+    inter = ix * iy
+    area_a, area_b = a[2] * a[3], b[2] * b[3]
+    return inter / (area_a + area_b - inter), 2 * inter / (area_a + area_b)
+
 
 # %%
 # @title IoU of two boxes, drawn: shared area ÷ covered area { display-mode: "form" }
@@ -386,6 +397,22 @@ display(fig)
 plt.close(fig)
 
 # %% [markdown]
+# <!-- callout: go-deeper | Go deeper · How boxes and masks are scored next week -->
+# <details><summary>Counting error, IoU, Dice and mAP</summary>
+#
+# - **Counting error** (the daily headcount) = |predicted count − true count|. It is the number the farmer
+#   reads, and it hides compensating mistakes: one missed sheep plus one bush called sheep is a perfect count.
+# - **IoU** (segmentation) = overlap ÷ union of the predicted and the true mask, per class, then averaged.
+#   **Dice** = 2 × overlap ÷ (area A + area B): the same overlap counted more kindly (Dice ≥ IoU always).
+# - **mAP** (the research metric for boxes): a box counts as correct when its IoU with a true box is ≥ 0.5;
+#   precision and recall are traced as the confidence threshold moves, the area under that curve is the
+#   class's average precision, and its mean over classes is mAP. Tiny far-away birds hurt it most.
+#
+# As with the dog alert (section 4): the overall number hides the rare class, the per-class number shows it.
+#
+# </details>
+
+# %% [markdown]
 # <!-- callout: across-tasks | Across tasks · What handles each of these later (next week and beyond) -->
 # Each finding (box imbalance, small boxes, a wide range of sizes, photos with many boxes) has a standard
 # answer on the model side, so the data report can say "we saw this, the training recipe handles it".
@@ -411,12 +438,12 @@ plt.close(fig)
 # box for two sheep, or none for the hidden one).
 
 # %% [markdown]
-# **Q20.** 🔴 Which class will have the most overlapping pairs of boxes per photo? *Example:* a photo of 4
+# **Q18.** 🔴 Which class will have the most overlapping pairs of boxes per photo? *Example:* a photo of 4
 # sheep has 6 pairs of boxes (4×3÷2); if two sheep stand behind each other, 1 of those 6 pairs overlaps.
 # Decide, then run the cell: it measures every pair of boxes in every photo.
 
 # %%
-# @title Q20 Boxes per photo per class, and crowding (overlapping box pairs) { display-mode: "form" }
+# @title Q18 Boxes per photo per class, and crowding (overlapping box pairs) { display-mode: "form" }
 def overlap_pairs(boxes_df: pd.DataFrame, threshold: float) -> pd.DataFrame:
     """One row per photo: n_boxes, n_pairs (all pairs) and n_overlapping (pairs with IoU > threshold)."""
     rows = []
@@ -452,7 +479,7 @@ show_boxes(_rows, boxes, "the most crowded photos (every box drawn)",
            cols=N_CROWDED_BOXES)
 
 # %% [markdown]
-# <!-- callout: answer | Worked answer (Q20) -->
+# <!-- callout: answer | Worked answer (Q18) -->
 # The flock classes: sheep and zebra on the full set (herds stand close), then bird.
 # Cats and dogs are mostly alone, so they have almost no pairs; on a small subset the leader can change, so
 # read the `crowded_photos` row. Try counting the crowded photos' animals *without* the boxes: that is the
@@ -499,12 +526,12 @@ print(f"park_boxes: {len(park_boxes)} boxes for {park_boxes['image_id'].nunique(
       f"(boxes had {len(boxes)}). One box is missing. Find the photo.")
 
 # %% [markdown]
-# **Q21.** 🟡 You have two numbers for every photo: the keeper's headcount (`n_animals`) and the number of
+# **Q19.** 🟡 You have two numbers for every photo: the keeper's headcount (`n_animals`) and the number of
 # boxes the team drew for it (the rows of `park_boxes` with that `image_id`). What simple comparison of
 # the two points straight at the photo with a missing box? Say it in one sentence, then run the cell.
 
 # %%
-# @title Q21 Keeper's headcount vs the team's box count per photo { display-mode: "form" }
+# @title Q19 Keeper's headcount vs the team's box count per photo { display-mode: "form" }
 box_counts = park_boxes.groupby("image_id").size()
 headcount = clean_images.set_index("id")["n_animals"]
 missing_boxes = (headcount - box_counts.reindex(headcount.index, fill_value=0))
@@ -524,10 +551,10 @@ show_boxes(_rows, park_boxes, "the suspect photo(s): one animal has no box",
                              f"{int(box_counts.get(r['id'], 0))} boxes")
 
 # %% [markdown]
-# <!-- callout: answer | Worked answer (Q21) -->
+# <!-- callout: answer | Worked answer (Q19) -->
 # Subtract the number of boxes per photo from the keeper's headcount: one photo has
 # one box fewer than animals, and the gallery shows the animal without a frame. Two counts of the same thing
-# from two sources cost nothing, which is why annotation teams are asked for a per-image count. Section 9
+# from two sources cost nothing, which is why annotation teams are asked for a per-image count. Section 8
 # repeats the idea between masks and boxes, and the Challenge hides another missing box among other faults.
 
 # %%
@@ -557,7 +584,7 @@ plt.close(fig)
 # The same class has a different share depending on the unit:
 #
 # - **Sheep** is about 9 % of the photos but about 22 % of the boxes.
-# - **Bird** is rare by photos, common by boxes, and rare again by pixels (section 9).
+# - **Bird** is rare by photos, common by boxes, and rare again by pixels (section 8).
 #
 # Whenever you report imbalance, size or a split, say what the unit is: photo, box or pixel. The park's three
 # jobs count three different things from the same photos.
