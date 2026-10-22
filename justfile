@@ -12,7 +12,7 @@ lint:
 
 # Execute the whole notebook headless on tiny data (NB_SMOKE=1)
 smoke: build
-    uv run pytest -q -x -p no:warnings tests/test_smoke.py tests/test_content.py
+    uv run pytest -q -x -p no:warnings tests/test_smoke.py tests/test_content.py tests/test_cuts.py
 
 # Lint + smoke: what the night run and CI require before a commit counts
 check: lint smoke

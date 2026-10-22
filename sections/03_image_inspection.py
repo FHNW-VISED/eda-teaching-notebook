@@ -21,20 +21,24 @@
 # Networks](https://karpathy.github.io/2019/04/25/recipe/) (2019).
 
 # %% [markdown]
-# The numbers collected per photo, and how each is measured (brightness, contrast and colour are measured on a
-# small thumbnail of the photo):
+# The numbers collected per photo, each in one line:
 #
-# - **width, height:** the pixel columns and rows stored in the file.
-# - **aspect:** width ÷ height. 1 is square, above 1 landscape, below 1 portrait.
+# - **width, height, aspect:** the pixels stored in the file, and width ÷ height (1 square, above 1
+#   landscape, below 1 portrait).
+# - **mode:** how the file stores colour: `RGB` three channels, `L` one grey channel.
+# - **brightness:** the mean grey level of the photo: 0 black, 255 white. **contrast:** its standard
+#   deviation: low is flat or foggy, high is deep shadow next to bright highlight.
+# - **colourfulness:** how far the colours are from grey. A grayscale picture scores exactly 0.
+
+# %% [markdown]
+# <!-- callout: go-deeper | Go deeper · Every number, and how it is measured -->
+# Brightness, contrast and colour are measured on a small thumbnail of the photo.
+#
 # - **long_side:** the larger of width and height. **megapixels:** width × height ÷ 1,000,000.
-# - **mode:** how the file stores colour: `RGB` three channels, `L` one grey channel, `RGBA` RGB plus
-#   transparency, `CMYK` print inks.
-# - **brightness:** the mean grey level (R, G, B averaged per pixel, then over the photo): 0 black, 255 white.
-# - **contrast:** the standard deviation of that grey level: low is flat or foggy, high is deep shadow next to
-#   bright highlight.
+# - **mode:** also `RGBA` (RGB plus transparency) and `CMYK` (print inks).
+# - **brightness:** R, G, B averaged per pixel, then averaged over the photo.
 # - **colourfulness** (Hasler & Süsstrunk 2003): `sqrt(σ_rg² + σ_yb²) + 0.3 · sqrt(μ_rg² + μ_yb²)`, with
 #   `rg = R − G` and `yb = (R + G)/2 − B` per pixel, and σ, μ their standard deviation and mean.
-#   A grayscale picture scores exactly 0.
 # - **mean_r, mean_g, mean_b:** the average value of each colour channel.
 
 # %% [markdown]
@@ -223,18 +227,18 @@ STAT_COLUMNS = ["width", "height", "aspect", "megapixels", "brightness", "contra
 image_stats[STAT_COLUMNS].agg(["min", "median", "mean", "max"]).T.round(2)
 
 # %% [markdown]
-# 💡 Read the `min` and `max` of every row before anything else: a width of 0, a maximum of 6000 or a
-# brightness of 254 each tell a story. A number is a summary; the photos behind it are the evidence. The next
-# cell shows, for every statistic, the photo with the minimum, a typical one (the median) and the maximum.
+# 💡 Read the `min` and `max` of every row first: a width of 0, a maximum of 6000 or a brightness of 254 each
+# tell a story. A
+# number is a summary; the photos behind it are the evidence. The next cell shows the photo with the minimum,
+# a typical one (the median) and the maximum of every statistic.
 
 # %%
 # @title Show the min, median and max photo of every statistic { display-mode: "form" }
 show_min_median_max(STAT_COLUMNS)
 
 # %% [markdown]
-# 💡 Look at the median photo first: that is what a typical photo of this dataset looks like. The extremes
-# then show how far the dataset stretches. The last blocks hold photos with *no colour at all*, stored in two
-# different ways.
+# 💡 Look at the median photo first: that is a typical photo of this dataset. The extremes show how far it
+# stretches. The last blocks hold photos with *no colour at all*, stored in two different ways.
 
 # %% [markdown]
 # ### Sizes and shapes
@@ -320,8 +324,8 @@ plt.close(fig)
 #
 # How a file stores colour is easy to forget and painful to discover during training: one grayscale (`L`) or
 # `RGBA` file in a batch of `RGB` arrays crashes the data loader, or silently gets a channel duplicated or
-# dropped. The next cell counts the modes, shows the photos that look grayscale, and draws the typical RGB
-# histogram of each class.
+# dropped. The next cell counts the modes, shows the photos that look grayscale, and
+# draws the typical RGB histogram of each class.
 
 # %%
 # @title Count colour modes, show gray photos, plot RGB histograms { display-mode: "form" }
@@ -372,19 +376,56 @@ plt.close(fig)
 
 # %% [markdown]
 # 💡 The photos above are the grayscale-looking ones (stored as `L`, or as `RGB` with almost no colour).
-# Section 5 keeps them: files stored as `L` get a note in a `flags` column, and every photo is opened with
-# `.convert("RGB")`, so a grayscale file becomes three equal channels instead of crashing a batch.
 #
-# Read the histograms as *typical colours of a class* (a strong blue channel for a pond, high values across
-# all three for a sandy savanna). If the colour curves differ per class, a model can cheat by using colour
-# instead of the animal: a dog on green grass might be called "sheep".
+# Read the histograms as *typical colours of a class*. If the curves differ per class, a model can cheat by
+# using colour instead of the animal: a dog on green grass might be called "sheep".
+
+# %% [markdown]
+# <!-- callout: go-deeper | Go deeper · Grayscale files in section 5, and what a histogram shows -->
+# Section 5 keeps the grayscale photos: files stored as `L` get a note in a `flags` column, and every photo is
+# opened with `.convert("RGB")`, so a grayscale file becomes three equal channels instead of crashing a batch.
+#
+# A strong blue channel suggests a pond, high values across all three a sandy savanna.
 
 # %% [markdown]
 # ### Brightness and the extremes
 #
-# The brightness distribution tells you whether the dataset has night shots at all, and its extremes are the
-# fastest route to broken or odd files. To read a violin: the wider the shape, the more photos at that value;
-# the line marks the median.
+# The extremes of a statistic are the fastest route to broken or odd files. Numbers point, eyes decide:
+# `show_extremes(stat, n)` shows the `n` photos at both ends of any column of `image_stats`, with the median
+# photo in the middle for comparison.
+
+# %% [markdown]
+# <!-- callout: your-turn | Your turn · Look at the extremes -->
+# **Look for:** which class has the darkest photos, and are they broken or just dusk?
+#
+# Set `STAT_TO_SHOW` (`brightness, contrast, colourfulness, aspect, megapixels, long_side`) and `N_EXTREMES`
+# (how many photos per end), then run the cell. Try `"brightness"` first, then `"colourfulness"` (the low end
+# is where grayscale pictures hide) and `"aspect"`.
+
+# %%
+# ✏️ YOUR TURN
+STAT_TO_SHOW = "brightness"
+N_EXTREMES = 4
+
+if not isinstance(N_EXTREMES, int) or N_EXTREMES < 1:
+    raise SystemExit(f"N_EXTREMES must be a positive integer, not {N_EXTREMES!r}")
+n_extremes = min(N_EXTREMES, 3) if SMOKE else N_EXTREMES  # smoke mode caps the gallery, same code (N-014)
+show_extremes(STAT_TO_SHOW, n_extremes)
+
+# %% [markdown]
+# 💡 The darkest photos are usually real (an animal in shade, a night shot with flash) and worth keeping: they
+# resemble the park's dusk frames. The brightest are often snow, sand or an over-exposed sky.
+
+# %% [markdown]
+# <!-- callout: go-deeper | Go deeper · Which extremes are a cleaning job -->
+# A uniform grey rectangle or a photo of a screen at either end is a file for section 5's cleaning list.
+
+# %% [markdown]
+# ### 🔴 Optional · Brightness per class as a violin
+
+# %% [markdown]
+# The brightness distribution tells you whether the dataset has night shots at all. To read a violin: the
+# wider the shape, the more photos at that value; the line marks the median.
 
 # %%
 # @title Plot brightness per class as violins { display-mode: "form" }
@@ -409,32 +450,6 @@ plt.close(fig)
 # %% [markdown]
 # 💡 Every class covers most of the range, but the medians sit in the middle: daytime holiday photos. The
 # park's cameras also run at dusk and at night, which this data cannot teach.
-#
-# Numbers point, eyes decide. `show_extremes(stat, n)` shows the `n` photos at both ends of any column of
-# `image_stats`, with the median photo in the middle for comparison.
-
-# %% [markdown]
-# <!-- callout: your-turn | Your turn · Look at the extremes -->
-# **Look for:** which class has the darkest photos, and are they broken or just dusk?
-#
-# Set `STAT_TO_SHOW` to one of `brightness, contrast, colourfulness, aspect, megapixels, long_side` and
-# `N_EXTREMES` to how many photos per end you want, then run the cell. Try `"brightness"` first, then
-# `"colourfulness"` (the low end is where grayscale pictures hide) and `"aspect"`.
-
-# %%
-# ✏️ YOUR TURN
-STAT_TO_SHOW = "brightness"
-N_EXTREMES = 4
-
-if not isinstance(N_EXTREMES, int) or N_EXTREMES < 1:
-    raise SystemExit(f"N_EXTREMES must be a positive integer, not {N_EXTREMES!r}")
-n_extremes = min(N_EXTREMES, 3) if SMOKE else N_EXTREMES  # smoke mode caps the gallery, same code (N-014)
-show_extremes(STAT_TO_SHOW, n_extremes)
-
-# %% [markdown]
-# 💡 The darkest photos are usually real (an animal in shade, a night shot with flash) and worth keeping: they
-# resemble the park's dusk frames. The brightest are often snow, sand or an over-exposed sky. A uniform grey
-# rectangle or a photo of a screen at either end is a file for section 5's cleaning list.
 
 # %% [markdown]
 # ### The detective beat: a cluster is a clue
@@ -447,29 +462,9 @@ show_extremes(STAT_TO_SHOW, n_extremes)
 #    seen those, and may fail exactly at night.
 # 3. **What to do** → decide per group: keep it, convert it to RGB, or drop it.
 
-# %%
-# @title Toy example: what a cluster of odd sizes and modes looks like { display-mode: "form" }
-_rng = np.random.default_rng(SEED)
-fig, (ax_sizes, ax_modes) = plt.subplots(1, 2, figsize=(8.4, 2.8))
-_cameras = [((1920, 1080, 30), INK, "camera A"), ((1280, 720, 12), "#0B6E79", "camera B")]
-for (_cx, _cy, _n), _col, _name in _cameras:
-    ax_sizes.scatter(_rng.normal(_cx, 15, _n), _rng.normal(_cy, 10, _n), s=14, color=_col, label=_name)
-ax_sizes.set_xlabel("width (px)", fontsize=8)
-ax_sizes.set_ylabel("height (px)", fontsize=8)
-ax_sizes.set_title("two camera models: two size clusters", fontsize=9)
-ax_sizes.legend(frameon=False, fontsize=8)
-ax_modes.bar(["colour (RGB)", "night frames (L)"], [90, 14], color=[INK, "#9AA5A8"])
-ax_modes.set_ylabel("frames", fontsize=8)
-ax_modes.set_title("infrared night mode: a few grayscale frames", fontsize=9)
-for ax in (ax_sizes, ax_modes):
-    ax.tick_params(labelsize=7)
-fig.tight_layout()
-display(fig)
-plt.close(fig)
-
 # %% [markdown]
 # <!-- callout: questions | Questions -->
-# The toy picture above shows both clues. Look back at the real scatter from Q4 before you run the next cell.
+# Look back at the real scatter from Q4 before you run the next cell.
 
 # %% [markdown]
 # **Q5.** 🟡 Which longest-side value do most photos share, and how many photos do you think do *not* share
@@ -508,13 +503,17 @@ show_rows(odd_size.head(N_ODD), f"photos whose longest side is not {COMMON_LONG_
 
 # %% [markdown]
 # <!-- callout: across-tasks | Across tasks · Resizing -->
-# - **Classification:** squashing a 4:3 photo into a 224×224 square distorts it, but every photo is distorted
-#   the same way, so it is usually harmless. Cropping or padding keeps the shape at the cost of pixels or
-#   borders.
+# - **Classification:** squashing a 4:3 photo into a 224×224 square distorts every photo the same way: usually
+#   harmless.
 # - **Detection:** a box is in pixels, so rescale it with the image: x and width by `new_width / width`, y and
-#   height by `new_height / height`. Forget it and "all the boxes sit in the top-left corner".
-# - **Segmentation:** a mask holds class ids, not colours. Smooth (bilinear) resizing invents in-between
-#   values that are no class; masks need **nearest-neighbour** resizing.
+#   height by `new_height / height`.
+# - **Segmentation:** a mask holds class ids, not colours: smooth (bilinear) resizing invents in-between
+#   values that are no class, so masks need **nearest-neighbour** resizing.
+
+# %% [markdown]
+# <!-- callout: go-deeper | Go deeper · Crop, pad, and a forgotten rescale -->
+# Cropping or padding keeps the photo's shape at the cost of pixels or borders. Forget to rescale the boxes
+# and "all the boxes sit in the top-left corner".
 
 # %% [markdown]
 # **Q6.** 🟡 A 640×427 photo is resized to 224×224. Answer both parts, then run the cell to check them:

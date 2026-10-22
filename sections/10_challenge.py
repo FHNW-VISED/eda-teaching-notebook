@@ -3,32 +3,33 @@
 
 # %% [markdown]
 # <!-- callout: objective | Objective -->
-# Find the problems planted in a new batch of photos from the park, using only the tools of sections 3 to 9,
-# and see how many you catch.
+# Find the problems planted in a new batch of park photos, using only the tools of sections 3 to 9.
 
 # %% [markdown]
 # <!-- callout: theory | Theory · Data-centric AI -->
-# Two ways to make a model better, both aimed at the same park alert, a dog in the sheep paddock:
-#
-# - **Model-centric:** keep the data fixed, change the model. A bigger network, another loss, more epochs.
-# - **Data-centric:** keep the model fixed, change the data. The dog is missed because three training photos
-#   of dogs are labelled "sheep": fix the labels, remove the copies, make the boxes and masks consistent.
-#
-# The data is where the cheap gains are. Sections 5 to 9 were the training for this: here you use it on one
-# batch, without being told where the problems are.
+# Two ways to make a model better. **Model-centric:** keep the data, change the model. **Data-centric:** keep
+# the model, change the data. The park's alert misses a dog in the sheep paddock because three training photos
+# of dogs are labelled "sheep": fix the labels, remove the copies, make the boxes and masks agree.
+
+# %% [markdown]
+# <!-- callout: go-deeper | Go deeper · Why data-centric -->
+# The data is where the cheap gains are. Andrew Ng gave the second approach its name in 2021. Northcutt,
+# Athalye and Mueller (2021) found label errors in the *test sets* of ten widely used benchmarks: on
+# average at least 3.3 % of the labels, and at least 6 % of ImageNet's validation set. That is enough
+# to change which model looks best. A model-centric fix would be a bigger network, another loss or
+# more epochs.
 
 # %% [markdown]
 # ### A new batch from the park
 #
-# The park's cameras have delivered about 150 photos, to be checked before next week's training. Five steps
-# made the batch, and each can go wrong. Ten kinds of problem are planted, **at runtime from `SEED`**, in
-# photos of the Play Dataset that passed every check of sections 5 to 9:
+# About 150 photos arrive from the park's cameras, to be checked before next week's training. Five steps made
+# the batch, and each can go wrong: ten kinds of problem are planted, **at runtime from `SEED`**:
 #
 # 1. **The camera operator typed one label per photo.**
-#    - **wrong label**: a typo, the operator typed the wrong class.
+#    - **wrong label**: a typo, the wrong class.
 # 2. **The intern split the photos into train and test.**
-#    - **train/test overlap**: a copy whose two files sit in *different* splits (whatever kind of copy it
-#      is), so the test score is too good.
+#    - **train/test overlap**: a copy whose two files sit in *different* splits (whatever kind of copy it is),
+#      so the test score is too good.
 # 3. **The keeper counted the animals per photo.**
 #    - **missing box**: an animal the keeper counted, but the annotation team did not annotate.
 # 4. **The annotation team drew a box and a mask per animal.**
@@ -275,9 +276,9 @@ def show_batch(file_names, title: str, caption=None, cols: int = 5, annotations:
 
 
 # %% [markdown]
-# The next cell writes the batch to `data/cache/challenge/` (a few seconds) and loads three objects:
-# `batch_files` (file name → path), `batch` (one row per file: label as typed, split, the keeper's headcount
-# `n_animals`, size) and `batch_animals` (one row per annotated animal: class, box, mask as RLE).
+# The next cell writes the batch (a few seconds) and loads three objects: `batch_files` (name → path), `batch`
+# (one row per file: label as typed, split, the keeper's headcount `n_animals`, size) and `batch_animals`
+# (one row per annotated animal: class, box, mask as RLE).
 
 # %%
 # @title Write the batch, then show its tables and a first look at a dozen photos { display-mode: "form" }
@@ -290,11 +291,10 @@ display(batch.drop(columns="path").head())
 show_batch(batch["file"].head(12), "the first dozen files of the batch (frame = the label as typed)", cols=6)
 
 # %% [markdown]
-# Nothing in the tables says "problem" yet: the files look like any other photos, and the labels, the splits
-# and the annotations look like any other rows. That is what a real delivery looks like.
+# Nothing in the tables says "problem": that is what a real delivery looks like.
 
 # %% [markdown]
-# <!-- callout: recipe | Recipe · Your tools, and where they came from -->
+# <!-- callout: go-deeper | Go deeper · Your tools, and where they came from -->
 # - `exact_duplicate_groups(paths)` and `find_copies(files, threshold, use_variants=True)` (section 5): pairs
 #   of files that are copies, and what kind of copy;
 # - `is_readable(path)` (helper defined in section 5's toolbox): does the file open at all? (`False` for a
@@ -303,57 +303,11 @@ show_batch(batch["file"].head(12), "the first dozen files of the batch (frame = 
 # - `batch["n_animals"]` against the number of rows per file in `batch_animals` (section 8);
 # - `mask_shape(decode(rle), bbox)` (section 9): `box_iou`, `fill`, `pieces`, `holes`, `solidity`;
 # - `show_batch(names, title, annotations=True)`: look at any files, with their boxes and masks.
-
-# %% [markdown]
-# <!-- callout: questions | Questions -->
-# Plan before you hunt: a minute with the list of tools saves ten minutes of looking at photos one by one.
-
-# %% [markdown]
-# **Q31.** 🟡 Plan the hunt for the ten kinds above. Write ten short lines in the form
-# `kind → tool → what it reads` (the files, the `batch` table or the `batch_animals` table), for example
-# `unreadable → is_readable → the files`. Then mark the kinds that cannot be seen in the pixels at all.
 #
-# **Q32.** 🟡 The hunt. The next cell has one header per kind, with an empty line under it for your check.
-# The first kind is done for you; each header names a tool for the others. Collect what you find in
-# `findings` in the cell after it and run the score. Rerun both as often as you like.
+# The planted problems sit in photos that passed every check of sections 5 to 9 at the default settings.
 
-# %%
-# Q32  Your hunt: one check per kind, written under its header. Kind 1 is done; the headers name the tools.
-
-# 1. unreadable — tool: is_readable — reads: the files
-cant_open = sorted(name for name, path in batch_files.items() if not is_readable(path))
-print("unreadable:", cant_open)
-
-# Kinds 2 to 6 are copies. Work on the files that open:
-#   opens = {n: p for n, p in batch_files.items() if n not in cant_open}
-#   pairs = find_copies(opens, HASH_THRESHOLD, use_variants=True)   (its "kind" column names the sort of copy)
-
-# 2. exact duplicate — tool: find_copies, kind "exact" — reads: the files
-
-
-# 3. flipped copy — tool: find_copies, kind "flipped" — reads: the files
-
-
-# 4. rotated copy — tool: find_copies, kind "rotated" — reads: the files
-
-
-# 5. recompressed copy — tool: find_copies, kind "recompressed" — reads: the files
-
-
-# 6. train/test overlap — tool: the same pairs, then batch["split"] of both files — reads: files + batch
-
-
-# 7. grayscale — tool: measure_image(path, 64)[0]["mode"] and ["colourfulness"] — reads: the files
-
-
-# 8. wrong label — tool: batch["class"] vs the class of the file's animals — reads: batch + batch_animals
-
-
-# 9. missing box — tool: batch["n_animals"] vs batch_animals.groupby("file").size() — reads: both tables
-
-
-# 10. ugly mask — tool: mask_shape(decode(a["rle"]), a["bbox"])["box_iou"] per row a — reads: batch_animals
-
+# %% [markdown]
+# Two collapsed cells follow: the scoring helpers, and a reference solution that prints only its score.
 
 # %%
 # @title Score helpers: check_findings, reveal_answers { display-mode: "form" }
@@ -406,39 +360,8 @@ def reveal_answers() -> None:
                cols=6, annotations=True)
 
 
-# %% [markdown]
-# <!-- callout: your-turn | Your turn · Your findings -->
-# Write one `(file, kind)` pair per problem into `findings`.
-#
-# - The kind is one of the ten kinds of the list above, spelled as in `CHALLENGE_TYPES`.
-# - For a copy, name either of its two files.
-# - You may build the list from your variables, e.g. `[(f, "unreadable") for f in cant_open] + [...]`.
-# - `check_findings` prints "found k of n" per kind: n problems of that kind were planted, and k of them are
-#   named by one of your pairs. It also counts the pairs that match nothing; it never says which ones.
-
 # %%
-# ✏️ YOUR TURN
-# One (file, kind) pair per problem; kind is one of CHALLENGE_TYPES. For a copy, either of its files counts.
-findings = [
-    # ("park_999.jpg", "grayscale"),  (the format; there is no park_999.jpg)
-]
-
-challenge_score = check_findings(findings)
-
-# %% [markdown]
-# 💡 Read the ⬜ lines as a to-do list: each one is a kind you have not caught yet, and its header in the
-# Q32 cell names a tool for it. A finding that matches nothing is one of two things:
-#
-# - the wrong kind for the right file (a copy across the splits is a *train/test overlap*, not a
-#   recompressed copy);
-# - a false alarm.
-#
-# Can every problem be found with this notebook's tools alone? **Run the collapsed cell below**: it runs a
-# reference solution at the tools' default settings and prints only its score. Open its code only if you
-# are stuck.
-
-# %%
-# @title Reference solution — run this cell; open it only if you are stuck { display-mode: "form" }
+# @title Reference solution (collapsed) — open its code only if you are stuck { display-mode: "form" }
 _REF_HASH_THRESHOLD = 8  # section 5's default
 _REF_IOU_MIN = 0.9  # section 9's default
 _TYPE_OF_COPY = {"exact": "exact duplicate", "flipped": "flipped copy", "rotated": "rotated copy",
@@ -480,13 +403,88 @@ print(f"reference solution: found {_reference_score['found']} of {_reference_sco
       f"problems with {len(_reference)} findings ({_reference_score['unmatched']} false alarms)")
 
 # %% [markdown]
-# ### The answer key
-#
-# When you are done (or stuck), open the worked answer below, then run `reveal_answers()` for the files of
-# your batch.
+# <!-- callout: questions | Questions -->
+# The ten headers in the next cell are your plan: one per kind, with its tool and what it reads.
 
 # %% [markdown]
-# <details><summary><b>Worked answer (Q31 and Q32): which check finds which kind</b></summary>
+# **Q26.** 🟡 The hunt. Six checks are written for you: kinds 1 to 5 and 7. Write the other four under their
+# headers: the kinds where two sources disagree. Before you do, predict: which kinds could you never spot in
+# the photo itself, however long you looked? Then collect what you find in `findings` and run the score.
+# Rerun both as often as you like.
+
+# %%
+# Q26  Your hunt: one header per kind = the plan. Kinds 1-5 and 7 are written; write 6, 8, 9 and 10.
+
+# 1. unreadable — tool: is_readable — reads: the files (written for you)
+cant_open = sorted(name for name, path in batch_files.items() if not is_readable(path))
+print("unreadable:", cant_open)
+
+# 2. exact duplicate — tool: find_copies, kind "exact" — reads: the files (written for you)
+opens = {n: p for n, p in batch_files.items() if n not in cant_open}
+pairs = find_copies(opens, HASH_THRESHOLD, use_variants=True)  # its "kind" column names the sort of copy
+
+
+def of_kind(kind):
+    return pairs.loc[pairs["kind"] == kind, ["a", "b"]].values.tolist()
+
+
+print("exact duplicate:", of_kind("exact"))
+
+# 3. flipped copy — tool: find_copies, kind "flipped" — reads: the files (written for you)
+print("flipped copy:", of_kind("flipped"))
+
+# 4. rotated copy — tool: find_copies, kind "rotated" — reads: the files (written for you)
+print("rotated copy:", of_kind("rotated"))
+
+# 5. recompressed copy — tool: find_copies, kind "recompressed" — reads: the files (written for you)
+print("recompressed copy:", of_kind("recompressed"))
+
+# 6. train/test overlap — tool: the same pairs, then batch["split"] of both files — reads: files + batch
+
+
+# 7. grayscale — tool: measure_image(path, 64)[0]["mode"] and ["colourfulness"] — reads: the files (written)
+looks_gray = [n for n, p in opens.items()
+              if (s := measure_image(p, 64)[0])["mode"] != "RGB" or s["colourfulness"] < 2.0]
+print("grayscale:", looks_gray)
+
+# 8. wrong label — tool: batch["class"] vs the class of the file's animals — reads: batch + batch_animals
+
+
+# 9. missing box — tool: batch["n_animals"] vs batch_animals.groupby("file").size() — reads: both tables
+
+
+# 10. ugly mask — tool: mask_shape(decode(a["rle"]), a["bbox"])["box_iou"] per row a — reads: batch_animals
+
+
+# %% [markdown]
+# <!-- callout: your-turn | Your turn · Your findings -->
+# Write one `(file, kind)` pair per problem into `findings`, with the kind spelled as in `CHALLENGE_TYPES`.
+#
+# - For a copy, name either of its two files.
+# - Build the list from your variables, e.g. `[(f, "unreadable") for f in cant_open] + [...]`.
+# - `check_findings` prints "found k of n" per kind: n problems of that kind were planted, and k of them are
+#   named by one of your pairs. It also counts the pairs that match nothing; it never says which ones.
+
+# %%
+# ✏️ YOUR TURN
+# One (file, kind) pair per problem; kind is one of CHALLENGE_TYPES. For a copy, either of its files counts.
+findings = [
+    # ("park_999.jpg", "grayscale"),  (the format; there is no park_999.jpg)
+]
+
+challenge_score = check_findings(findings)
+
+# %% [markdown]
+# 💡 Read the ⬜ lines as a to-do list: each is a kind you have not caught yet, and its header in the Q26
+# cell names a tool. The reference solution above found every problem with this notebook's tools alone.
+
+# %% [markdown]
+# ### The answer key
+#
+# Open the worked answer, then run the next cell to see the files of your batch.
+
+# %% [markdown]
+# <details><summary><b>Worked answer (Q26): which check finds which kind</b></summary>
 #
 # - **Unreadable**: `is_readable(path)` on every file. Run it first, because every other check that opens the
 #   photo stumbles on this file.
@@ -508,6 +506,13 @@ print(f"reference solution: found {_reference_score['found']} of {_reference_sco
 # The four kinds that cannot be seen in the pixels are train/test overlap, wrong label, missing box and ugly
 # mask. Each is a disagreement between two sources: two splits, a label and its annotation, a headcount and
 # the boxes, a mask and its box. That is the data-centric habit: get a second source and compare.
+#
+# **A finding that matches nothing** is the wrong kind for the right file (a copy across the splits is a
+# *train/test overlap*, not a recompressed copy), or a false alarm.
+#
+# **Looking or comparing?** Looking works for the copies and the grayscale photo, if you happen to see both
+# files. The wrong labels, the missing box and the ugly masks need two sources side by side: nobody spots
+# them by scrolling through 150 photos.
 # </details>
 
 # %%
@@ -516,87 +521,6 @@ reveal_answers()
 
 # %% [markdown]
 # 💡 Which problems did you find by looking, and which only by comparing?
-#
-# - Looking works for the copies and the grayscale photo, if you happen to see both files.
-# - The wrong labels, the missing box and the ugly masks need two sources side by side. Nobody spots them by
-#   scrolling through 150 photos.
-
-# %% [markdown]
-# ### 🔴 Optional · The ruler on the dirty and the cleaned batch
-
-# %% [markdown]
-# <!-- callout: go-deeper | Go deeper · Section 6's ruler on the batch -->
-# The nearest-neighbour **ruler** of section 6 comes back for one measurement. It is a ruler, not training:
-# a 1-nearest-neighbour classifier on colour histograms, no parameters, seconds on a CPU. It labels each test
-# photo with the label of its most similar training photo, three times:
-#
-# 1. on the batch as delivered;
-# 2. without the files in your `findings`;
-# 3. without the files the reference solution found.
-
-# %% [markdown]
-# **Q33.** 🔴 The test split has about 30 photos, so one photo moves the score by about 3 points. Will the
-# ruler score higher on the dirty batch or on the cleaned one? Think about what the train/test overlap (a
-# test photo whose copy is in training) and the wrong labels (a test photo graded against a wrong label) do
-# to the score. And which of the three numbers would you put in a report? Predict, then run.
-
-# %%
-# @title Q33 1-NN ruler accuracy: delivered, your cleaning, the reference's { display-mode: "form" }
-_ruler_x = {n: measure_image(p, RULER_THUMB)[1].ravel() for n, p in batch_files.items() if is_readable(p)}
-
-
-def batch_ruler(drop) -> tuple[float, int]:
-    """(1-NN accuracy on the test split, number of test photos), with the files in `drop` removed."""
-    keep = batch[batch["file"].isin(_ruler_x) & ~batch["file"].isin(set(drop))]
-    train, test = keep[keep["split"] == "train"], keep[keep["split"] == "test"]
-    if len(train) == 0 or len(test) == 0:
-        return float("nan"), len(test)
-    knn = KNeighborsClassifier(n_neighbors=1)
-    knn.fit(np.stack([_ruler_x[f] for f in train["file"]]), train["class"])
-    predicted = knn.predict(np.stack([_ruler_x[f] for f in test["file"]]))
-    return float((predicted == test["class"].to_numpy()).mean()), len(test)
-
-
-_yours = [Path(f[0]).name for f in findings
-          if isinstance(f, (list, tuple)) and len(f) == 2 and isinstance(f[0], str)]
-ruler_scores = {"as delivered": batch_ruler([]), "your cleaning": batch_ruler(_yours),
-                "reference cleaning": batch_ruler([f for f, _ in _reference])}
-RESULTS["challenge_ruler"] = {k: v[0] for k, v in ruler_scores.items()}
-for name, (acc, n_test) in ruler_scores.items():
-    print(f"{name:19s} ruler accuracy {acc:.1%} on {n_test} test photos")
-if not _yours:
-    print("(your findings list is empty, so 'your cleaning' is the batch as delivered)")
-
-fig, ax = plt.subplots(figsize=(6.5, 3))
-ax.bar(list(ruler_scores), [v[0] for v in ruler_scores.values()],
-       color=[CLASS_COLORS["cat"], CLASS_COLORS["horse"], CLASS_COLORS["zebra"]])
-ax.axhline(1 / len(CLASSES), color=INK, linestyle="--", linewidth=1, label="chance")
-ax.set_ylabel("1-NN ruler accuracy")
-ax.set_ylim(0, 1)
-ax.yaxis.set_major_formatter(mpl.ticker.PercentFormatter(1.0))
-ax.set_title("The same ruler on three versions of the batch")
-ax.legend(frameon=False)
-plt.tight_layout()
-plt.show()
-
-# %% [markdown]
-# 💡 The ruler did not change between the bars; only the data did. Any difference you see is the data's
-# doing, which is the whole point of data-centric work.
-#
-# **Worked answer (Q33).** Both directions are possible.
-#
-# - The train/test overlap gives the dirty batch a free point: the test copy finds its own source in training.
-# - The wrong labels cost it points: the ruler is graded against a label that is wrong.
-# - Cleaning removes both, so the score can go up or down.
-#
-# The number for a report is the cleaned one, because it is the only one that measures what you think it
-# measures. The honest report also says what was removed and why (section 5's "removed N, kept M").
-
-# %% [markdown]
-# <!-- callout: go-deeper | Go deeper · Why data-centric -->
-# Andrew Ng gave the second approach its name in 2021. Northcutt, Athalye and Mueller (2021) found label
-# errors in the *test sets* of ten widely used benchmarks: on average at least 3.3 % of the labels, and at
-# least 6 % of ImageNet's validation set. That is enough to change which model looks best.
 
 # %% [markdown]
 # <!-- callout: takeaway | Takeaway -->

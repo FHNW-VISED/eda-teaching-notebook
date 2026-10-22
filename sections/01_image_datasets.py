@@ -8,15 +8,18 @@
 
 # %% [markdown]
 # The park has no training data yet. Before anyone mounts cameras and hires annotators, ask:
-# *does a usable dataset already exist?* (Where to look, and how to label your own images, is at the end of
-# this section.) First, see what a dataset looks like.
+# *does a usable dataset already exist?* First, see what a dataset looks like.
 
 # %% [markdown]
 # **What is a label here?** In this notebook a photo comes with a class, a box and a mask. The next cell draws
 # one photo from the `images` and `annotations` tables with all three.
 #
-# **How would you validate labels?** Draw a random sample of N photos, check each label by eye and count the
-# mistakes; the share of mistakes in the sample estimates the share in the whole set.
+# <details><summary>How would you validate labels?</summary>
+#
+# Draw a random sample of N photos, check each label by eye and count the mistakes; the share of mistakes in
+# the sample estimates the share in the whole set.
+#
+# </details>
 
 # %%
 # @title Show one photo with its class, its box and its mask { display-mode: "form" }
@@ -58,11 +61,11 @@ print(f"class = {_ann['class']!r} · box (x, y, width, height) = {[round(v) for 
 print(f"mask covers {int(_m.sum()):,} of {_m.size:,} pixels ({_m.mean():.0%} of the photo)")
 
 # %% [markdown]
-# Before judging the dataset, look at it: three photos of each class.
+# Before judging the dataset, look at it: six photos of each class.
 
 # %%
-# @title Three example photos per class, framed in the class colour { display-mode: "form" }
-_per_class = 3
+# @title Six example photos per class, framed in the class colour { display-mode: "form" }
+_per_class = 6
 fig, axes = plt.subplots(_per_class, len(CLASSES), figsize=(13, 2.2 * _per_class))
 for j, c in enumerate(CLASSES):
     _of_class = images[images["class"] == c]
@@ -86,43 +89,49 @@ fig.tight_layout()
 plt.show()
 
 # %% [markdown]
-# Having a dataset is not the same as having a *good* one. This is the checklist from the lecture, each point
-# with an example from the park:
+# Having a dataset is not the same as having a *good* one. This is the checklist from the lecture:
 
 # %% [markdown]
 # <!-- callout: theory | Theory · What makes a good dataset -->
 # - **Does it fit the question?** The images, the classes and the setting must match the job you want the
 #   model to do.<br>*Park example:* the alert needs a dog seen from a fixed camera in the sheep paddock, not a
 #   dog in a holiday snapshot taken from two metres away.
-# - **Enough samples:** a few hundred to a few thousand images, depending on how many classes you have.<br>
-#   *Park example:* 100 photos per animal (600 in all) is a fair start; 12 zebra photos is not.
-# - **2–10 classes.** More classes need more photos each, and similar classes get confused.<br>
-#   *Park example:* six animals is fine; splitting sheep and horses into 40 breeds would not be.
-# - **About 500×500 px.** Check the input size of the models you plan to use.<br>
-#   *Park example:* a bird across the pond may cover only 20×20 px of a 640×480 photo; shrink the photo to
-#   224×224 and it is a handful of pixels.
+# - **Enough samples**, **2–10 classes** and **about 500×500 px**: the numbers to check, explained below.
 # - **Classes, distributions, imbalance, bias.** Know them, and take them into account in training (for
 #   example with a weighted loss).<br>
 #   *Park example:* if 70 % of the photos are sheep and 3 % are dogs, a model that always answers "sheep" is
 #   right 70 % of the time and never raises the dog alert.
-# - **Variability matches the target population.** Lighting, viewpoints, backgrounds and seasons in the data
-#   should look like the ones the model will meet.<br>
-#   *Park example:* take pictures of the park in winter and in summer, in sun and at dusk. A model that only
-#   saw sunny July afternoons will meet snow and low light in January.
-# - **Labels are present and validated.** Every image has its label, and someone checked a sample of them.<br>
+# - **Variability matches the target population**, and **labels are present and validated**: every image has
+#   a label, and someone checked a sample of them.<br>
 #   *Park example:* a photo of a zebra labelled "horse" teaches the model the wrong thing, and nobody notices
 #   until the zebra headcount is off.
-# - **Objects are identifiable and separable by eye.** If you cannot tell them apart, the model will struggle
-#   too.<br>
+# - **Objects are identifiable and separable by eye.**
+# - **What do experts and the literature say** about this data and this task?
+# - **Get a qualitative and a quantitative sense of the data** (Karpathy, 2019): look at many images, then
+#   measure.
+#
+# <details><summary>The reasons and park examples behind each point</summary>
+#
+# - **Enough samples:** a few hundred to a few thousand images, depending on how many classes you have.
+#   *Park example:* 100 photos per animal (600 in all) is a fair start; 12 zebra photos is not.
+# - **2–10 classes:** more classes need more photos each, and similar classes get confused.
+#   *Park example:* six animals is fine; splitting sheep and horses into 40 breeds would not be.
+# - **About 500×500 px:** check the input size of the models you plan to use.
+#   *Park example:* a bird across the pond may cover only 20×20 px of a 640×480 photo; shrink the photo to
+#   224×224 and it is a handful of pixels.
+# - **Variability:** lighting, viewpoints, backgrounds and seasons should look like the ones
+#   the model will meet.
+#   *Park example:* take pictures of the park in winter and in summer, in sun and at dusk. A model that only
+#   saw sunny July afternoons will meet snow and low light in January.
+# - **Separable by eye:** if you cannot tell them apart, the model will struggle too.
 #   *Park example:* a bird that is a dark speck over the pond, or sheep standing so close that their outlines
 #   merge into one woolly shape.
-# - **What do experts and the literature say** about this data and this task?<br>
-#   *Park example:* before trusting COCO's masks, read the audit that found some of them poor; it tells you
-#   what to look for.
-# - **Get a qualitative and a quantitative sense of the data** (Karpathy, 2019): look at many images, then
-#   measure.<br>
-#   *Park example:* look at many images and see how big the animals are and how much of the photo they
-#   cover. Is it the same for each class? Can you already see imbalances just by looking?
+# - **Experts and literature:** before trusting COCO's masks, read the audit that found some of them poor; it
+#   tells you what to look for.
+# - **Qualitative and quantitative:** look at many images and see how big the animals are and how much of the
+#   photo they cover. Is it the same for each class? Can you already see imbalances just by looking?
+#
+# </details>
 
 # %% [markdown]
 # <!-- callout: questions | Questions -->
@@ -204,6 +213,8 @@ for status, bullet, finding in checklist:
 
 # %% [markdown]
 # <!-- callout: go-deeper | Go deeper · Find a dataset, or label your own -->
+# Where to look for a dataset, and how to label your own images:
+#
 # **Find a dataset**
 #
 # - [Kaggle datasets](https://www.kaggle.com/datasets): a huge community collection, good for a first look.

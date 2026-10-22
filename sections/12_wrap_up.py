@@ -44,23 +44,36 @@ for outcome, lines in recap.items():
 
 # %% [markdown]
 # 💡 Every line is a decision you can now defend: what to fix, how to split, what to measure, and in which
-# unit (photo, box or pixel) to count. In smoke mode the numbers are tiny; the full run gives the park's real
-# ones.
+# unit (photo, box or pixel) to count.
+#
+# <details><summary>About the numbers</summary>
+#
+# In smoke mode the numbers are tiny; the full run gives the park's real ones.
+#
+# </details>
 
 # %% [markdown]
 # <!-- callout: takeaway | Takeaways -->
 # You can now do the three things from the banner:
 #
 # - **1 · Inspect.** **When you see** a new image dataset → **do** look at many photos before computing
-#   anything, then measure sizes, modes, colours and class counts. An outlier points at a bug; a photo the
-#   park's camera would never take points at a poor fit.
+#   anything, then measure sizes, modes, colours and class counts.
 # - **2 · Fix errors.** **When you see** files that may be the same photo → **do** hash the files for exact
-#   copies and the pixels (with flipped and rotated variants) for near copies, open every file once, and let
-#   a human judge the least typical labels and the ugliest masks. Write down "removed N, kept M".
+#   copies and the pixels for near copies, and write down "removed N, kept M".
 # - **3 · Split and measure.** **When you see** photos tied together by a camera or a burst → **do**
-#   deduplicate, then split by that group. Pick the metric from the expensive mistake: recall on dog for the
-#   paddock alert, counting error for the headcount, IoU per class for the outlines. Always say what you
-#   count: photos, boxes or pixels.
+#   deduplicate, then split by that group. Always say what you count: photos, boxes or pixels.
+#
+# <details><summary>How to do each step, with examples</summary>
+#
+# - **1 · Inspect:** an outlier points at a bug; a photo the park's camera would never take points
+#   at a poor fit.
+# - **2 · Fix errors:** flipped and rotated variants are near copies too, so hash the pixels as well
+#   as the bytes;
+#   open every file once, and let a human judge the least typical labels and the ugliest masks.
+# - **3 · Split and measure:** pick the metric from the expensive mistake: recall on dog for the
+#   paddock alert, counting error for the headcount, IoU per class for the outlines.
+#
+# </details>
 
 # %% [markdown]
 # ### Next week: training

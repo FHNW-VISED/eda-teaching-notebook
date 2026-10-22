@@ -7,9 +7,8 @@
 # understand why the dog alert cares about imbalance more than about accuracy.
 
 # %% [markdown]
-# This section looks at the **labels**, the one word per photo. Two questions decide whether they are usable:
-# how many photos of each class, and is "one word per photo" the right shape for this data? Karpathy looks
-# for this at the same point:
+# This section looks at the **labels**, the one word per photo: how many photos of each class, and is "one
+# word per photo" the right shape for this data? Karpathy looks for this at the same point:
 
 # %% [markdown]
 # <!-- callout: recipe | Recipe · Step 1, continued: imbalances and biases -->
@@ -113,11 +112,10 @@ show_rows(_crowded, "the most crowded photos", lambda r: f"{r['n_animals']} × {
 # "Which label then?" The park picks one of three before labelling a single frame:
 #
 # - **one label, the main animal** (COCO's choice): cheap, but the labeller decides what "main" means;
-# - **one label per animal class present**: "sheep and dog" is exactly the paddock alert, but it needs a
-#   different loss and metric;
+# - **one label per class present**: "sheep and dog" is the paddock alert, but needs a different loss and
+#   metric;
 # - **one box per animal** (detection, section 8): answers "which" and "how many", at a higher cost.
-
-# %% [markdown]
+#
 # The Play Dataset went further and dropped every photo with two classes. For the paddock camera, where the
 # case that matters is a dog **among** sheep, that filter deletes exactly the frames the alert is for.
 
@@ -215,47 +213,6 @@ print(f"This strip: accuracy {100 * _strip_right / len(_strip):.0f} %, recall on
 # dog, the better "always sheep" looks. For a rare class, watch its **recall**. A balanced-looking Play
 # Dataset says nothing about the imbalance of the *deployment*. Section 7 turns this into the park's metric;
 # class weights and oversampling are next week's topic.
-
-# %% [markdown]
-# ### Across tasks: what a label costs
-#
-# The park's other two jobs need richer labels, and richer labels cost more. The cell below counts them in
-# the crudest unit there is: clicks a labeller had to make.
-
-# %% [markdown]
-# <!-- callout: across-tasks | Across tasks · One label, one box, every pixel -->
-# - **Classification:** one label per image. One click. It cannot say "how many" or "where".
-# - **Detection:** one box per animal. Two clicks per box and a decision for every animal (is that blur a
-#   bird?). Imbalance is now counted in *boxes* (section 8).
-# - **Segmentation:** every pixel gets a class. One click per vertex of a polygon, many vertices per animal.
-#   Imbalance is counted in *pixels*, and birds end up with a few per cent of them (section 9).
-#
-# The table below counts exactly these clicks on the Play Dataset. Each task costs several times more than
-# the one before, which is why real datasets have many more image labels than boxes, and many more boxes
-# than masks.
-
-# %%
-# @title Clicks per task: 1 per image label, 2 per box, 1 per mask vertex { display-mode: "form" }
-_polygons = annotations["segmentation"].apply(lambda s: s if isinstance(s, list) else [])
-_vertices = _polygons.apply(lambda polys: sum(len(p) // 2 for p in polys))
-_n_crowd = int((annotations["iscrowd"] == 1).sum())
-annotation_cost = pd.DataFrame(
-    {
-        "unit": ["image labels", "boxes", "mask vertices"],
-        "count": [len(images), len(annotations), int(_vertices.sum())],
-        "clicks": [len(images), 2 * len(annotations), int(_vertices.sum())],
-    }
-).set_index("unit")
-annotation_cost["clicks per photo"] = (annotation_cost["clicks"] / len(images)).round(1)
-_label_clicks = annotation_cost.loc["image labels", "clicks"]
-annotation_cost["× classification"] = (annotation_cost["clicks"] / _label_clicks).round(1)
-if _n_crowd:
-    print(f"({_n_crowd} crowd regions are stored as pixel masks, not polygons, and count 0 vertices here.)")
-display(annotation_cost)
-
-# %% [markdown]
-# 💡 The same photos, the same animals, and the click count climbs with every task. When the park asks for
-# "a quick model that also counts and outlines", this table is the answer to "how quick".
 
 # %% [markdown]
 # <!-- callout: takeaway | Takeaway -->

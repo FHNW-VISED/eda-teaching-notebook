@@ -8,29 +8,26 @@
 # Pick the metric that matches the use case, and see why accuracy is the wrong one for the dog alert.
 
 # %% [markdown]
-# "Always sheep" scored 98 % on a paddock day and never saw a dog. That was a toy; this section repeats the
-# comparison on **prepared predictions**: one per photo of `clean_images`, shaped like the output of a decent
-# classifier (right most of the time, wrong mostly on the rare class). Nothing is trained here (that is next
-# week); a seed makes everyone look at the same table.
+# "Always sheep" scored 98 % on a paddock day and never saw a dog. This section repeats the comparison on
+# **prepared predictions**, shaped like a decent classifier's output: right most of the time, wrong mostly on
+# the rare class. Nothing is trained here (that is next week); a seed makes everyone look at the same table.
 
 # %% [markdown]
 # <!-- callout: theory | Theory · Accuracy, recall, precision and the confusion matrix -->
 # A **confusion matrix** counts photos by (true class, predicted class): rows are what the photo shows,
 # columns are what the classifier said, the diagonal is the correct ones. Three numbers come out of it:
 #
-# - **Accuracy** = correct photos / all photos (diagonal / everything). One number for the whole table,
-#   dominated by the big classes.
+# - **Accuracy** = correct photos / all photos. One number, dominated by the big classes.
 # - **Recall** of a class = correct / its **row** total: "of all the real dogs, how many did we catch?" A dog
 #   called sheep lowers it.
-# - **Precision** of a class = correct / its **column** total: "of all the photos we called dog, how many were
-#   dogs?" A sheep called dog lowers it.
+# - **Precision** of a class = correct / its **column** total: "of all the photos we called dog, how many
+#   were dogs?" A sheep called dog lowers it.
 #
-# No metric is right in itself. The use case says which mistake is expensive, and that picks the metric.
+# No metric is right in itself: the use case says which mistake is expensive.
 
 # %% [markdown]
-# Meet two contestants on a paddock week of 1000 frames, 20 of them with a dog: **always sheep**, and a
-# **decent classifier**. The next cell draws their 2 × 2 confusion matrices, with the dog row (recall) and the
-# dog column (precision) marked.
+# Two contestants on a paddock week of 1000 frames, 20 with a dog: **always sheep** and a **decent
+# classifier**. The next cell draws their 2 × 2 confusion matrices.
 
 # %%
 # @title Toy: a paddock week of 1000 frames, 'always sheep' vs a decent classifier { display-mode: "form" }
@@ -116,16 +113,14 @@ predictions.head()
 
 # %% [markdown]
 # <!-- callout: questions -->
-# Before computing anything: which number would the park manager quote in a report, and which one should the
-# dog alert be judged on?
+# Which number would the park manager quote in a report, and which one should the dog alert be judged on?
 
 # %% [markdown]
-# **Q19.** 🟡 Using the error rates above and the photos per class the cell printed, guess the accuracy of
-# `predictions` (over all photos) and the recall on dog. Close, or far apart? Write both guesses down, then
-# run.
+# **Q17.** 🟡 From the error rates above and the photos per class printed, guess the accuracy of
+# `predictions` and the recall on dog. Close, or far apart? Write both guesses down, then run.
 
 # %%
-# @title Q19 Confusion matrix, then accuracy, recall and precision per class { display-mode: "form" }
+# @title Q17 Confusion matrix, then accuracy, recall and precision per class { display-mode: "form" }
 _true = predictions["true"].to_numpy()
 _pred = predictions["pred"].to_numpy()
 confusion = pd.DataFrame(0, index=CLASSES, columns=CLASSES, dtype=int)
@@ -185,7 +180,7 @@ display(fig)
 plt.close(fig)
 
 # %% [markdown]
-# 💡 **Worked answer (Q19).** Far apart: accuracy around 80 %, recall on dog around 50 %. Accuracy is a
+# 💡 **Worked answer (Q17).** Far apart: accuracy around 80 %, recall on dog around 50 %. Accuracy is a
 # photo-weighted average, so it sits near the tall bars while the dog bar sits far below; most missed dogs
 # were called *sheep*, exactly the frame that should have raised the alert. The manager is happy while every
 # second dog walks by. Compare the gap, not the digits.
@@ -194,9 +189,10 @@ plt.close(fig)
 # ### The mistakes behind the numbers
 #
 # - **Recall reads the dog row:** the real dogs the alert missed.
-# - **Precision reads the dog column:** the photos called dog that are not dogs (false alarms).
+# - **Precision reads the dog column:** photos called dog that are not dogs (false alarms).
 #
-# The next cell shows up to six of each.
+# The next cell shows up to six of each. The missed dogs are ordinary dogs that a classifier biased towards
+# the big classes labelled as something else: recall on dog is nothing but the first gallery.
 
 # %%
 # @title Dogs the alert missed (recall) and false alarms (precision) { display-mode: "form" }
@@ -215,32 +211,23 @@ show_rows(_alarm_rows, f"Precision: {len(_alarms)} of the {_n_alarms} photos cal
           caption=lambda row: f"true {row['class']} · said dog")
 
 # %% [markdown]
-# 💡 Nothing about the missed dogs is special: they are ordinary dogs that a classifier biased towards the
-# big classes labelled as something else. Recall on dog is nothing but the first gallery.
-
-# %% [markdown]
 # ### The same classes, a different shop
 #
 # Move the same six classes to a **pet-food shop**, whose webcam looks at the customer's pet and recommends
-# food. Horses and zebras never walk in, and a false "cat" is cheap (the customer taps "no, a dog"); what
-# costs the shop is *insisting*, calling a dog a cat with confidence. Its question is "when we say cat, is it
-# a cat?", which is **precision on cat and on dog**. Same classes, same predictions, same matrix, different
-# slice: the paddock reads the dog *row* (recall), the shop the cat and dog *columns* (precision), because the
+# food. Horses and zebras never walk in, and a false "cat" is cheap; what costs the shop is *insisting*,
+# calling a dog a cat with confidence. Its question is "when we say cat, is it a cat?", which is
+# **precision**: on these predictions about 82 % on cat and 83 % on dog, while the paddock's recall on dog
+# is 50 %.
+#
+# Same matrix, different slice: the paddock reads the dog *row*, the shop the cat and dog *columns*. The
 # metric belongs to the use case, not to the data.
-
-# %%
-# @title The shop's view: precision on cat and dog, horse and zebra ignored { display-mode: "form" }
-# The shop's view of the same predictions: precision on cat and dog (the columns), horse and zebra ignored.
-_shop = metrics.loc[["cat", "dog"], ["precision", "recall"]]
-print("Pet-food shop, same predictions:")
-display(_shop.T)
-print(f"The paddock quotes recall on dog ({recall['dog']:.0%}); the shop quotes precision on cat "
-      f"({precision['cat']:.0%}) and dog ({precision['dog']:.0%}).")
-
-# %% [markdown]
-# 💡 Same predictions, two headline numbers: the shop's precision on dog comes from the dog column, the
-# paddock's recall from the dog row. A classifier can be good enough for one question and useless for the
-# other, on the very same test set.
+#
+# <details><summary>More on the shop</summary>
+#
+# A false "cat" is cheap because the customer taps "no, a dog". A classifier can be good enough for one
+# question and useless for the other, on the very same test set.
+#
+# </details>
 
 # %% [markdown]
 # ### ✍️ Pick the alert metric
@@ -250,10 +237,9 @@ print(f"The paddock quotes recall on dog ({recall['dog']:.0%}); the shop quotes 
 # The paddock alert fires when a dog is in front of the sheep camera. Missing a dog is worse than a false
 # alarm (the park story, section 0).
 #
-# - **Do:** replace the `...` with one of `"accuracy"`, `"precision"` or `"recall"`: the metric, computed on
-#   the dog class, that the alert should be judged on.
-# - **Then:** the check cell tells you whether it agrees and continues with the reference choice either way,
-#   like the `use()` cells.
+# - **Do:** replace the `...` with `"accuracy"`, `"precision"` or `"recall"`: the metric, on the dog class,
+#   the alert should be judged on.
+# - **Then:** the check cell says whether it agrees and continues with the reference either way.
 
 # %%
 # ✍️ YOUR CODE
@@ -291,60 +277,10 @@ print(f"The paddock alert is judged on {alert_metric} on dog: {_dog_scores[alert
 # - Next week, when a real model is trained, this is the number to put on the validation curve.
 
 # %% [markdown]
-# ### Quick check
-#
-# **Q20.** 🟡 The shop's webcam now also knows *rabbits* (a new, rare class). In a week: 10 rabbits and 100
-# dogs. The classifier calls one rabbit "dog" and gets every dog right. Which two per-class numbers fall?
-
-# %% [markdown]
-# <!-- callout: your-turn | Your turn · `QUIZ_ANSWER` -->
-# Set `QUIZ_ANSWER` to one letter:
-#
-# - **A** recall on rabbit dropped, precision on dog dropped
-# - **B** recall on rabbit dropped, precision on dog is fine
-# - **C** precision on rabbit dropped, recall on dog dropped
-# - **D** accuracy dropped, nothing else changed
-
-# %%
-# ✏️ YOUR TURN
-QUIZ_ANSWER = None  # "A", "B", "C" or "D"
-
-# %%
-# @title Check QUIZ_ANSWER { display-mode: "form" }
-_QUIZ_KEY = "A"
-_QUIZ_WHY = {
-    "A": "a rabbit called dog is a miss in the rabbit row (recall on rabbit) and a wrong entry in the dog "
-         "column (precision on dog). One mistake, two metrics.",
-    "B": "a rabbit called dog also lands in the dog column: everything called dog that is not a dog lowers "
-         "precision on dog.",
-    "C": "no rabbit is predicted for a dog, so the rabbit column (precision on rabbit) and the dog row "
-         "(recall on dog) are untouched.",
-    "D": "accuracy barely moves (rabbits are rare), and two per-class metrics did change.",
-}
-if QUIZ_ANSWER is None:
-    print("✏️  QUIZ_ANSWER not set yet; the answer is shown below.")
-elif str(QUIZ_ANSWER).upper() not in _QUIZ_WHY:
-    raise SystemExit(f"QUIZ_ANSWER must be one of A, B, C, D, not {QUIZ_ANSWER!r}")
-elif str(QUIZ_ANSWER).upper() == _QUIZ_KEY:
-    print(f"✅ {_QUIZ_KEY}: {_QUIZ_WHY[_QUIZ_KEY]}")
-else:
-    print(f"❌ {str(QUIZ_ANSWER).upper()}: {_QUIZ_WHY[str(QUIZ_ANSWER).upper()]}")
-
-# %% [markdown]
-# **Worked answer (Q20).** A. The one mistake, "rabbit called dog", sits in the rabbit *row* and the dog
-# *column* at once:
-#
-# - recall on rabbit = 9 / 10 (one rabbit missed);
-# - precision on dog = 100 / 101 (one non-dog called dog);
-# - precision on rabbit and recall on dog only move when a dog is called rabbit, which never happens.
-#
-# Accuracy hardly notices a weekly rabbit.
-
-# %% [markdown]
 # ### Across tasks: counting and outlining
 #
-# The park's two other jobs have their own numbers. The lesson is the same: the use case names the expensive
-# mistake, and the metric follows.
+# The park's two other jobs have their own numbers, and the lesson is the same: the use case names the
+# expensive mistake, and the metric follows.
 
 # %% [markdown]
 # <!-- callout: across-tasks | Across tasks · Counting error, IoU and Dice -->
@@ -376,7 +312,8 @@ else:
 # <!-- callout: go-deeper | Go deeper · IoU and Dice on a shifted box -->
 # IoU and Dice score how well a predicted shape sits on the true one. On boxes, the next cell slides a
 # predicted box away from the true one: the two numbers rank the same predictions in the same order, only
-# their scale differs (Dice is always the kinder one), so compare numbers across papers with care.
+# their scale differs (Dice is always the kinder one), so compare numbers across papers with care. (The
+# counting error is the number the farmer reads; it can be perfect while individual boxes are wrong.)
 
 # %%
 # @title IoU vs Dice of a shifted box (defines box_iou_dice, used in 8 and 9) { display-mode: "form" }
@@ -410,24 +347,6 @@ fig.suptitle("The same overlap, two scores: Dice is always the kinder one", colo
 fig.tight_layout()
 display(fig)
 plt.close(fig)
-
-# %% [markdown]
-# **Q21.** 🟡 A detector looks at a paddock photo with 5 sheep. It finds 4 of them and also calls a bush a
-# sheep. What is the counting error for that photo? How many individual box mistakes (missed or false boxes)
-# are there? Decide, then run.
-
-# %%
-# @title Q21 Counting error vs individual box mistakes { display-mode: "form" }
-true_count, found, false_boxes = 5, 4, 1
-counting_error = abs((found + false_boxes) - true_count)
-_box_mistakes = true_count - found + false_boxes
-print(f"headcount: {found + false_boxes} predicted vs {true_count} true → counting error {counting_error}; "
-      f"box-level mistakes: {true_count - found} missed + {false_boxes} false = {_box_mistakes}")
-
-# %% [markdown]
-# 💡 **Worked answer (Q21).** **Counting error 0** (5 predicted, 5 true) but **2 box mistakes** (one missed
-# sheep, one false box). The first number is the park's, the second is the one you fix the model with: a
-# headcount that is right for the wrong reasons will be wrong on the next photo.
 
 # %% [markdown]
 # <!-- callout: takeaway | Takeaway -->

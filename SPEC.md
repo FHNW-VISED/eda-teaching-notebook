@@ -82,24 +82,24 @@ food for customers' pets. Horses and zebras never appear, a false "cat" is cheap
 | Dev access in Colab | GitHub token in Colab Secrets, or the repo temporarily public (G-29) |
 
 ## 6. Sections
-Time = participant minutes (~110 total; Susanne may cut sections 1 and the 🔴 parts first). Status: todo · in-progress · done · blocked.
+Time = participant minutes at lab pace (~144 total after the cut pass of 2026-10-22, time keeper ±15 %, slot 90; the 🔴 parts and section 11's "After the lab" block add ≈ 22 and are not included; Susanne may cut sections 1 and the 🔴 parts first). Status: todo · in-progress · done · blocked.
 🧾 = opens with a Karpathy Recipe Callout (2–3 verbatim sentences + link). ✏️ = change a value. ✍️ = write a function via `use()`.
 
 | # | File | Title | Objective (one line) | Level | Time | Status |
 |---|---|---|---|---|---|---|
 | 0 | sections/00_setup.py | Setup & the park | Run setup, meet the park, see the three outcomes | 🟢 | 5 | done |
-| 1 | sections/01_image_datasets.py | Image datasets | Know where datasets come from and what makes a good one | 🟢 | 5 | done |
+| 1 | sections/01_image_datasets.py | Image datasets | Know where datasets come from and what makes a good one | 🟢 | 6 | done |
 | 2 | sections/02_become_one.py | Become one with the data 🧾 | Look at many images before computing anything | 🟢 | 8 | done |
-| 3 | sections/03_image_inspection.py | Image inspection 🧾 | Measure sizes, aspect ratios, colour modes and colour statistics | 🟢🟡 | 8 | done |
-| 4 | sections/04_labels_distribution.py | Labels & class distribution 🧾 | Count classes and see why imbalance matters for the dog alert | 🟢🟡 | 8 | done |
-| 5 | sections/05_errors_cleaning.py | Common dataset errors & cleaning 🧾 | Find duplicates, flipped/rotated copies and suspicious labels; produce a cleaned dataset | 🟡 | 15 | done |
-| 6 | sections/06_splits_leakage.py | Splits & leakage | Choose a split that does not leak, and understand cross-validation | 🟡 | 12 | done |
-| 7 | sections/07_metrics.py | Metrics for the park | Pick the metric that matches the use case | 🟡 | 7 | done |
-| 8 | sections/08_boxes.py | Same data, boxes | See what imbalance, size, position and label quality mean for detection | 🟡 | 10 | done |
-| 9 | sections/09_masks.py | Same data, masks | See what they mean for segmentation; find ugly masks | 🟡 | 10 | done |
-| 10 | sections/10_challenge.py | Data-centric AI in practice: the Challenge | Find the planted problems in a new batch with the tools learned | 🟡🔴 | 15 | done |
+| 3 | sections/03_image_inspection.py | Image inspection 🧾 | Measure sizes, aspect ratios, colour modes and colour statistics | 🟢🟡 | 15 | done |
+| 4 | sections/04_labels_distribution.py | Labels & class distribution 🧾 | Count classes and see why imbalance matters for the dog alert | 🟢🟡 | 11 | done |
+| 5 | sections/05_errors_cleaning.py | Common dataset errors & cleaning 🧾 | Find duplicates, flipped/rotated copies and suspicious labels; produce a cleaned dataset | 🟡 | 17 | done |
+| 6 | sections/06_splits_leakage.py | Splits & leakage | Choose a split that does not leak, and understand cross-validation | 🟡 | 16 | done |
+| 7 | sections/07_metrics.py | Metrics for the park | Pick the metric that matches the use case | 🟡 | 11 | done |
+| 8 | sections/08_boxes.py | Same data, boxes | See what imbalance, size, position and label quality mean for detection | 🟡 | 15 | done |
+| 9 | sections/09_masks.py | Same data, masks | See what they mean for segmentation; find ugly masks | 🟡 | 14 | done |
+| 10 | sections/10_challenge.py | Data-centric AI in practice: the Challenge | Find the planted problems in a new batch with the tools learned | 🟡🔴 | 18 | done |
 | 11 | sections/11_your_dataset.py | Your project dataset | Run the checklist on your own folder-per-class dataset | 🟢 | 5 | done |
-| 12 | sections/12_wrap_up.py | Wrap-up & next week | Takeaways and where to go next | 🟢 | 2 | done |
+| 12 | sections/12_wrap_up.py | Wrap-up & next week | Takeaways and where to go next | 🟢 | 3 | done |
 
 ### Section contents
 - **00 Setup & the park**
@@ -113,32 +113,31 @@ Time = participant minutes (~110 total; Susanne may cut sections 1 and the 🔴 
   - Then apply each bullet to the Play Dataset in one line each (e.g. "2–10 classes: ✅ 6").
 - **02 Become one with the data**
   - 🧾 Karpathy: "become one with the data".
-  - An image grid per class (✏️ `CLASS_TO_SHOW`, `N_SHOW`).
+  - One class grid in the lesson: section 1's grid (six photos per class) is reused for Q2, and a single ✏️ grid cell follows (`CLASS_TO_SHOW`, `N_SHOW`).
   - Students write down 3 observations, as a markdown cell to fill in.
   - **[PROPOSAL]** A first 💡 insight sentence after every plot (N-004).
 - **03 Image inspection**
   - Width/height scatter, aspect-ratio histogram, colour modes (RGB / L / RGBA counts), RGB histograms per class, brightness.
   - **[PROPOSAL]** a `show_extremes(stat)` gallery: the images at both ends of a statistic.
-  - **[PROPOSAL]** a detective beat: a cluster of odd sizes or modes points to a different source.
+  - The brightness-per-class violin is a 🔴 optional part.
+  - **[PROPOSAL]** a detective beat: a cluster of odd sizes or modes points to a different source (three numbered steps, no toy figure: the real scatter is the picture).
   - 🔀 Across tasks: resizing distorts aspect ratios; box coordinates must be rescaled; masks need nearest-neighbour resizing.
 - **04 Labels & class distribution**
   - Images per class (bar, in `CLASS_COLORS`).
   - Images with several animals: "which label then?"
   - Why the dog alert cares about imbalance (⚠️ Pitfall: accuracy hides a rare class).
-  - 🔀 Across tasks: one label per image vs one box per animal vs every pixel; what each costs to annotate.
+  - The "what each task costs to annotate" part (one label vs one box vs every pixel, with the clicks table) now opens section 8.
 - **05 Common dataset errors & cleaning**
   - **[PROPOSAL]** Opens with a real Kaggle duplicate story: PetFinder (near-duplicates with different scores; train/test duplicates removed) and Cassava (a duplicated pair with two labels).
   - Then:
-    - exact duplicates (file hash);
-    - near-duplicates (perceptual hash, ✏️ `HASH_THRESHOLD`);
+    - exact duplicates (file hash) and near-duplicates (perceptual hash, ✏️ `HASH_THRESHOLD`), asked together in one question (Q10);
     - **flipped/rotated copies, found by hashing each image's flipped and rotated variants** (**[PROPOSAL]** a shoot-out: plain hashing misses them, variant hashing catches them);
-    - suspicious labels (each class's least typical images for a human to judge).
-  - **Guided hunt** (G-25): a planted batch with exact duplicates + a flipped + a rotated + a recompressed copy. ✍️ `find_flipped_copies(image, candidates) -> list[str]`.
-  - 🔴 model-based near-duplicate and outlier search on precomputed embeddings.
+  - **Guided hunt** (G-25): a planted batch with exact duplicates + a flipped + a rotated + a recompressed copy. ✍️ `find_flipped_copies(image, candidates) -> list[str]`. The hunt ends on its printed answer key (no extra figure).
+  - One 🔴 optional part, "Suspicious labels": each class's least typical images for a human to judge (Q12), then model-based near-duplicate and outlier search on precomputed embeddings (Q13), with a short note that teams use embeddings this way at scale.
   - Ends with `clean_images`, the cleaned table, and a summary "removed N, kept M".
 - **06 Splits & leakage**
   - On COCO: random vs stratified split, with class shares per split.
-  - Cross-validation: **k-fold, stratified k-fold, leave-one-out (useful for very small datasets: every image is tested once; costly and noisy), and leave-one-group-out** (G-27).
+  - Cross-validation: **k-fold, stratified k-fold, leave-one-out (useful for very small datasets: every image is tested once; costly and noisy), and leave-one-group-out** (G-27), shown as one fold diagram on 12 toy photos (it carries the "0 %" answer for leave-one-out); no table and no question, and `cv_schemes` is still computed in a collapsed cell.
   - Then the park's woodland trail cameras (CCT20): bursts and locations.
   - **Leakage shown without a model** (G-26): the share of test images with a burst sibling in training, random split vs split by camera, plus the paper's 20.8 % → 41.1 %.
   - ⚠️ Pitfall: **plain leave-one-out leaks across burst frames just like a random split**, and leave-one-*group*-out (one camera) is the fix.
@@ -147,24 +146,27 @@ Time = participant minutes (~110 total; Susanne may cut sections 1 and the 🔴 
   - 🔴 optional nearest-neighbour classifier on colour features to *see* the score gap (seconds on CPU).
 - **07 Metrics for the park**
   - On **prepared predictions** (a fixed CSV generated with a seed; no model): accuracy vs recall on dog for the paddock alert, plus a confusion matrix.
-  - The pet-food-shop contrast paragraph.
+  - The pet-food-shop contrast as one paragraph with its numbers inline (no extra cell).
   - ✍️ pick the alert metric: `ALERT_METRIC = ...` with a check.
-  - **[PROPOSAL]** a quick multiple-choice check.
-  - 🔀 Across tasks: counting error / mAP for detection, IoU / Dice for segmentation.
+  - The quick check (rabbit quiz) is asked aloud as a show of hands (FACILITATION), not in the notebook.
+  - 🔀 Across tasks: counting error for detection, IoU / Dice for segmentation; mAP and the IoU / Dice figure are go-deeper boxes. The section ends on the alert metric.
 - **08 Same data, boxes**
-  - Boxes per class (vs images per class: the ranking flips, bird goes from 4th to 1st), box-area distribution (small/medium/large), box-centre heatmap, animals per image, overlap and crowding.
+  - Opens with "What a label costs": the clicks table (label vs box vs mask), moved here from section 4.
+  - Boxes per class (vs images per class: the ranking flips, bird goes from 4th to 1st), box-area distribution (small/medium/large; numbers in the table, no stacked share bars), box-centre heatmap, overlap (the IoU drawing section 9 uses).
+  - Crowding (overlapping box pairs per class: table and gallery) is a 🔴 optional part.
   - Guided hunt: **one image with a missing box** (an image with 3 sheep but only 2 boxes).
   - ✍️ `count_boxes_per_class(annotations) -> dict[str, int]`.
   - Each concept gets its one-line "handled later by" (G-18): weighted/focal loss, tiling, multi-scale, iterative stratification.
 - **09 Same data, masks**
-  - Pixels per class **including background**; mask-area distribution; per-class pixel heatmaps; thin parts.
+  - Pixels per class **including background**; mask-area distribution and fill ratio (Q23).
+  - One 🔴 optional part at the end, "More about masks": per-class pixel heatmaps and thin parts (Q25).
   - Guided hunt: **5 ugly masks** (G-25):
     - swollen (dilated);
     - shifted ~15 px;
     - a chunk missing;
     - a mask that belongs to another animal;
     - a crude polygon of a few vertices.
-  - Students find them with mask–box agreement (IoU of the mask's own bbox with the annotated bbox), fill ratio (mask area / box area), and pieces and holes (✏️ thresholds). 🔴 boundary–edge alignment.
+  - Students find them with mask–box agreement (IoU of the mask's own bbox with the annotated bbox), fill ratio (mask area / box area), and pieces, holes and solidity. One ✏️ threshold, `IOU_MIN`; the other four are fixed.
   - Note: COCO has real poor masks too; students may find genuine ones.
 - **10 Data-centric AI in practice: the Challenge**
   - A 📘 Theory Callout on data-centric AI (fix the data before the model) introduces it.
@@ -178,12 +180,13 @@ Time = participant minutes (~110 total; Susanne may cut sections 1 and the 🔴 
     - one train/test overlap;
     - one image with a missing box;
     - plus 2 ugly masks.
+  - The plan and the hunt are one question (Q26): one header per kind, with the copy and grayscale checks pre-written and the four "two sources disagree" checks left to the student.
   - Students fill `findings = [...]`. `check_findings(findings)` reports "found k of n" per type, and `reveal_answers()` prints the key (also in a `<details>` toggle **[PROPOSAL]**).
-  - 🔴 optional ending (G-33): the nearest-neighbour "ruler" score on the dirty batch vs after the student's cleaning, framed as *a ruler, not training*.
+  - No ruler in the Challenge: the nearest-neighbour "ruler" (G-33) lives only in section 6's 🔴 part (Q16).
 - **11 Your project dataset**
   - **One clearly marked swap-in cell** (`MY_DATASET_DIR = None`, folder-per-class).
-  - Rerun the classification checklist on it: counts, sizes, modes, duplicates, flips, a split suggestion.
-  - The guiding questions, each answered for the park, with space for the student's answer (G-8).
+  - In class: the folder tree, the swap-in cell and the report card on the sample (the classification checklist: counts, sizes, modes, duplicates, flips, a split suggestion).
+  - An **"After the lab"** block (homework): Q27, the notes on how to read each check, and the guiding questions each answered for the park, with space for the student's answer (G-8; Q28).
   - In smoke mode, a tiny generated folder-per-class sample is used.
 - **12 Wrap-up & next week**
   - The three outcomes restated as takeaways (N-002).
@@ -195,7 +198,7 @@ Time = participant minutes (~110 total; Susanne may cut sections 1 and the 🔴 
   - comparing counts across tasks without saying what is counted;
   - splitting before deduplicating;
   - treating LOO as leakage-proof.
-- Extensions (🔴): model-based near-duplicates, boundary–edge alignment, the nearest-neighbour ruler in sections 6 and 10.
+- Extensions (🔴): model-based near-duplicates, the nearest-neighbour ruler in section 6.
 
 ## 7. Out of scope / limitations
 - **No model training** (that's next week). Only the 🔴 nearest-neighbour "ruler" on colour features.
