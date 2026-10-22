@@ -177,11 +177,11 @@ print(f"{len(masks)} masks on {masks['image_id'].nunique()} photos "
 masks.head(3)
 
 # %% [markdown]
-# Four photos with their masks painted, before any number: a close-up pet, a flock of small birds, horses
-# with thin legs, and a flock of sheep.
+# Four photos with their masks painted, before any number: every pixel of every animal is coloured. Look at
+# how much of each photo is coloured, and how much is not.
 
 # %%
-# @title Four photos with their masks: close-up pet, small birds, thin legs, a flock { display-mode: "form" }
+# @title Four photos with their masks { display-mode: "form" }
 _mimgs = clean_images.set_index("id")
 _mper = masks.groupby("image_id").agg(n=("class", "size"), cls=("class", "first"),
                                       px=("mask_area", "sum"))
@@ -194,7 +194,7 @@ for _cls, _how in [(["cat", "dog"], "largest share"), (["bird"], "most masks"),
         _key = _c["share"].idxmax() if _how == "largest share" else _c["n"].idxmax()
         _mpicks.append(_key)
 show_masks(_mimgs.loc[_mpicks].reset_index(), masks, "same photos, third unit: every pixel of every animal",
-           caption=lambda r: f"{r['class']} · animals cover {_mper.at[r['id'], 'share']:.0%} of the photo")
+           caption=lambda r: r["class"])  # no shares: Q20 asks for them
 
 # %% [markdown]
 # ### Pixels per class, background included

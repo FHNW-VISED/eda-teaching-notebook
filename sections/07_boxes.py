@@ -124,11 +124,11 @@ def show_boxes(rows_df: pd.DataFrame, boxes_df: pd.DataFrame, title: str, captio
 
 
 # %% [markdown]
-# Four photos first, so you have seen what the next questions count: a flock of sheep, a lone pet, a flock of
-# small birds and one big horse.
+# Four photos first, so you have seen what the next questions count: one box is drawn around every animal.
+# Look at how many boxes each photo has, and how big they are.
 
 # %%
-# @title Four photos with their boxes: sheep flock, lone pet, bird flock, big horse { display-mode: "form" }
+# @title Four photos with their boxes { display-mode: "form" }
 _ann = annotations[annotations["image_id"].isin(clean_images["id"])]
 _imgs = clean_images.set_index("id")
 _per_photo = _ann.groupby("image_id").agg(n=("class", "size"), cls=("class", "first"),
@@ -146,7 +146,7 @@ _picks = [_pick(["sheep", "zebra"], "n"), _pick(["cat", "dog"], "area", alone=Tr
           _pick(["bird"], "n"), _pick(["horse"], "area", alone=True)]
 _picks = list(dict.fromkeys(i for i in _picks if i is not None))  # skip missing ones, no repeats
 show_boxes(_imgs.loc[_picks].reset_index(), _ann, "same photos, new unit: one box per animal",
-           caption=lambda r: f"{r['class']} · {int(_per_photo.at[r['id'], 'n'])} box(es)")
+           caption=lambda r: r["class"])  # no counts: Q16 and Q17 ask for them
 
 # %% [markdown]
 # ### Boxes per class vs photos per class
