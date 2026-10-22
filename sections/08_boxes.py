@@ -1,30 +1,30 @@
 # %% [markdown]
 # ## 8. Same data, boxes
+
+# %% [markdown]
+# <!-- callout: objective | Objective -->
+# See what imbalance, object size, position and crowding mean once the park wants a *headcount*, and find
+# the one box an annotation team forgot.
+
+# %% [markdown]
+# The park's second job, **count** the sheep, zebras and birds every day, needs a **box per animal**
+# instead of one label per photo, and the same photos now tell a different story.
 #
-# **Objective:** see what imbalance, object size, position and label quality mean once the park wants a
-# *headcount*, and find one box that an annotator forgot.
+# `annotations` already holds one row per animal. Its box is `[x, y, w, h]` in pixels (COCO format: the
+# top-left corner, then the width and height). This section looks at the boxes of the photos in
+# `clean_images`.
+
+# %% [markdown]
+# <!-- callout: theory | Theory · What changes when the unit is a box -->
+# A classifier sees one example per photo. A detector sees one example per **box**, so a photo with twelve
+# sheep weighs twelve times a photo with one cat. Four things follow, each with its own chart below:
 #
-# Sections 4 to 7 treated each photo as one label. The park's second job, **count** the sheep, zebras and
-# birds every day, needs a **box per animal** instead, and the same photos now tell a different story.
-# `annotations` already holds one row per animal with its box as `[x, y, w, h]` in pixels (COCO format: the
-# top-left corner and the size). This section keeps the photos of `clean_images` and looks at their boxes.
-#
-# <table width="100%"><tr><td bgcolor="#E3F2FD"><font color="#0D47A1">
-# <b>📘 Theory · What changes when the unit is a box</b><br>
-# A classifier sees one example per photo. A detector sees one example per <b>box</b>, so the photo with
-# twelve sheep weighs twelve times the photo with one cat. Four things follow:
-# <ul>
-# <li><b>Imbalance is counted in boxes</b>, not photos. The class with the most photos is not the class with
-# the most boxes.</li>
-# <li><b>Size matters.</b> COCO calls a box <i>small</i> under 32×32 px, <i>medium</i> up to 96×96 px, and
-# <i>large</i> above. Detectors score far worse on small boxes, and the park's far-away birds are small.</li>
-# <li><b>Position matters.</b> If every animal sits in the middle of the frame, the detector learns
-# "look in the middle", and the fence-edge sheep is missed.</li>
-# <li><b>Crowding matters.</b> Overlapping boxes of the same class are the hard case for both the detector
-# and the annotator, who may simply forget one.</li>
-# </ul>
-# </font></td></tr></table>
-#
+# - **Imbalance is counted in boxes**, not photos (a paddock photo shows a flock).
+# - **Size matters**: a bird on the far side of the pond is a 12×8 px speck.
+# - **Position matters**: animals always in the middle means the sheep at the fence edge is missed.
+# - **Crowding matters**: two sheep behind each other may get one box.
+
+# %% [markdown]
 # The collapsed cell defines `show_boxes`, a gallery that draws each photo's boxes in its class colour.
 
 # %%
@@ -75,23 +75,30 @@ def show_boxes(rows_df: pd.DataFrame, boxes_df: pd.DataFrame, title: str, captio
 
 # %% [markdown]
 # ### Boxes per class vs photos per class
-#
-# <table width="100%"><tr><td bgcolor="#E0F7F4"><font color="#00564D">
-# <b>❓ Questions</b><br>
+
+# %% [markdown]
+# <!-- callout: questions -->
 # Section 4 ranked the classes by photos: cat and dog on top, sheep at the bottom. Now the same photos are
-# counted by animal.
-# </font></td></tr></table>
-#
+# counted by animal. *Example:* one photo of 12 sheep adds 1 to the sheep's photo count and 12 to its box
+# count.
+
+# %% [markdown]
 # **Q22.** 🟡 Will the ranking by *boxes* be the same as the ranking by *photos*? Name the class you expect to
 # climb most, then run the cell. It needs your first function of the section.
-#
-# <table width="100%"><tr><td bgcolor="#FFF4D6"><font color="#7A4A00">
-# <b>✏️ Your turn · <code>count_boxes_per_class</code></b><br>
+
+# %% [markdown]
+# <!-- callout: your-turn | Your turn · `count_boxes_per_class` -->
 # Write the function in the next cell: given an annotations table (one row per animal, with a
-# <code>class</code> column), return a dict <code>{class: number of boxes}</code> with <b>every</b> class in
-# <code>CLASSES</code> as a key, counts as plain <code>int</code>s. The <code>use()</code> line checks it
+# `class` column), return a dict `{class: number of boxes}` with **every** class in
+# `CLASSES` as a key, counts as plain `int`s. The `use()` line checks it
 # against the reference and continues with the reference either way.
-# </font></td></tr></table>
+
+# %%
+# @title Reference solution — peek only if you are stuck { display-mode: "form" }
+def _ref_count_boxes_per_class(annotations):
+    counts = annotations["class"].value_counts()
+    return {c: int(counts.get(c, 0)) for c in CLASSES}
+
 
 # %%
 # ✍️ YOUR CODE
@@ -104,16 +111,11 @@ def count_boxes_per_class(annotations):
     ...
 
 
-def _ref_count_boxes_per_class(annotations):
-    counts = annotations["class"].value_counts()
-    return {c: int(counts.get(c, 0)) for c in CLASSES}
-
-
 boxes = annotations[annotations["image_id"].isin(clean_images["id"])].reset_index(drop=True)
 boxes_per_class = use(count_boxes_per_class, boxes, reference=_ref_count_boxes_per_class)
 
 # %%
-# Q22  Boxes per class next to photos per class, both ranked, on the photos of clean_images.
+# @title Q22 Boxes per class next to photos per class, both ranked { display-mode: "form" }
 photos_per_class = {c: int((clean_images["class"] == c).sum()) for c in CLASSES}
 RESULTS["boxes_per_class"] = boxes_per_class
 RESULTS["n_boxes"] = int(len(boxes))
@@ -142,22 +144,28 @@ display(fig)
 plt.close(fig)
 
 # %% [markdown]
-# 💡 Same photos, two rankings: the flock classes (bird, sheep, zebra) climb because one photo of them holds
-# many animals, and cat and dog sink because they are photographed alone. A detector trained on this set is
-# *not* short of sheep examples the way a classifier is.
-#
-# **Worked answer (Q22).** No. On the full set bird climbs from 4th by photos to 1st by boxes, and sheep from
-# last to 2nd, while cat and dog drop to the bottom. The exact ranks depend on the photos you have (the smoke
-# subset is smaller), so compare the *shapes* of the two charts, not the digits. Say which unit you counted
-# every time you say "imbalance": the headcount model and the alert model see different ones.
-#
+# **Worked answer (Q22).** No. The flock classes climb because one photo holds many animals: on the full set
+# bird goes from 4th by photos to 1st by boxes and sheep from last to 2nd, while the lone cat and dog drop to
+# the bottom. A detector is not short of sheep the way a classifier is. On a small subset, compare shapes,
+# not digits.
+
+# %% [markdown]
 # ### Box sizes: small, medium, large
 #
-# **Q23.** 🟢 Which class do you expect to have the smallest boxes? Pick one, then run the cell: it buckets
-# every box with COCO's thresholds and shows the smallest and largest boxes in the set.
+# A box's **area** is its width × height in pixels. COCO sorts boxes by area:
+#
+# - **small**: under 32×32 = 1,024 px² (a bird far away on the pond);
+# - **medium**: under 96×96 = 9,216 px²;
+# - **large**: anything bigger (a horse next to the fence).
+#
+# The plots use the box's **side** = √(w·h), the side of a square with the same area.
+
+# %% [markdown]
+# **Q23.** 🟢 Which of the six classes do you expect to have the smallest boxes? Pick one, then run the cell:
+# it buckets every box and shows the smallest, a typical (median) and the largest box of the set.
 
 # %%
-# Q23  Box area per class on a log scale, COCO's small/medium/large buckets, and the extreme boxes.
+# @title Q23 Box size per class, COCO buckets, smallest · median · largest box { display-mode: "form" }
 boxes["w"] = boxes["bbox"].map(lambda b: b[2])
 boxes["h"] = boxes["bbox"].map(lambda b: b[3])
 boxes["box_area"] = boxes["w"] * boxes["h"]
@@ -169,23 +177,26 @@ RESULTS["small_box_share"] = {c: float(bucket_share.loc[c, "small"]) for c in CL
 print("share of each class's boxes that is small / medium / large:")
 display((bucket_share * 100).round(0).astype(int).T)
 
-fig, axes = plt.subplots(1, 2, figsize=(10, 3.6))
+fig, axes = plt.subplots(1, 2, figsize=(10, 3.8))
 ax = axes[0]
 _sides = [boxes.loc[boxes["class"] == c, "side"].clip(lower=4).to_numpy() for c in CLASSES]
-_parts = ax.boxplot(_sides, tick_labels=CLASSES, patch_artist=True, showfliers=False, widths=0.6)
-for patch, c in zip(_parts["boxes"], CLASSES, strict=True):
-    patch.set_facecolor(CLASS_COLORS[c])
-    patch.set_alpha(0.75)
-for med in _parts["medians"]:
-    med.set_color(INK)
-ax.set_yscale("log")
+# Violins are drawn on log10(side) so the KDE is smooth on the log axis; ticks are relabelled in pixels.
+_parts = ax.violinplot([np.log10(v) for v in _sides], showmedians=True, showextrema=False, widths=0.8)
+for body, c in zip(_parts["bodies"], CLASSES, strict=True):
+    body.set_facecolor(CLASS_COLORS[c])
+    body.set_alpha(0.75)
+_parts["cmedians"].set_color(INK)
+_parts["cmedians"].set_linewidth(2.5)
+_tick_names = [f"{c}\nmedian {np.median(v):.0f} px" for c, v in zip(CLASSES, _sides, strict=True)]
+ax.set_xticks(range(1, len(CLASSES) + 1), _tick_names, fontsize=8)
+for lab, c in zip(ax.get_xticklabels(), CLASSES, strict=True):
+    lab.set_color(CLASS_COLORS[c])
+ax.set_yticks(np.log10([4, 10, 32, 100, 300, 1000]), ["4", "10", "32", "100", "300", "1000"])
 for thr, name in [(32, "small ↓"), (96, "large ↑")]:
-    ax.axhline(thr, color=INK, linestyle="--", linewidth=1)
-    ax.text(0.5, thr, f" {thr} px · {name}", va="bottom", fontsize=8, color=INK)
+    ax.axhline(np.log10(thr), color=INK, linestyle="--", linewidth=1)
+    ax.text(0.5, np.log10(thr), f" {thr} px · {name}", va="bottom", fontsize=8, color=INK)
 ax.set_ylabel("box side √(w·h), px (log)")
-ax.set_title("Box size per class")
-for lab in ax.get_xticklabels():
-    lab.set_color(CLASS_COLORS[lab.get_text()])
+ax.set_title("Box size per class (bar = median)")
 
 ax = axes[1]
 _bottom = np.zeros(len(CLASSES))
@@ -204,33 +215,58 @@ fig.tight_layout()
 display(fig)
 plt.close(fig)
 
-N_EXTREME_BOXES = 2 if SMOKE else 4  # photos with the smallest / largest boxes to show (N-014)
-_smallest = boxes.sort_values(["box_area", "id"]).drop_duplicates("image_id").head(N_EXTREME_BOXES)
-_largest = boxes.sort_values(["box_area", "id"], ascending=[False, True]).drop_duplicates("image_id").head(
-    N_EXTREME_BOXES)
-_extreme_ids = list(_smallest["image_id"]) + list(_largest["image_id"])
-_rows = clean_images.set_index("id").loc[_extreme_ids].reset_index()
-_side_of = dict(zip(_extreme_ids, list(_smallest["side"]) + list(_largest["side"]), strict=True))
-show_boxes(_rows, boxes, f"the {N_EXTREME_BOXES} smallest and the {N_EXTREME_BOXES} largest boxes",
-           caption=lambda r: f"{r['class']} · box side {_side_of[r['id']]:.0f} px", cols=2 * N_EXTREME_BOXES)
+# The smallest, a typical (median) and the largest box of the whole set: the photo with the box in bold, then
+# the box cut out and enlarged (pixels shown as blocks), so a "10 px bird" is seen as the speck it is.
+_by_area = boxes.sort_values(["box_area", "id"]).reset_index(drop=True)
+_picks = {"smallest": _by_area.iloc[0], "median": _by_area.iloc[len(_by_area) // 2],
+          "largest": _by_area.iloc[-1]}
+_photo_of = clean_images.set_index("id")
+fig, axes = plt.subplots(2, 3, figsize=(11, 7))
+for col, (tag, b) in enumerate(_picks.items()):
+    photo = _photo_of.loc[b["image_id"]]
+    thumb = load_thumb(photo["path"], 384)
+    scale = thumb.width / photo["width"]
+    ax = axes[0, col]
+    ax.imshow(thumb)
+    for _, o in boxes[boxes["image_id"] == b["image_id"]].iterrows():
+        ox, oy, ow, oh = o["bbox"]
+        ax.add_patch(mpl.patches.Rectangle((ox * scale, oy * scale), ow * scale, oh * scale, fill=False,
+                                           lw=3 if o["id"] == b["id"] else 1,
+                                           edgecolor=CLASS_COLORS[o["class"]],
+                                           ls="-" if o["id"] == b["id"] else ":"))
+    frame(ax, CLASS_COLORS[b["class"]])
+    ax.set_title(f"{tag}: {b['class']}, {b['w']:.0f}×{b['h']:.0f} px\n= {b['box_area']:,.0f} px² "
+                 f"({b['bucket']})", fontsize=9)
+    x, y, w, h = b["bbox"]
+    pad = 0.25 * max(w, h) + 4
+    x0, y0 = max(0.0, x - pad), max(0.0, y - pad)
+    full = Image.open(photo["path"]).convert("RGB")
+    crop = full.crop((int(x0), int(y0), int(x + w + pad), int(y + h + pad)))
+    ax = axes[1, col]
+    ax.imshow(crop, interpolation="nearest")
+    ax.add_patch(mpl.patches.Rectangle((x - int(x0), y - int(y0)), w, h, fill=False, lw=2,
+                                       edgecolor=CLASS_COLORS[b["class"]]))
+    frame(ax, CLASS_COLORS[b["class"]])
+    ax.set_title("the box up close", fontsize=9)
+fig.tight_layout()
+display(fig)
+plt.close(fig)
 
 # %% [markdown]
-# 💡 The box plot is on a log scale because the spread is enormous: a bird can be a few pixels on a pond
-# and a horse can fill the frame. The small share is the number to watch: those boxes are the ones every
-# detector misses first, and in the park they are exactly the far-away birds the headcount needs.
-#
-# **Worked answer (Q23).** Bird, by a wide margin: on the full set a large share of its boxes is *small* in
-# COCO's sense, while cat, dog and horse are mostly *large*. Whatever subset you run on, look at the
-# smallest-box gallery: a box of 10 px is a speck, and resizing the photo to a network's input makes it
-# smaller still (section 3).
-#
+# **Worked answer (Q23).** Bird, by a wide margin: a large share of its boxes is *small*, while cat, dog and
+# horse are mostly *large*. The **small share** is the number to watch: small boxes are what every detector
+# misses first, and here they are the far-away birds the headcount needs (the violin is on a log scale
+# because sizes range from a speck to a full frame).
+
+# %% [markdown]
 # ### Where the animals are: a box-centre heatmap
 #
-# Each box has a centre. Dividing it by the photo's width and height puts every centre on the same
-# 0–1 square, whatever the photo's size, and a 2-D histogram of those points shows where the annotator
-# (and so the detector) expects an animal. The next cell draws one small heatmap per class.
+# A box's **centre** is `(x + w/2, y + h/2)`. Dividing by the photo's width and height puts every centre on
+# the same 0–1 square, so a sheep at the left fence has a centre near x = 0.05 whatever the photo's size.
+# The cell below draws one heatmap per class: dark = many centres there.
 
 # %%
+# @title Box-centre heatmap, one per class in its own colour { display-mode: "form" }
 # Box centres on the unit square, one heatmap per class in its own colour (white = no boxes there).
 _size = clean_images.set_index("id")[["width", "height"]]
 _img_w = boxes["image_id"].map(_size["width"])
@@ -261,26 +297,59 @@ display(fig)
 plt.close(fig)
 
 # %% [markdown]
-# 💡 The centre of the frame is darker in every panel: photographers point the camera at the animal. A
-# park camera does not, so a detector that learned "animals live in the middle" will miss the sheep at the
-# fence. The flock classes (sheep, bird, zebra) spread wider because a flock fills the frame, and that is the
-# one bias the Play Dataset shares with the paddock.
-#
+# 💡 The centre is darker in every panel: photographers point the camera at the animal. A park camera does
+# not, so a detector that learned "animals live in the middle" misses the sheep at the fence. Bird and sheep
+# boxes spread out more because a flock fills the frame: the one way this dataset resembles the paddock.
+
+# %% [markdown]
 # ### Animals per photo, and crowding
 #
-# Section 4 counted animals per photo to ask "which label then?". For the headcount the question is
-# different: how often do boxes of the same class **overlap**? Two sheep standing behind each other give
-# two boxes that share pixels, which is hard for the detector (which one is which?) and easy for the
-# annotator to get wrong (one box for two sheep, or no box for the hidden one).
+# For the headcount the question is how often boxes of the same class **overlap**. Two sheep standing behind
+# each other give two boxes that share pixels. Which box is which is hard for the detector, and easy for the
+# annotator to get wrong (one box for two sheep, or none for the hidden one).
 #
-# **Q24.** 🟡 Which class will have the most overlapping pairs of boxes per photo? Decide, then run the
-# cell: for every photo it computes the overlap (IoU, section 7) of every pair of its boxes.
+# Overlap is measured with **IoU** (intersection over union): the shared area divided by the area covered by
+# either box. We call two boxes *overlapping* when their IoU is above 0.1.
 
 # %%
-# Q24  Boxes per photo per class, and crowding: pairs of boxes in one photo with IoU above a threshold.
+# @title IoU of two boxes, drawn: shared area ÷ covered area { display-mode: "form" }
 OVERLAP_IOU = 0.1  # two boxes "overlap" when their IoU is above this
 
+_a = (20, 20, 60, 40)
+_cases = [("two sheep, one behind the other", (50, 35, 60, 40)),
+          ("two sheep, corners just touch", (70, 55, 60, 40))]
+fig, axes = plt.subplots(1, 2, figsize=(9, 3.2))
+for ax, (what, _b) in zip(axes, _cases, strict=True):
+    iou = box_iou_dice(_a, _b)[0]
+    _ix0, _iy0 = max(_a[0], _b[0]), max(_a[1], _b[1])
+    _iw = max(0, min(_a[0] + _a[2], _b[0] + _b[2]) - _ix0)
+    _ih = max(0, min(_a[1] + _a[3], _b[1] + _b[3]) - _iy0)
+    _inter = _iw * _ih
+    _union = _a[2] * _a[3] + _b[2] * _b[3] - _inter
+    ax.add_patch(mpl.patches.Rectangle(_a[:2], *_a[2:], color=CLASS_COLORS["sheep"], alpha=0.35))
+    ax.add_patch(mpl.patches.Rectangle(_b[:2], *_b[2:], color=CLASS_COLORS["zebra"], alpha=0.35))
+    ax.add_patch(mpl.patches.Rectangle((_ix0, _iy0), _iw, _ih, facecolor="none", edgecolor=INK, hatch="////",
+                                       lw=1.5))
+    ax.set_xlim(10, 140)
+    ax.set_ylim(105, 10)
+    ax.set_aspect("equal")
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.grid(False)
+    ax.set_title(f"{what}\nIoU = {_inter:,} ÷ {_union:,} = {iou:.2f} → "
+                 f"{'overlapping' if iou > OVERLAP_IOU else 'not counted'}", fontsize=9)
+fig.suptitle("IoU = hatched area (shared) ÷ coloured area (covered by either box)", color=INK)
+fig.tight_layout()
+display(fig)
+plt.close(fig)
 
+# %% [markdown]
+# **Q24.** 🟡 Which class will have the most overlapping pairs of boxes per photo? *Example:* a photo of 4
+# sheep has 6 pairs of boxes (4×3÷2); if two sheep stand behind each other, 1 of those 6 pairs overlaps.
+# Decide, then run the cell: it measures every pair of boxes in every photo.
+
+# %%
+# @title Q24 Boxes per photo per class, and crowding (overlapping box pairs) { display-mode: "form" }
 def overlap_pairs(boxes_df: pd.DataFrame, threshold: float) -> pd.DataFrame:
     """One row per photo: n_boxes, n_pairs (all pairs) and n_overlapping (pairs with IoU > threshold)."""
     rows = []
@@ -301,6 +370,7 @@ _per_class["boxes_per_photo"] = _per_class["boxes_per_photo"].round(1)
 _per_class["crowded_photos"] = (_per_class["crowded_photos"] * 100).round(0).astype(int).astype(str) + " %"
 RESULTS["crowded_photo_share"] = float((crowding["n_overlapping"] > 0).mean())
 _n_crowded = int((crowding["n_overlapping"] > 0).sum())
+print("boxes_per_photo = boxes ÷ photos · crowded_photos = share of photos with ≥ 1 overlapping pair")
 print(f"{_n_crowded} of {len(crowding)} photos have at least one pair of boxes with IoU > {OVERLAP_IOU} "
       f"({RESULTS['crowded_photo_share']:.0%}).")
 display(_per_class.T)
@@ -315,40 +385,43 @@ show_boxes(_rows, boxes, "the most crowded photos (every box drawn)",
            cols=N_CROWDED_BOXES)
 
 # %% [markdown]
-# 💡 Look at the crowded gallery and try to count the animals *without* the boxes: that is the annotator's
-# job, and the detector's. Where boxes pile up, a missing or doubled box is a matter of attention, which is
-# why the next part plants one.
+# **Worked answer (Q24).** The flock classes: sheep and zebra on the full set (herds stand close), then bird.
+# Cats and dogs are mostly alone, so they have almost no pairs; on a small subset the leader can change, so
+# read the `crowded_photos` row. Try counting the crowded photos' animals *without* the boxes: that is the
+# annotator's job, and where boxes pile up a missing or doubled box is easy to make.
+
+# %% [markdown]
+# <!-- callout: across-tasks | Across tasks · What handles each of these later (next week and beyond) -->
+# Each finding (box imbalance, small boxes, a wide range of sizes, photos with many boxes) has a standard
+# answer on the model side, so the data report can say "we saw this, the training recipe handles it".
+# None of them fixes a photo whose annotation is wrong: that is the data side, and it is yours.
 #
-# **Worked answer (Q24).** The flock classes: sheep and zebra on the full set (herds stand close), with
-# bird next (flocks on water). Cats and dogs are mostly alone, so they have no pairs at all. On a small
-# subset the leader can change, so read the `crowded_photos` row: the share of a class's photos with at
-# least one overlapping pair.
+# <details><summary>Names to look up next week</summary>
 #
-# <table width="100%"><tr><td bgcolor="#EDE7F6"><font color="#311B92">
-# <b>🔀 Across tasks · What handles each of these later (next week and beyond)</b><br>
-# Each finding above has a standard answer on the model side. Know the name, so that the data report can
-# say "we saw this, the training recipe handles it with …":
-# <ul>
-# <li><b>Imbalance in boxes</b> (bird 1st, cat last) → a <b>weighted</b> or <b>focal loss</b>, which
-# down-weights the easy, frequent boxes and lets the rare class count.</li>
-# <li><b>Small boxes</b> (far-away birds) → <b>tiling</b>: cut the photo into overlapping crops and detect in
-# each, so a 10 px bird becomes a 40 px bird.</li>
-# <li><b>A wide range of sizes</b> (a bird of 10 px and a horse of 400 px in one set) → <b>multi-scale</b>
-# training and feature pyramids, so the detector looks at several resolutions at once.</li>
-# <li><b>Splitting photos that hold several boxes</b> (a photo is "sheep" <i>and</i> has 12 boxes) →
-# <b>iterative stratification</b>, the multi-label version of the stratified split of section 6, which
-# balances the box counts per class across the splits, not only the photo counts.</li>
-# </ul>
-# None of these fixes a photo whose annotation is wrong. That is the data side, and it is yours.
-# </font></td></tr></table>
+# - **Imbalance in boxes** (bird 1st, cat last) → a **weighted** or **focal loss**, which down-weights
+#   the easy, frequent boxes.
+# - **Small boxes** (far-away birds) → **tiling**: cut the photo into overlapping crops, so a 10 px bird
+#   becomes a 40 px bird.
+# - **A wide range of sizes** (a 10 px bird and a 400 px horse in one set) → **multi-scale** training, so
+#   the detector looks at several resolutions at once.
+# - **Photos with several boxes** (a "sheep" photo holding 12 boxes) → **iterative stratification**, the
+#   split of section 6 that balances box counts per class, not only photo counts.
 #
+# </details>
+
+# %% [markdown]
 # ### Guided hunt: the box that is not there
 #
-# The park sent its first batch of paddock photos to an annotation team and got the boxes back. The keeper
-# also wrote down a headcount per photo on the day. In the Play Dataset the keeper's headcount is the
-# `n_animals` column of `clean_images` (counted from every instance in section 0), and the team's boxes are
-# `park_boxes`, built by the collapsed cell: it is `boxes` with **one box removed** from a photo of a small
-# flock. Which photo, and which animal, is decided at runtime from `SEED`.
+# The park's annotation team returned boxes for its first batch of paddock photos. In the Play Dataset, the
+# team's boxes are `park_boxes` and the keeper's headcount is the `n_animals` column of `clean_images`.
+
+# %% [markdown]
+# The story, in three steps:
+#
+# 1. The team draws a box around every animal and sends the table back (`park_boxes`).
+# 2. On the day, the keeper counted the animals in each photo by eye (`n_animals`).
+# 3. One box was dropped from a photo of a small flock, and a detector trained on it is told that animal is
+#    *background*. Which photo is decided at runtime from `SEED`; nobody can look at hundreds of photos.
 
 # %%
 # @title Plant the hunt (one box removed, seeded) { display-mode: "form" }
@@ -380,11 +453,12 @@ print(f"park_boxes: {len(park_boxes)} boxes for {park_boxes['image_id'].nunique(
       f"(boxes had {len(boxes)}). One box is missing. Find the photo.")
 
 # %% [markdown]
-# **Q25.** 🟡 You cannot look at hundreds of photos. Which two columns, compared per photo, point straight at
-# the one with a missing box? Say it in one sentence, then run the cell.
+# **Q25.** 🟡 You have two numbers for every photo: the keeper's headcount (`n_animals`) and the number of
+# boxes the team drew for it (the rows of `park_boxes` with that `image_id`). What simple comparison of
+# the two points straight at the photo with a missing box? Say it in one sentence, then run the cell.
 
 # %%
-# Q25  The keeper's headcount vs the team's box count, per photo: any photo where they differ is suspect.
+# @title Q25 Keeper's headcount vs the team's box count per photo { display-mode: "form" }
 box_counts = park_boxes.groupby("image_id").size()
 headcount = clean_images.set_index("id")["n_animals"]
 missing_boxes = (headcount - box_counts.reindex(headcount.index, fill_value=0))
@@ -404,19 +478,50 @@ show_boxes(_rows, park_boxes, "the suspect photo(s): one animal has no box",
                              f"{int(box_counts.get(r['id'], 0))} boxes")
 
 # %% [markdown]
-# 💡 Two counts of the same thing from two sources, and a photo where they disagree: that is the whole
-# trick, and it costs nothing. Without a second count (the keeper's), the only way is a visual check list,
-# photo by photo, which is why annotation teams ask for a per-image count in the brief.
+# **Worked answer (Q25).** Subtract the number of boxes per photo from the keeper's headcount: one photo has
+# one box fewer than animals, and the gallery shows the animal without a frame. Two counts of the same thing
+# from two sources cost nothing, which is why annotation teams are asked for a per-image count. Section 9
+# repeats the idea between masks and boxes, and the Challenge hides another missing box among other faults.
+
+# %%
+# @title What a missing box looks like (toy drawing: headcount 3, boxes 2) { display-mode: "form" }
+fig, ax = plt.subplots(figsize=(6, 2))
+for k, x in enumerate([2, 5, 8]):
+    ax.add_patch(mpl.patches.Ellipse((x, 1), 2.0, 1.2, color=CLASS_COLORS["sheep"], alpha=0.8))
+    drawn = k < 2
+    ax.add_patch(mpl.patches.Rectangle((x - 1.3, 0.1), 2.6, 1.8, fill=False, lw=2 if drawn else 1.5,
+                                       ls="-" if drawn else "--",
+                                       edgecolor=CLASS_COLORS["sheep"] if drawn else INK))
+    if not drawn:
+        ax.text(x, 1.0, "no box", ha="center", va="center", fontsize=9, color=INK)
+ax.set_xlim(0, 10)
+ax.set_ylim(0, 2)
+ax.set_aspect("equal")
+ax.set_xticks([])
+ax.set_yticks([])
+ax.grid(False)
+ax.set_title("the toy version: keeper counted 3 · team drew 2 boxes · difference 1", fontsize=9)
+fig.tight_layout()
+display(fig)
+plt.close(fig)
+
+# %% [markdown]
+# <!-- callout: pitfall | Pitfall · Counting different things across tasks -->
+# The same class has a different share depending on the unit:
 #
-# **Worked answer (Q25).** Compare the keeper's headcount (`n_animals`) with the number of boxes per photo
-# in `park_boxes`. One photo has one box fewer than animals; the gallery shows the animal without a frame.
-# In section 9 the same comparison works between masks and boxes, and the Challenge hides another missing
-# box among other faults.
+# - **Sheep** is about 9 % of the photos but about 22 % of the boxes.
+# - **Bird** is rare by photos, common by boxes, and rare again by pixels (section 9).
 #
-# <table width="100%"><tr><td bgcolor="#FDECEA"><font color="#8B1A10">
-# <b>⚠️ Pitfall · Counting different things across tasks</b><br>
-# "Sheep is 9 % of the dataset" is true by photos and false by boxes (22 %). "Bird is rare" is true by
-# photos and false by boxes, and true again by pixels (section 9). Whenever you report imbalance, size or a
-# split, say what the unit is: photo, box or pixel. The park's three jobs count three different things from
-# the same photos.
-# </font></td></tr></table>
+# Whenever you report imbalance, size or a split, say what the unit is: photo, box or pixel. The park's three
+# jobs count three different things from the same photos.
+
+# %% [markdown]
+# <!-- callout: takeaway | Takeaway -->
+# - **When you see** a class ranking → **do** say whether you counted photos or boxes; the order can flip
+#   (bird 4th by photos, 1st by boxes).
+# - **When you see** many boxes under 32×32 px (far-away birds) → **do** report the small share and plan for
+#   tiling or a higher input resolution.
+# - **When you see** box centres piled in the middle → **do** expect misses at the frame edges, and test on
+#   photos where the animal is off-centre.
+# - **When you see** the keeper's headcount and the team's box count disagree on a photo → **do** open it:
+#   a box is missing or doubled.

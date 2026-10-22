@@ -1,26 +1,36 @@
 # %% [markdown]
 # ## 2. Become one with the data
+
+# %% [markdown]
+# <!-- callout: objective | Objective -->
+# Look at many images before computing anything, and write down what you see.
+
+# %% [markdown]
+# Three 👀 questions from section 1 only your eyes can answer (most people skip this step):
 #
-# **Objective:** look at many images before computing anything, and write down what you see.
+# - 👀 Does the data **fit** the park's cameras?
+# - 👀 Does its **variability** match what the cameras will see?
+# - 👀 Are the animals **identifiable by eye**?
 #
-# Section 1 ended with three 👀 bullets that no table can answer: does the data *fit* the park's cameras, does
-# its *variability* match what the cameras will see, and are the animals *identifiable by eye*? The only tool
-# for those is your eyes, and this is the step most people skip. Karpathy puts it first in his recipe:
-#
-# <table width="100%"><tr><td bgcolor="#E8F5E9"><font color="#1B5E20">
-# <b>🧾 Recipe · Step 1: Become one with the data</b><br>
-# <i>"The first step to training a neural net is to not touch any neural net code at all and instead begin by
+# Karpathy puts this step first in his recipe:
+
+# %% [markdown]
+# <!-- callout: recipe | Recipe · Step 1: Become one with the data -->
+# *"The first step to training a neural net is to not touch any neural net code at all and instead begin by
 # thoroughly inspecting your data. This step is critical. I like to spend copious amount of time (measured in
 # units of hours) scanning through thousands of examples, understanding their distribution and looking for
-# patterns."</i><br>
-# Andrej Karpathy, <a href="https://karpathy.github.io/2019/04/25/recipe/">A Recipe for Training Neural
-# Networks</a> (2019).
-# </font></td></tr></table>
+# patterns."*
 #
+# Andrej Karpathy, [A Recipe for Training Neural
+# Networks](https://karpathy.github.io/2019/04/25/recipe/) (2019).
+
+# %% [markdown]
 # We will not spend hours, but we will spend a few minutes. The first cell draws one row of photos per class,
-# each framed in its class colour (the same colour every plot in this notebook uses for that class). Scroll
-# slowly: look at the backgrounds, the distance to the animal, the lighting, and whether anything else is in
-# the photo.
+# framed in the class colour used in every plot of this notebook. Scroll slowly and look at:
+#
+# - the backgrounds and the lighting,
+# - the distance to the animal,
+# - anything else in the photo.
 
 # %%
 # @title Grid helpers { display-mode: "form" }
@@ -99,36 +109,31 @@ def show_all_classes(n_per_class: int) -> None:
 
 
 # %% [markdown]
-# <table width="100%"><tr><td bgcolor="#E0F7F4"><font color="#00564D">
-# <b>❓ Questions</b><br>
+# <!-- callout: questions | Questions -->
 # Predict before you run: the park's cameras are fixed, outdoors, and often far from the animal.
-# </font></td></tr></table>
-#
+
+# %% [markdown]
 # **Q2.** 🟢 Which class do you expect to look *least* like a fixed park camera's view, and why? One line,
 # then run the cell.
 
 # %%
-# Q2  One row per class: a fixed sample of photos, framed in the class colour used throughout the notebook.
+# @title Q2 Show one row of photos per class { display-mode: "form" }
+# A fixed sample of photos per class, framed in the class colour used throughout the notebook.
 N_PER_CLASS = 3 if SMOKE else 6  # fewer thumbnails in smoke mode, same code (N-014)
 show_all_classes(N_PER_CLASS)
 
 # %% [markdown]
-# 💡 Even six photos per class show that these are holiday snapshots, not camera-trap frames: close-ups,
-# people, sofas and streets, with the animal usually centred and filling the frame.
+# **Worked answer (Q2).** 💡 Holiday snapshots, not camera-trap frames. Cats and dogs are the farthest from a
+# park camera: indoors, up close, with people and sofas. Sheep, horses and zebras are at least outdoors and
+# sometimes far away, closer to what the paddock and savanna cameras will see.
+
+# %% [markdown]
+# <!-- callout: your-turn | Your turn · Pick a class -->
+# Look at more photos of one class: twelve is enough to start noticing patterns. **Look for:** which class has
+# the most photos that a paddock camera would never take?
 #
-# **Worked answer (Q2).** Cats and dogs are the farthest from a park camera: they are photographed indoors,
-# up close, often with people and furniture. Sheep, horses and zebras are at least outdoors and sometimes far
-# away, which is closer to what the paddock and savanna cameras will see.
-#
-# Now pick one class and look at more of it. Twelve photos is enough to start noticing patterns; raise it if
-# you have time.
-#
-# <table width="100%"><tr><td bgcolor="#FFF4D6"><font color="#7A4A00">
-# <b>✏️ Your turn · Pick a class</b><br>
-# Set <code>CLASS_TO_SHOW</code> to one of <code>cat, dog, bird, horse, sheep, zebra</code> and
-# <code>N_SHOW</code> to how many photos you want (up to the class size), then run the cell. Try at least
-# <code>"dog"</code> (the alert class) and <code>"bird"</code> (the tiny-box class).
-# </font></td></tr></table>
+# Set `CLASS_TO_SHOW` to one of `cat, dog, bird, horse, sheep, zebra` and `N_SHOW` to how many photos you
+# want, then run the cell. Try at least `"dog"` (the alert class) and `"bird"` (the tiny-box class).
 
 # %%
 # ✏️ YOUR TURN
@@ -143,15 +148,14 @@ n_show = min(N_SHOW, 6) if SMOKE else N_SHOW  # smoke mode caps the grid, same c
 show_grid(CLASS_TO_SHOW, n_show)
 
 # %% [markdown]
-# 💡 The title of each photo says how many animals of that class it holds: more than one is common, so "one
-# label per image" is already a simplification, and section 4 asks which label a photo with several animals
-# should get.
-#
-# <table width="100%"><tr><td bgcolor="#E0F7F4"><font color="#00564D">
-# <b>❓ Questions</b><br>
+# 💡 Each title says how many animals of that class the photo holds. More than one is common, so "one label
+# per image" is already a simplification (section 4).
+
+# %% [markdown]
+# <!-- callout: questions | Questions -->
 # Karpathy's step ends with writing things down. Do the same: edit the next markdown cell (double-click it).
-# </font></td></tr></table>
-#
+
+# %% [markdown]
 # **Q3.** 🟢 Write three observations about the photos you just looked at. Good observations are specific
 # ("many dog photos are indoors with a person's legs in the frame"), and each one hints at something the park
 # should worry about or check later (fit to the cameras, lighting, distance, several animals, people, odd
@@ -167,14 +171,17 @@ show_grid(CLASS_TO_SHOW, n_show)
 # %% [markdown]
 # **Worked answer (Q3)**, for the dog grid on the full set. Yours will differ; that is the point.
 #
-# 1. **Setting:** most dog photos are indoors or in a street, taken by the owner from a metre away. A paddock
-#    camera sees a small dog far away in grass. The model will have to generalise from close-ups to that
-#    (section 11's question "does it fit?").
-# 2. **People:** a person, a hand or a leash appears in many photos. A model can learn "person + leash = dog"
-#    and miss the stray dog alone in the paddock.
-# 3. **Several animals and odd photos:** some photos hold two or three dogs, some show a dog in a costume,
-#    on a skateboard or on a screen. Each of these is a labelling decision (sections 4 and 5) before it is a
-#    modelling problem.
+# 1. **Setting:** most dogs are indoors or in a street, a metre away; the paddock camera sees one far off.
+# 2. **People:** a person, hand or leash is in many photos: "person + leash = dog" is a shortcut to learn.
+# 3. **Odd photos:** two or three dogs, a costume, a screen: labelling decisions (sections 4 and 5).
 #
-# Keep your three lines: section 11 asks you for the same three on your own dataset, and the rest of this
-# notebook turns the observations above into numbers, one at a time.
+# Keep your three lines: section 11 asks for the same three on your own dataset.
+
+# %% [markdown]
+# <!-- callout: takeaway | Takeaway -->
+# - **When you see** a pattern in the photos (indoors, people, several animals) → **do** write it down as a
+#   specific observation, and turn it into a check later.
+# - **When you see** a gap between the photos and the deployment cameras (distance, lighting, setting) →
+#   **do** flag it now, before any model exists.
+# - **When you see** several animals or an odd subject in one photo → **do** note it as a labelling decision
+#   for sections 4 and 5.

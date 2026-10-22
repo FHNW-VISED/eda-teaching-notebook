@@ -1,12 +1,15 @@
 # %% [markdown]
 # ## 11. Your project dataset
-#
-# **Objective:** run the checklist of sections 3 to 6 on your own folder-per-class dataset, and answer the
-# guiding questions for it the way we answered them for the park.
-#
+
+# %% [markdown]
+# <!-- callout: objective | Objective -->
+# Run the checklist of sections 3 to 6 on your own folder-per-class dataset, and answer the guiding questions
+# for it the way we answered them for the park.
+
+# %% [markdown]
 # Everything so far ran on the park's photos. Your project has its own dataset, and it deserves the same
-# twenty minutes of looking before anybody trains on it. This section packs the classification checklist
-# into a few cells that read **any folder-per-class dataset**: one sub-folder per class, the images inside.
+# twenty minutes of looking before anybody trains on it. This section reads **any folder-per-class
+# dataset**: one sub-folder per class, the images inside.
 #
 # ```
 # my_dataset/
@@ -14,30 +17,35 @@
 # ├── dog/      …
 # └── sheep/    …
 # ```
+
+# %% [markdown]
+# <!-- callout: your-turn | Your turn · Point the notebook at your dataset -->
+# The workflow, step by step:
 #
-# <table width="100%"><tr><td bgcolor="#FFF4D6"><font color="#7A4A00">
-# <b>✏️ Your turn · Point the notebook at your dataset</b><br>
-# Put your dataset in Colab first: mount Google Drive (<code>from google.colab import drive</code>, then
-# <code>drive.mount("/content/drive")</code>) or upload a zip in the Files pane and unzip it. Then set
-# <code>MY_DATASET_DIR</code> to the folder that holds the class folders, e.g.
-# <code>"/content/drive/MyDrive/project/my_dataset"</code>, and run this section again.<br>
-# Leave it at <code>None</code> and the cells run on a small sample built from the Play Dataset, so you can
-# see what the output looks like first. Images may sit in sub-folders of a class folder; other files are
-# ignored. For a detection or segmentation project, put all images in one folder inside
-# <code>MY_DATASET_DIR</code>: the class counts then say nothing, but sizes, modes, copies and the split
-# still do (the box and mask checks are sections 8 and 9).
-# </font></td></tr></table>
+# 1. **Put your dataset in Colab.** Mount Google Drive (`from google.colab import drive`, then
+#    `drive.mount("/content/drive")`) or upload a zip in the Files pane and unzip it. *Colab can now see the
+#    folder.*
+# 2. **Set `MY_DATASET_DIR`** in the next cell to the folder that holds the class folders, e.g.
+#    `"/content/drive/MyDrive/project/my_dataset"`. *Each sub-folder name becomes a class; images deeper
+#    inside a class folder count, other files are ignored.*
+# 3. **Run this section again** from the cell below. *The four checks read your photos.*
+# 4. **Or leave it at `None`.** *The cells run on a small sample of the Play Dataset with three planted
+#    problems, so you can see what the output looks like first.*
+#
+# Detection or segmentation project? Put all images in one folder inside `MY_DATASET_DIR`. The class counts
+# then say nothing, but sizes, modes, copies and the split still do (the box and mask checks are sections 8
+# and 9).
 
 # %%
 # ✏️ YOUR TURN
 MY_DATASET_DIR = None  # e.g. "/content/drive/MyDrive/project/my_dataset" (one sub-folder per class)
 
 # %% [markdown]
-# The next cell checks the folder and lists every image with its class (its folder name). If
-# `MY_DATASET_DIR` is `None`, or the folder cannot be used, it builds the sample in `data/cache/my_dataset/`
-# instead: a few cleaned photos per class, plus **three planted problems** so the checklist has something to
-# find (an exact copy, a mirrored copy and a photo saved in grayscale). Very large datasets are sampled down
-# to `MY_MAX_IMAGES` photos, keeping the class shares, so the checks stay at a minute or two.
+# The next cell lists every image with its class (its folder name). If `MY_DATASET_DIR` is `None`, or the
+# folder cannot be used, it builds a sample in `data/cache/my_dataset/` instead: 20 cleaned photos per
+# class, plus **three planted problems** (an exact copy of a cat, a mirrored copy of a dog, and a bird photo
+# saved in grayscale). Datasets above `MY_MAX_IMAGES` photos are sampled down, keeping the class shares, so
+# the checks stay at a minute or two.
 
 # %%
 # @title Read the folder, or build the sample { display-mode: "form" }
@@ -107,14 +115,18 @@ MY_COLORS = {c: CLASS_COLORS.get(c, _palette[i % len(_palette)]) for i, c in enu
 print(f"source: {my_source} · {my_root} · {len(my_files)} images in {len(MY_CLASSES)} class folders")
 
 # %% [markdown]
-# **Q34.** 🟢 Before running the checklist on your dataset, write down what you expect: the largest and the
-# smallest class, how many sizes and colour modes, and whether you think there are any copies. (On the
-# sample you already know the planted problems; predict whether the checks will catch all three.)
+# **Q34.** 🟢 Before running the checks, think of what you expect for your dataset: the largest and the
+# smallest class, how many image sizes and colour modes, and whether there are copies. (Think of your
+# answers; there is no need to type them.) On the sample the folders are cat, dog, bird, horse, sheep and
+# zebra with 20 photos each, plus the three planted problems above: predict which of the checks below will
+# catch each one.
 #
-# The first check counts the images per folder, as section 4 did for the park.
+# The first check counts the images per folder, as section 4 did for the park. The **ratio** is the images
+# of the largest class divided by the images of the smallest (in the park about 130 cats against about 50
+# sheep: between 2 : 1 and 3 : 1).
 
 # %%
-# Check 1: images per class, and the ratio between the largest and the smallest class.
+# @title Check 1: images per class, and the largest : smallest ratio { display-mode: "form" }
 my_counts = my_files["class"].value_counts().reindex(MY_CLASSES)
 fig, ax = plt.subplots(figsize=(max(5, 0.8 * len(MY_CLASSES) + 2), 3.2))
 ax.bar(MY_CLASSES, my_counts.to_numpy(), color=[MY_COLORS[c] for c in MY_CLASSES])
@@ -128,14 +140,18 @@ print(f"largest {my_counts.idxmax()} ({my_counts.max()}) · smallest {my_counts.
       f"· ratio {my_imbalance:.1f} : 1")
 
 # %% [markdown]
-# 💡 A ratio of 2 or 3 to 1 is common and harmless if you watch the small class's recall; at 10 to 1 and
-# beyond, accuracy hides the small class completely (section 4's ⚠️ Pitfall). Ask whether the *expensive*
-# class is the small one.
+# 💡 How to read the ratio:
 #
-# The second check opens every file once: does it open, how large is it, and which colour mode is stored.
+# - **2 or 3 to 1:** common and harmless if you watch the small class's recall.
+# - **10 to 1 and beyond:** accuracy hides the small class completely (section 4's ⚠️ Pitfall).
+# - **Always ask:** is the *expensive* class the small one?
+#
+# The second check opens every file once with `is_readable`, then reads its size (width × height in pixels)
+# and its colour mode (`RGB` stores three colour channels, `L` one gray channel).
 
 # %%
-# Check 2: readable? size and colour mode of every file (section 3's measure_image on a small thumbnail).
+# @title Check 2: readable? size and colour mode of every file { display-mode: "form" }
+# (section 3's measure_image on a small thumbnail)
 _my_rows = []
 for _, r in my_files.iterrows():
     ok = is_readable(r["path"])
@@ -163,15 +179,20 @@ print(f"distinct sizes: {_ok.groupby(['width', 'height']).ngroups} · "
 display(my_stats[my_stats["mode"] != "RGB"].head(10))
 
 # %% [markdown]
-# 💡 One tight cluster of sizes means one source; a second cluster, or one class sitting apart from the
-# others, means a second source, and the model may learn the source instead of the animal (section 3's
-# detective beat). Every file that is not RGB is listed above: decide whether to convert it or drop it.
+# 💡 How to read the sizes and modes:
+#
+# - **One tight cluster of sizes:** one source.
+# - **A second cluster, or one class sitting apart:** a second source, and the model may learn the source
+#   instead of the animal (section 3's detective beat).
+# - **Every file that is not RGB** is listed above: decide whether to convert it or drop it.
 #
 # The third check is section 5's copy hunt: exact copies by file hash, and near, flipped and rotated copies
-# by comparing perceptual hashes of every image and its variants, with your `HASH_THRESHOLD` from section 5.
+# by the **distance** between perceptual hashes (the number of differing bits out of 64) of every image and
+# its variants. Pairs at or below your `HASH_THRESHOLD` from section 5 count as copies.
 
 # %%
-# Check 3: exact, recompressed, flipped and rotated copies (all pairs, in blocks to keep memory small).
+# @title Check 3: exact, recompressed, flipped and rotated copies { display-mode: "form" }
+# (all pairs, in blocks to keep memory small)
 _readable = my_stats.index[my_stats["readable"]].to_numpy()
 _my_paths = my_files.loc[_readable, "path"].tolist()
 _md5 = [file_md5(p) for p in _my_paths]
@@ -218,21 +239,26 @@ if len(_show):
     plt.show()
 
 # %% [markdown]
-# 💡 Every pair is a decision for a human: keep one file of each pair, and look twice at pairs from different
-# class folders, because one of the two labels is wrong. On a dataset of near-identical shots (a fixed camera,
-# a microscope) many pairs are genuine different photos: lower `HASH_THRESHOLD` in section 5 and rerun.
+# 💡 Every pair is a decision for a human:
 #
-# <table width="100%"><tr><td bgcolor="#FDECEA"><font color="#8B1A10">
-# <b>⚠️ Pitfall · Splitting before deduplicating</b><br>
+# - **Keep one file of each pair.**
+# - **Look twice at pairs from different class folders:** one of the two labels is wrong.
+# - **Many pairs on near-identical shots** (a fixed camera, a microscope) are genuinely different photos:
+#   lower `HASH_THRESHOLD` in section 5 and rerun.
+
+# %% [markdown]
+# <!-- callout: pitfall | Pitfall · Splitting before deduplicating -->
 # If the two files of a copy pair land on different sides of the split, the test set contains photos the
 # model has already seen, and the score is too good (section 6). The split below therefore keeps every copy
 # group together, even before you have removed the copies.
-# </font></td></tr></table>
-#
-# The last check suggests a split: it groups the copies, then makes a stratified, group-aware split.
+
+# %% [markdown]
+# The last check suggests a split: it groups the copies, then makes a stratified (every class in both halves,
+# in the same shares), group-aware split.
 
 # %%
-# Check 4: a split suggestion. Copies form groups that stay on one side; the split is stratified by class.
+# @title Check 4: a split suggestion, copies grouped, stratified by class { display-mode: "form" }
+# Copies form groups that stay on one side; the split is stratified by class.
 import warnings
 
 from sklearn.model_selection import StratifiedGroupKFold
@@ -276,14 +302,14 @@ my_split.to_csv(_split_csv, index=False)
 print(f"split saved to {_split_csv}")
 
 # %% [markdown]
-# 💡 The split is a suggestion from what the folders show. Only you know what else ties photos together,
-# such as one camera, one day, one patient; section 6 showed that a split which ignores such groups can
-# halve the error it reports.
+# 💡 The split is a suggestion from what the folders show. Only you know what else ties photos together, such
+# as one camera, one day, one patient; section 6 showed that a split which ignores such groups reports a
+# better score than the model will earn.
 #
-# The checklist in one place, so you can paste it into your project notes:
+# The checklist in one place, to paste into your project notes:
 
 # %%
-# The report card for this dataset.
+# @title The report card for this dataset { display-mode: "form" }
 _n_unreadable = int((~my_stats["readable"]).sum())
 _n_not_rgb = int(((my_stats["mode"] != "RGB") & my_stats["readable"]).sum())
 my_report = [
@@ -302,13 +328,17 @@ RESULTS["swap_in"] = {"source": my_source, "n_images": int(len(my_files)), "n_cl
                       "copies": int(len(my_copies)), "not_rgb": _n_not_rgb}
 
 # %% [markdown]
-# **Worked answer (Q34, on the sample).** Every folder holds the same number of photos, plus the planted
-# copies in cat and dog, so the ratio is close to 1 : 1; that is a property of the sample, not of the park.
-# All sizes fall in the Play Dataset's few clusters (long side 640 or 500 px). The grayscale bird shows up
-# as one `L` file in check 2, and check 3 finds the exact copy of the cat and the mirrored dog as an `exact`
-# and a `flipped` pair, both inside one folder; the split keeps each pair on one side. If a check missed one
-# of them, look at the `HASH_THRESHOLD` you set in section 5.
+# **Worked answer (Q34, on the sample).**
 #
+# - **Check 1:** every folder holds the same number of photos, plus the planted copies in cat and dog, so
+#   the ratio is close to 1 : 1. That is a property of the sample, not of the park.
+# - **Check 2:** all sizes fall in the Play Dataset's few clusters (long side 640 or 500 px). The grayscale
+#   bird shows up as one `L` file.
+# - **Check 3:** the exact copy of the cat and the mirrored dog show up as an `exact` and a `flipped` pair,
+#   both inside one folder. The split keeps each pair on one side.
+# - If a check missed one of them, look at the `HASH_THRESHOLD` you set in section 5.
+
+# %% [markdown]
 # ### The guiding questions
 #
 # These questions are the notebook in short. Each one has the park's answer, and an empty line for yours.
@@ -326,16 +356,16 @@ RESULTS["swap_in"] = {"source": my_source, "n_images": int(len(my_files)), "n_cl
 #      animals on grass (section 2).
 #    - *Your dataset:*
 # 3. **How balanced are the classes, and is the expensive class a small one?**
-#    - *The park:* cat and dog 130 photos each, sheep 59, about 2 : 1. Dog is not rare, but accuracy would
-#      still hide a weak recall on dog (section 4).
+#    - *The park:* cat and dog about 130 photos each, sheep about 50, roughly 2 : 1 to 3 : 1. Dog is not
+#      rare, but accuracy would still hide a weak recall on dog (section 4).
 #    - *Your dataset:*
 # 4. **Which sizes, aspect ratios and colour modes are there, and what must be resized or converted?**
 #    - *The park:* nearly every photo has a long side of 640 or 500 px, in landscape and portrait; files
-#      that are not RGB get converted (sections 3 and 5).
+#      that are not RGB get converted (section 3).
 #    - *Your dataset:*
-# 5. **Are there copies, flipped or rotated copies, broken files or doubtful labels?**
-#    - *The park:* a few copies and odd files, removed before splitting (section 5's "removed N, kept M");
-#      photos with several animals make the label ambiguous (section 4).
+# 5. **Are there copies, flipped or rotated copies, unreadable or odd files, or doubtful labels?**
+#    - *The park:* a few copies, removed before splitting (section 5's "removed N, kept M"); photos with
+#      several animals make the label ambiguous (section 4).
 #    - *Your dataset:*
 # 6. **What ties photos together, and which split keeps those groups apart?**
 #    - *The park:* COCO has no groups, so a stratified split after deduplication; the trail cameras have
@@ -347,5 +377,10 @@ RESULTS["swap_in"] = {"source": my_source, "n_images": int(len(my_files)), "n_cl
 #    - *Your dataset:*
 
 # %% [markdown]
-# **Takeaway.** The checklist takes a few minutes on any folder-per-class dataset; the answers to the
-# questions are what you bring to next week's training, together with `data/cache/my_split.csv`.
+# <!-- callout: takeaway | Takeaway -->
+# - **When you get a new folder-per-class dataset** → **do** run the four checks (classes, sizes and modes,
+#   copies, split) before anything else; they take a few minutes.
+# - **When a check lists files** (not RGB, copy pairs, pairs across class folders) → **do** decide per file:
+#   convert, keep one, or fix the label.
+# - **When you leave** → **do** bring your answers to the guiding questions and `data/cache/my_split.csv`
+#   to next week's training.
