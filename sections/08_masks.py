@@ -373,7 +373,14 @@ show_masks(clean_images.set_index("id").loc[list(_ends["image_id"])].reset_index
 # - **a crude polygon**: five or six clicks in a hurry.
 #
 # They hide among hundreds of real masks. **Your job is not to look through hundreds of masks.** It is to
-# know which check catches which kind (Q22), so that a script does the looking and you read its short list.
+# know which check catches which kind, so that a script does the looking and you read its short list.
+# In order:
+#
+# 1. look at the five kinds (first picture);
+# 2. look at the five checks (second picture);
+# 3. answer Q22: which check catches which kind;
+# 4. run the hunt and read its output;
+# 5. open the answer key.
 
 # %%
 # @title Plant the hunt (five ugly masks, seeded) { display-mode: "form" }
@@ -621,6 +628,19 @@ display(fig)
 plt.close(fig)
 
 # %% [markdown]
+# **Q22.** 🟡 Match each kind (first picture) to the check you expect to catch it (the numbered list):
+# write five pairs, e.g. *shifted → mask–box agreement*. Some kinds trip more than one check, and one check
+# may catch none.
+#
+# Then run the hunt (the cell after the ✏️ box) and read its output in this order:
+#
+# 1. **The count per check:** how many masks each check flags. Most of them are real COCO masks, not planted.
+# 2. **The gallery of the strongest suspects** (the masks that tripped the most checks). In each photo the
+#    **bright mask with the solid box** is the suspect; the faint ones are the other animals. Its title gives
+#    the checks that fired and its numbers. For each photo, guess: planted, or a real COCO mask?
+# 3. **The answer key** below: compare it with your five pairs and your guesses.
+
+# %% [markdown]
 # <!-- callout: your-turn | Your turn · `IOU_MIN`, the threshold of check 1 only -->
 # `IOU_MIN` tunes **check 1 (mask–box agreement) and nothing else**; checks 2 to 5 keep their fixed rules.
 #
@@ -635,19 +655,6 @@ IOU_MIN = 0.9  # suspect when the mask's own box overlaps the annotated box less
 
 if not (isinstance(IOU_MIN, (int, float)) and 0 <= IOU_MIN <= 1):
     raise SystemExit("IOU_MIN is a number between 0 and 1.")
-
-# %% [markdown]
-# **Q22.** 🟡 Match each kind (first picture) to the check you expect to catch it (the numbered list):
-# write five pairs, e.g. *shifted → mask–box agreement*. Some kinds trip more than one check, and one check
-# may catch none.
-#
-# Then run the next cell and read its output in this order:
-#
-# 1. **The count per check:** how many masks each check flags. Most of them are real COCO masks, not planted.
-# 2. **The gallery of the strongest suspects** (the masks that tripped the most checks). In each photo the
-#    **bright mask with the solid box** is the suspect; the faint ones are the other animals. Its title gives
-#    the checks that fired and its numbers. For each photo, guess: planted, or a real COCO mask?
-# 3. **The answer key** below: compare it with your five pairs and your guesses.
 
 # %%
 # @title Q22 Measure every judged mask, flag the suspects, score the hunt { display-mode: "form" }
