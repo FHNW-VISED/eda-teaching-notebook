@@ -1,5 +1,7 @@
 # SPEC — Know Your Data: Exploring and Preparing Image Datasets at the Wildwood Farm Park
 
+**With:** Susanne Suter
+
 The single source of truth for **what** this notebook is. `AGENTS.md` says how to work,
 `RULES.md` says what every notebook must respect, and this file says what *this* one must do.
 Written 2026-10-19 from Simone's grilling (decisions G-1…G-33 on the vault page
@@ -245,7 +247,7 @@ Time = participant minutes at lab pace. **Estimate, not re-timed:** ≈ 108 afte
 - Every question is still **answered exemplarily on the Play Dataset**, right after it, but inside a collapsed `<details>` toggle (the markup of §1's "The reasons and park examples behind each point").
 - Answer figures and printed keys go inside the toggle too, drawn as HTML output; figures the question asks the student to read stay visible.
 - The Challenge keeps `reveal_answers()` + `<details>`.
-- Source: Susanne, "we answer it exemplarily with our play dataset"; Simone, G-3; Simone, 2026-10-22: "the 'worked answers' … could be made with the toggle as well, so that they are hidden until the toggle is removed".
+- Source: Susanne's request (2026-10-19) that every guiding question is answered as a worked example on the play dataset; Simone, G-3; Simone, 2026-10-22: "the 'worked answers' … could be made with the toggle as well, so that they are hidden until the toggle is removed".
 
 **L-006 — No training**: no neural-network training anywhere. The 🔴 nearest-neighbour "ruler" is the only fitted model, and it is labelled as a ruler. Source: Susanne, 2026-10-19; G-26, G-33.
 
