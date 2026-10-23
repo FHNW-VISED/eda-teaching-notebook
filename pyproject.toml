@@ -14,7 +14,8 @@ dependencies = [
     "opencv-python-headless==5.0.0.93",
     "scikit-image==0.25.2",
     "scikit-learn==1.6.1",
-    "imagehash",  # not in Colab: %pip install in 00_setup
+    "imagehash", # not in Colab: %pip install in 00_setup
+    "ipywidgets==7.7.1",
 ]
 
 [dependency-groups]
@@ -27,6 +28,7 @@ dev = [
     "ruff>=0.6",
     "jupyterlab>=4",
     "markdown>=3.11.2",
+    "markdownify>=0.13",
 ]
 
 [tool.ruff]
