@@ -144,7 +144,7 @@ display(OnePhotoBrowser().view)
 # class; ◀ goes back.
 
 # %%
-# @title Six photos per class, framed in the class colour { display-mode: "form" }
+# @title Six example photos per class, framed in the class colour { display-mode: "form" }
 _TILE, _GAP, _HEAD = 180, 8, 28  # px: one photo's square, the space between, the class-name row
 
 
