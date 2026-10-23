@@ -88,7 +88,7 @@ def _button(text: str, tip: str) -> widgets.Button:
 
 # %%
 # @title Browse photos with their class, box and mask { display-mode: "form" }
-_ONE_SIZE = 256  # px on screen: every photo is fitted into this square, whatever its own size
+_ONE_SIZE = 256  # px on screen for the longest side; the other side keeps the photo's aspect ratio
 _ONE_PIXELS = 2 * _ONE_SIZE  # drawn at twice that, so it stays sharp on high-resolution screens
 
 
@@ -102,10 +102,8 @@ def _one_photo(row) -> tuple[bytes, str]:
     im = _Image.fromarray(photo)
     x, y, w, h = ann["bbox"]
     _ImageDraw.Draw(im).rectangle([x, y, x + w, y + h], outline=_rgb(color), width=max(3, im.width // 150))
-    im.thumbnail((_ONE_PIXELS, _ONE_PIXELS))  # the mask and box were drawn at full size, then shrunk
-    square = _Image.new("RGB", (_ONE_PIXELS, _ONE_PIXELS), "white")
-    square.paste(im, ((_ONE_PIXELS - im.width) // 2, (_ONE_PIXELS - im.height) // 2))
-    im = square
+    scale = _ONE_PIXELS / max(im.size)  # longest side to exactly _ONE_PIXELS, aspect ratio kept
+    im = im.resize((round(im.width * scale), round(im.height * scale)), _Image.LANCZOS)
     caption = (
         f"<b style='color:{color}'>class: {ann['class']}</b> · box (x, y, width, height) = "
         f"{[round(v) for v in ann['bbox']]} px · mask covers {m.mean():.0%} of the photo"
@@ -122,8 +120,7 @@ class OnePhotoBrowser:
         self.picker = widgets.Dropdown(options=["any class", *CLASSES], description="Class:")
         self.prev, self.next = _button("◀", "previous photo"), _button("▶", "next photo")
         self.where = widgets.Label()
-        size = f"{_ONE_SIZE}px"
-        self.image = widgets.Image(format="jpeg", layout=widgets.Layout(width=size, height=size))
+        self.image = widgets.Image(format="jpeg")
         self.caption = widgets.HTML()
         self.picker.observe(lambda _: self.show(0), names="value")
         self.prev.on_click(lambda _: self.show(self.i - 1))
@@ -139,6 +136,8 @@ class OnePhotoBrowser:
         order = _shuffled(rows)
         self.i = i % len(order)
         self.image.value, self.caption.value = _one_photo(images.loc[order[self.i]])
+        w, h = _Image.open(_io.BytesIO(self.image.value)).size  # shown at half size: sharp
+        self.image.layout.width, self.image.layout.height = f"{w // 2}px", f"{h // 2}px"
         self.where.value = f"photo {self.i + 1} of {len(order)}"
 
 
