@@ -23,14 +23,13 @@ EXECUTED = ROOT / "build" / "smoke-executed.ipynb"
 RESULTS_FILE = ROOT / "build" / "smoke-results.json"
 CLASSES = {"cat", "dog", "bird", "horse", "sheep", "zebra"}
 KARPATHY = "karpathy.github.io/2019/04/25/recipe"
-CALLOUT_KINDS = (  # SPEC L-001: every Callout kind is used at least once ("go-deeper" is optional)
+CALLOUT_KINDS = (  # every Callout kind is used at least once ("go-deeper" is optional)
+    # SN-001…003 (Susanne, 2026-10-23): questions + your-turn are one "task"; objectives are plain markdown
     "theory",
-    "your-turn",
-    "questions",
+    "task",
     "across-tasks",
     "pitfall",
     "recipe",
-    "objective",
     "takeaway",
     "banner",
 )
