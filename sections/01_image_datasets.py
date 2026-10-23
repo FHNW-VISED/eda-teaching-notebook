@@ -12,68 +12,179 @@
 
 # %%
 # @title Photo browser helpers { display-mode: "form" }
-import io as _io
-import threading as _threading
+def _photo_browser_kit(images, annotations, CLASSES, CLASS_COLORS, INK, SEED):
+    """All the photo browsers' code, kept inside one function. A later section that reuses one of these names
+    (section 9 has its own `_jpeg`) cannot reach the buttons, so they keep working after "Run all"."""
+    import io as _io
+    import random
+    import threading as _threading
 
-import ipywidgets as widgets
-from IPython.display import display
-from PIL import Image as _Image
-from PIL import ImageDraw as _ImageDraw
-from PIL import ImageFont as _ImageFont
-from pycocotools import mask as _mask_utils
+    import ipywidgets as widgets
+    import numpy as np
+    import pandas as pd
+    from PIL import Image as _Image
+    from PIL import ImageDraw as _ImageDraw
+    from PIL import ImageFont as _ImageFont
+    from pycocotools import mask as _mask_utils
 
-_THUMBS: dict[tuple[str, int], _Image.Image] = {}  # (path, size) -> thumbnail, so going back is instant
-
-
-def _thumb(path, size: int) -> _Image.Image:
-    """A cached RGB thumbnail (JPEG decodes at reduced size, so this is fast even the first time)."""
-    key = (str(path), size)
-    if key not in _THUMBS:
-        im = _Image.open(path)
-        im.draft("RGB", (size, size))
-        im = im.convert("RGB")
-        im.thumbnail((size, size))
-        _THUMBS[key] = im
-    return _THUMBS[key]
+    _THUMBS: dict[tuple[str, int], _Image.Image] = {}  # (path, size) -> thumbnail, so going back is instant
 
 
-def _prefetch(paths, size: int) -> None:
-    """Load the next photos in the background while the learner looks at these."""
-    _threading.Thread(target=lambda: [_thumb(p, size) for p in paths], daemon=True).start()
+    def _thumb(path, size: int) -> _Image.Image:
+        """A cached RGB thumbnail (JPEG decodes at reduced size, so this is fast even the first time)."""
+        key = (str(path), size)
+        if key not in _THUMBS:
+            im = _Image.open(path)
+            im.draft("RGB", (size, size))
+            im = im.convert("RGB")
+            im.thumbnail((size, size))
+            _THUMBS[key] = im
+        return _THUMBS[key]
 
 
-def _jpeg(im: _Image.Image) -> bytes:
-    buf = _io.BytesIO()
-    im.save(buf, format="JPEG", quality=85)
-    return buf.getvalue()
+    def _prefetch(paths, size: int) -> None:
+        """Load the next photos in the background while the learner looks at these."""
+        _threading.Thread(target=lambda: [_thumb(p, size) for p in paths], daemon=True).start()
 
 
-def _rgb(hex_color: str) -> tuple[int, int, int]:
-    return tuple(int(hex_color[i : i + 2], 16) for i in (1, 3, 5))
+    def _jpeg(im: _Image.Image) -> bytes:
+        buf = _io.BytesIO()
+        im.save(buf, format="JPEG", quality=85)
+        return buf.getvalue()
 
 
-def _label_mask(segmentation, height: int, width: int) -> np.ndarray:
-    """Decode a COCO segmentation (polygons or RLE) into a 0/1 array of the photo's size."""
-    if isinstance(segmentation, list):
-        rle = _mask_utils.merge(_mask_utils.frPyObjects(segmentation, height, width))
-    elif isinstance(segmentation["counts"], list):
-        rle = _mask_utils.frPyObjects(segmentation, height, width)
-    else:
-        rle = segmentation
-    return _mask_utils.decode(rle)
+    def _rgb(hex_color: str) -> tuple[int, int, int]:
+        return tuple(int(hex_color[i : i + 2], 16) for i in (1, 3, 5))
 
 
-def _shuffled(rows: pd.DataFrame) -> list[int]:
-    """The rows' index in a fixed random order (seeded: everyone starts on the same photo)."""
-    order = sorted(rows.index)
-    random.Random(SEED).shuffle(order)
-    return order
+    def _label_mask(segmentation, height: int, width: int) -> np.ndarray:
+        """Decode a COCO segmentation (polygons or RLE) into a 0/1 array of the photo's size."""
+        if isinstance(segmentation, list):
+            rle = _mask_utils.merge(_mask_utils.frPyObjects(segmentation, height, width))
+        elif isinstance(segmentation["counts"], list):
+            rle = _mask_utils.frPyObjects(segmentation, height, width)
+        else:
+            rle = segmentation
+        return _mask_utils.decode(rle)
 
 
-def _button(text: str, tip: str) -> widgets.Button:
-    return widgets.Button(description=text, tooltip=tip, layout=widgets.Layout(width="auto"))
+    def _shuffled(rows: pd.DataFrame) -> list[int]:
+        """The rows' index in a fixed random order (seeded: everyone starts on the same photo)."""
+        order = sorted(rows.index)
+        random.Random(SEED).shuffle(order)
+        return order
 
 
+    def _button(text: str, tip: str) -> widgets.Button:
+        return widgets.Button(description=text, tooltip=tip, layout=widgets.Layout(width="auto"))
+
+
+
+    _ONE_SIZE = 256  # px on screen for the longest side; the other side keeps the photo's aspect ratio
+    _ONE_PIXELS = 2 * _ONE_SIZE  # drawn at twice that, so it stays sharp on high-resolution screens
+
+
+    def _one_photo(row) -> tuple[bytes, str]:
+        """The photo with its mask tinted and its box drawn in the class colour, plus a one-line caption."""
+        ann = annotations[annotations["image_id"] == row["id"]].iloc[0]
+        color = CLASS_COLORS[ann["class"]]
+        photo = np.array(_Image.open(row["path"]).convert("RGB"))
+        m = _label_mask(ann["segmentation"], int(row["height"]), int(row["width"])).astype(bool)
+        photo[m] = (0.45 * photo[m] + 0.55 * np.array(_rgb(color))).astype(np.uint8)
+        im = _Image.fromarray(photo)
+        x, y, w, h = ann["bbox"]
+        line = max(3, im.width // 150)
+        _ImageDraw.Draw(im).rectangle([x, y, x + w, y + h], outline=_rgb(color), width=line)
+        scale = _ONE_PIXELS / max(im.size)  # longest side to exactly _ONE_PIXELS, aspect ratio kept
+        im = im.resize((round(im.width * scale), round(im.height * scale)), _Image.LANCZOS)
+        caption = (
+            f"<b style='color:{color}'>class: {ann['class']}</b> · box (x, y, width, height) = "
+            f"{[round(v) for v in ann['bbox']]} px · mask covers {m.mean():.0%} of the photo"
+        )
+        return _jpeg(im), caption
+
+
+    class OnePhotoBrowser:
+        """Class picker + ◀ ▶: one photo with its single animal's box and mask."""
+
+        def __init__(self) -> None:
+            single = images[images["n_animals"] == 1]
+            self.pool = single if len(single) else images
+            self.picker = widgets.Dropdown(options=["any class", *CLASSES], description="Class:")
+            self.prev, self.next = _button("◀", "previous photo"), _button("▶", "next photo")
+            self.where = widgets.Label()
+            self.image = widgets.Image(format="jpeg")
+            self.caption = widgets.HTML()
+            self.picker.observe(lambda _: self.show(0), names="value")
+            self.prev.on_click(lambda _: self.show(self.i - 1))
+            self.next.on_click(lambda _: self.show(self.i + 1))
+            self.view = widgets.VBox(
+                [widgets.HBox([self.picker, self.prev, self.next, self.where]), self.image, self.caption]
+            )
+            self.show(0)
+
+        def show(self, i: int) -> None:
+            cls = self.picker.value
+            rows = self.pool if cls == "any class" else self.pool[self.pool["class"] == cls]
+            order = _shuffled(rows)
+            self.i = i % len(order)
+            self.image.value, self.caption.value = _one_photo(images.loc[order[self.i]])
+            w, h = _Image.open(_io.BytesIO(self.image.value)).size  # shown at half size: sharp
+            self.image.layout.width, self.image.layout.height = f"{w // 2}px", f"{h // 2}px"
+            self.where.value = f"photo {self.i + 1} of {len(order)}"
+
+
+
+    _TILE, _GAP, _HEAD = 180, 8, 28  # px: one photo's square, the space between, the class-name row
+
+
+    def _class_grid(page: int, per_class: int = 6) -> bytes:
+        """One picture: a column per class, `per_class` photos each, the page-th set of each class's order."""
+        width = len(CLASSES) * (_TILE + _GAP) + _GAP
+        height = _HEAD + per_class * (_TILE + _GAP) + _GAP
+        grid = _Image.new("RGB", (width, height), "white")
+        draw = _ImageDraw.Draw(grid)
+        font = _ImageFont.load_default(size=16)
+        upcoming = []
+        for j, c in enumerate(CLASSES):
+            order = _shuffled(images[images["class"] == c])
+            x0 = _GAP + j * (_TILE + _GAP)
+            draw.text((x0 + _TILE // 2, _HEAD // 2), c, fill=_rgb(INK), font=font, anchor="mm")
+            for i in range(per_class):
+                k = (page * per_class + i) % len(order)
+                y0 = _HEAD + _GAP + i * (_TILE + _GAP)
+                tile = _thumb(images.loc[order[k], "path"], _TILE)
+                grid.paste(tile, (x0 + (_TILE - tile.width) // 2, y0 + (_TILE - tile.height) // 2))
+                frame = [x0 - 2, y0 - 2, x0 + _TILE + 1, y0 + _TILE + 1]
+                draw.rectangle(frame, outline=_rgb(CLASS_COLORS[c]), width=4)
+                upcoming.append(images.loc[order[(k + per_class) % len(order)], "path"])
+        _prefetch(upcoming, _TILE)
+        return _jpeg(grid)
+
+
+    class ClassGridBrowser:
+        """🔀 / ◀ through sets of six photos per class."""
+
+        def __init__(self) -> None:
+            self.page = 0
+            self.more = _button("🔀 Other photos", "six new photos per class")
+            self.back = _button("◀", "previous set")
+            self.where = widgets.Label()
+            self.image = widgets.Image(format="jpeg", layout=widgets.Layout(max_width="100%"))
+            self.more.on_click(lambda _: self.show(self.page + 1))
+            self.back.on_click(lambda _: self.show(self.page - 1))
+            self.view = widgets.VBox([widgets.HBox([self.back, self.more, self.where]), self.image])
+            self.show(0)
+
+        def show(self, page: int) -> None:
+            self.page = max(0, page)
+            self.image.value = _class_grid(self.page)
+            self.where.value = f"set {self.page + 1}"
+
+    return OnePhotoBrowser, ClassGridBrowser
+
+
+OnePhotoBrowser, ClassGridBrowser = _photo_browser_kit(images, annotations, CLASSES, CLASS_COLORS, INK, SEED)
 # %% [markdown]
 # **What is a label here?** In this notebook a photo comes with a class, a box and a mask. The next cell draws
 # one photo from the `images` and `annotations` tables with all three. Pick a class and step through the
@@ -88,60 +199,8 @@ def _button(text: str, tip: str) -> widgets.Button:
 
 # %%
 # @title Browse photos with their class, box and mask { display-mode: "form" }
-_ONE_SIZE = 256  # px on screen for the longest side; the other side keeps the photo's aspect ratio
-_ONE_PIXELS = 2 * _ONE_SIZE  # drawn at twice that, so it stays sharp on high-resolution screens
-
-
-def _one_photo(row) -> tuple[bytes, str]:
-    """The photo with its mask tinted and its box drawn in the class colour, plus a one-line caption."""
-    ann = annotations[annotations["image_id"] == row["id"]].iloc[0]
-    color = CLASS_COLORS[ann["class"]]
-    photo = np.array(_Image.open(row["path"]).convert("RGB"))
-    m = _label_mask(ann["segmentation"], int(row["height"]), int(row["width"])).astype(bool)
-    photo[m] = (0.45 * photo[m] + 0.55 * np.array(_rgb(color))).astype(np.uint8)
-    im = _Image.fromarray(photo)
-    x, y, w, h = ann["bbox"]
-    _ImageDraw.Draw(im).rectangle([x, y, x + w, y + h], outline=_rgb(color), width=max(3, im.width // 150))
-    scale = _ONE_PIXELS / max(im.size)  # longest side to exactly _ONE_PIXELS, aspect ratio kept
-    im = im.resize((round(im.width * scale), round(im.height * scale)), _Image.LANCZOS)
-    caption = (
-        f"<b style='color:{color}'>class: {ann['class']}</b> · box (x, y, width, height) = "
-        f"{[round(v) for v in ann['bbox']]} px · mask covers {m.mean():.0%} of the photo"
-    )
-    return _jpeg(im), caption
-
-
-class OnePhotoBrowser:
-    """Class picker + ◀ ▶: one photo with its single animal's box and mask."""
-
-    def __init__(self) -> None:
-        single = images[images["n_animals"] == 1]
-        self.pool = single if len(single) else images
-        self.picker = widgets.Dropdown(options=["any class", *CLASSES], description="Class:")
-        self.prev, self.next = _button("◀", "previous photo"), _button("▶", "next photo")
-        self.where = widgets.Label()
-        self.image = widgets.Image(format="jpeg")
-        self.caption = widgets.HTML()
-        self.picker.observe(lambda _: self.show(0), names="value")
-        self.prev.on_click(lambda _: self.show(self.i - 1))
-        self.next.on_click(lambda _: self.show(self.i + 1))
-        self.view = widgets.VBox(
-            [widgets.HBox([self.picker, self.prev, self.next, self.where]), self.image, self.caption]
-        )
-        self.show(0)
-
-    def show(self, i: int) -> None:
-        cls = self.picker.value
-        rows = self.pool if cls == "any class" else self.pool[self.pool["class"] == cls]
-        order = _shuffled(rows)
-        self.i = i % len(order)
-        self.image.value, self.caption.value = _one_photo(images.loc[order[self.i]])
-        w, h = _Image.open(_io.BytesIO(self.image.value)).size  # shown at half size: sharp
-        self.image.layout.width, self.image.layout.height = f"{w // 2}px", f"{h // 2}px"
-        self.where.value = f"photo {self.i + 1} of {len(order)}"
-
-
-display(OnePhotoBrowser().view)
+photo_browser = OnePhotoBrowser()
+display(photo_browser.view)
 
 # %% [markdown]
 # Before judging the dataset, look at it: six photos of each class. **🔀 Other photos** shows six new ones per
@@ -149,54 +208,8 @@ display(OnePhotoBrowser().view)
 
 # %%
 # @title Six example photos per class, framed in the class colour { display-mode: "form" }
-_TILE, _GAP, _HEAD = 180, 8, 28  # px: one photo's square, the space between, the class-name row
-
-
-def _class_grid(page: int, per_class: int = 6) -> bytes:
-    """One picture: a column per class, `per_class` photos each, the page-th set of each class's order."""
-    width = len(CLASSES) * (_TILE + _GAP) + _GAP
-    height = _HEAD + per_class * (_TILE + _GAP) + _GAP
-    grid = _Image.new("RGB", (width, height), "white")
-    draw = _ImageDraw.Draw(grid)
-    font = _ImageFont.load_default(size=16)
-    upcoming = []
-    for j, c in enumerate(CLASSES):
-        order = _shuffled(images[images["class"] == c])
-        x0 = _GAP + j * (_TILE + _GAP)
-        draw.text((x0 + _TILE // 2, _HEAD // 2), c, fill=_rgb(INK), font=font, anchor="mm")
-        for i in range(per_class):
-            k = (page * per_class + i) % len(order)
-            y0 = _HEAD + _GAP + i * (_TILE + _GAP)
-            tile = _thumb(images.loc[order[k], "path"], _TILE)
-            grid.paste(tile, (x0 + (_TILE - tile.width) // 2, y0 + (_TILE - tile.height) // 2))
-            frame = [x0 - 2, y0 - 2, x0 + _TILE + 1, y0 + _TILE + 1]
-            draw.rectangle(frame, outline=_rgb(CLASS_COLORS[c]), width=4)
-            upcoming.append(images.loc[order[(k + per_class) % len(order)], "path"])
-    _prefetch(upcoming, _TILE)
-    return _jpeg(grid)
-
-
-class ClassGridBrowser:
-    """🔀 / ◀ through sets of six photos per class."""
-
-    def __init__(self) -> None:
-        self.page = 0
-        self.more = _button("🔀 Other photos", "six new photos per class")
-        self.back = _button("◀", "previous set")
-        self.where = widgets.Label()
-        self.image = widgets.Image(format="jpeg", layout=widgets.Layout(max_width="100%"))
-        self.more.on_click(lambda _: self.show(self.page + 1))
-        self.back.on_click(lambda _: self.show(self.page - 1))
-        self.view = widgets.VBox([widgets.HBox([self.back, self.more, self.where]), self.image])
-        self.show(0)
-
-    def show(self, page: int) -> None:
-        self.page = max(0, page)
-        self.image.value = _class_grid(self.page)
-        self.where.value = f"set {self.page + 1}"
-
-
-display(ClassGridBrowser().view)
+grid_browser = ClassGridBrowser()
+display(grid_browser.view)
 
 # %% [markdown]
 # <!-- callout: questions | Questions -->
