@@ -139,7 +139,7 @@ show_grid(CLASS_TO_SHOW, n_show)
 
 # %% [markdown]
 # <!-- callout: answer | Worked answer (Q3) -->
-# , for the dog grid on the full set. Yours will differ; that is the point.
+# An example, for the dog grid on the full set. Yours will differ; that is the point.
 #
 # 1. **Setting:** most dogs are indoors or in a street, a metre away; the paddock camera sees one far off.
 # 2. **People:** a person, hand or leash is in many photos: "person + leash = dog" is a shortcut to learn.

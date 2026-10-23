@@ -17,12 +17,16 @@ work on a Play Dataset and then reuse the notebook as a checklist for their own 
 The single question it answers: **"Is this dataset fit for my task, and what must I fix before training?"**
 
 ## 2. Audience and level
-BSc Data Science / Computer Science students. They know Python and basic ML vocabulary, and have
-seen Susanne's lecture on image datasets. No training happens here; that comes the following week.
+BSc Computer Science students in Susanne's computer-vision course. They know Python and machine learning, and
+have had 7 weeks of classical image processing (convolution etc.); this is their introduction to computer vision
+with deep learning. Lecture 1 is "how AI sees", **this notebook is lecture 2 and replaces its slides**, and
+lecture 3 is classification, so no training happens here (walkthrough 2026-10-23, S18–S19).
 Default path 🟢/🟡, with optional 🔴 parts.
 **Freedom (N-028): low to medium** (G-14, G-21):
 - **Most cells:** run, then read one sentence on what to look at.
 - **✏️ change a value:** at most one per section, plain variables, no Colab sliders (G-12).
+- **Photo browsers** (class picker, ◀ ▶) in section 1 are run-and-look widgets, not ✏️ cells, so G-12 does not
+  apply to them (S14, N-057).
 - **✍️ write a small function:** ~4 in the notebook, each with a given signature and run through `use(...)` (N-029), so they never block "Run all".
 - **The Challenge** is the most open part, and it never blocks either.
 

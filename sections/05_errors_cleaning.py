@@ -123,8 +123,8 @@ def flag_odd_files(stats: pd.DataFrame) -> pd.DataFrame:
 # the colour, keep the big blobs, write 1 or 0 for each. A resized or re-compressed copy keeps the same big
 # blobs, so it gets almost the same bits.
 #
-# The **Hamming distance** is how many of the 64 bits differ: 0 = same picture, about 32 = unrelated. What
-# counts as "the same picture" is a threshold you choose.
+# The **Hamming distance** is how many of the 64 bits differ: 0 = same picture, and two random unrelated
+# photos differ in about 32 (half the bits). What counts as "the same picture" is a threshold you choose.
 
 # %% [markdown]
 # <!-- callout: go-deeper | Go deeper · How the 64 bits are made -->
@@ -272,7 +272,8 @@ show_rows(_rows, "closest pairs by perceptual hash (each pair side by side)",
 # But MD5 only sees identical bytes: re-save a photo at another JPEG quality and the hash changes completely,
 # which is why we need a hash that looks at the picture.
 #
-# Near copies: unrelated pictures sit about 30 bits apart, far right of the threshold. Most closest pairs on
+# Near copies: two *random* photos differ in about 32 bits, but the histogram shows each photo's *closest*
+# other photo, the best match among hundreds, so it sits lower (around 20). Most closest pairs on
 # COCO are different photos of a similar scene (two zebras on grass), so the default catches one true pair on
 # the full Play Dataset: two frames of the same tabby in front of one brick wall (the smoke sample may lack
 # it). A loose threshold adds non-copies, a strict one misses re-compressed copies, so read the list by eye
@@ -285,8 +286,10 @@ show_rows(_rows, "closest pairs by perceptual hash (each pair side by side)",
 
 # %% [markdown]
 # <!-- callout: pitfall | Pitfall · A hash distance is not a similarity score -->
-# Two burst frames of the same sheep can be 12 bits apart and two unrelated photos 10. The threshold only
-# separates "same picture, different file" from everything else; it does not rank how alike two photos are.
+# Two burst frames of the same sheep can be 12 bits apart and two unrelated photos 10. pHash keeps only the
+# coarse layout of a 32×32 grey thumbnail in 64 bits, so two unrelated photos with the same layout (bright
+# sky above, dark ground below) can share most of their bits. The threshold only separates "same picture,
+# different file" from everything else; it does not rank how alike two photos are.
 
 # %% [markdown]
 # ### A memory card from the park: the guided hunt
