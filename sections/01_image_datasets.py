@@ -10,22 +10,46 @@
 # The park has no training data yet. Before anyone mounts cameras and hires annotators, ask:
 # *does a usable dataset already exist?* First, see what a dataset looks like.
 
-# %% [markdown]
-# **What is a label here?** In this notebook a photo comes with a class, a box and a mask. The next cell draws
-# one photo from the `images` and `annotations` tables with all three.
-#
-# <details><summary>How would you validate labels?</summary>
-#
-# Draw a random sample of N photos, check each label by eye and count the mistakes; the share of mistakes in
-# the sample estimates the share in the whole set.
-#
-# </details>
-
 # %%
-# @title Show one photo with its class, its box and its mask { display-mode: "form" }
-import matplotlib.patches as _patches
+# @title Photo browser helpers { display-mode: "form" }
+import io as _io
+import threading as _threading
+
+import ipywidgets as widgets
+from IPython.display import display
 from PIL import Image as _Image
+from PIL import ImageDraw as _ImageDraw
+from PIL import ImageFont as _ImageFont
 from pycocotools import mask as _mask_utils
+
+_THUMBS: dict[tuple[str, int], _Image.Image] = {}  # (path, size) -> thumbnail, so going back is instant
+
+
+def _thumb(path, size: int) -> _Image.Image:
+    """A cached RGB thumbnail (JPEG decodes at reduced size, so this is fast even the first time)."""
+    key = (str(path), size)
+    if key not in _THUMBS:
+        im = _Image.open(path)
+        im.draft("RGB", (size, size))
+        im = im.convert("RGB")
+        im.thumbnail((size, size))
+        _THUMBS[key] = im
+    return _THUMBS[key]
+
+
+def _prefetch(paths, size: int) -> None:
+    """Load the next photos in the background while the learner looks at these."""
+    _threading.Thread(target=lambda: [_thumb(p, size) for p in paths], daemon=True).start()
+
+
+def _jpeg(im: _Image.Image) -> bytes:
+    buf = _io.BytesIO()
+    im.save(buf, format="JPEG", quality=85)
+    return buf.getvalue()
+
+
+def _rgb(hex_color: str) -> tuple[int, int, int]:
+    return tuple(int(hex_color[i : i + 2], 16) for i in (1, 3, 5))
 
 
 def _label_mask(segmentation, height: int, width: int) -> np.ndarray:
@@ -39,54 +63,136 @@ def _label_mask(segmentation, height: int, width: int) -> np.ndarray:
     return _mask_utils.decode(rle)
 
 
-_single = images[images["n_animals"] == 1]
-_row = (_single if len(_single) else images).sample(1, random_state=SEED).iloc[0]
-_ann = annotations[annotations["image_id"] == _row["id"]].iloc[0]
-_color = CLASS_COLORS[_ann["class"]]
-_photo = np.array(_Image.open(_row["path"]).convert("RGB"))
-_m = _label_mask(_ann["segmentation"], int(_row["height"]), int(_row["width"])).astype(bool)
+def _shuffled(rows: pd.DataFrame) -> list[int]:
+    """The rows' index in a fixed random order (seeded: everyone starts on the same photo)."""
+    order = sorted(rows.index)
+    random.Random(SEED).shuffle(order)
+    return order
 
-_shown = _photo.copy()
-_rgb = np.array([int(_color[i : i + 2], 16) for i in (1, 3, 5)])
-_shown[_m] = (0.45 * _shown[_m] + 0.55 * _rgb).astype(np.uint8)
 
-fig, ax = plt.subplots(figsize=(5.5, 4.5))
-ax.imshow(_shown)
-_bx, _by, _bw, _bh = _ann["bbox"]
-ax.add_patch(_patches.Rectangle((_bx, _by), _bw, _bh, fill=False, edgecolor=_color, linewidth=3))
-ax.set_title(f"class: {_ann['class']} · box and mask drawn from the tables")
-ax.axis("off")
-plt.show()
-print(f"class = {_ann['class']!r} · box (x, y, width, height) = {[round(v) for v in _ann['bbox']]} px")
-print(f"mask covers {int(_m.sum()):,} of {_m.size:,} pixels ({_m.mean():.0%} of the photo)")
+def _button(text: str, tip: str) -> widgets.Button:
+    return widgets.Button(description=text, tooltip=tip, layout=widgets.Layout(width="auto"))
+
 
 # %% [markdown]
-# Before judging the dataset, look at it: six photos of each class.
+# **What is a label here?** In this notebook a photo comes with a class, a box and a mask. The next cell draws
+# one photo from the `images` and `annotations` tables with all three. Pick a class and step through the
+# photos with ◀ ▶.
+#
+# <details><summary>How would you validate labels?</summary>
+#
+# Draw a random sample of N photos, check each label by eye and count the mistakes; the share of mistakes in
+# the sample estimates the share in the whole set.
+#
+# </details>
 
 # %%
-# @title Six example photos per class, framed in the class colour { display-mode: "form" }
-_per_class = 6
-fig, axes = plt.subplots(_per_class, len(CLASSES), figsize=(13, 2.2 * _per_class))
-for j, c in enumerate(CLASSES):
-    _of_class = images[images["class"] == c]
-    _picked = _of_class.sample(min(_per_class, len(_of_class)), random_state=SEED)
-    for i in range(_per_class):
-        ax = axes[i, j]
-        ax.grid(False)
-        ax.set_xticks([])
-        ax.set_yticks([])
-        for spine in ax.spines.values():
-            spine.set_visible(True)
-            spine.set_color(CLASS_COLORS[c])
-            spine.set_linewidth(4)
-        if i < len(_picked):
-            _thumb = _Image.open(_picked.iloc[i]["path"]).convert("RGB")
-            _thumb.thumbnail((256, 256))
-            ax.imshow(_thumb)
-        if i == 0:
-            ax.set_title(c, color=INK, fontweight="bold")
-fig.tight_layout()
-plt.show()
+# @title Browse photos with their class, box and mask { display-mode: "form" }
+_ONE_SIZE = 640  # longest side shown; the mask and box are drawn at the photo's full size, then shrunk
+
+
+def _one_photo(row) -> tuple[bytes, str]:
+    """The photo with its mask tinted and its box drawn in the class colour, plus a one-line caption."""
+    ann = annotations[annotations["image_id"] == row["id"]].iloc[0]
+    color = CLASS_COLORS[ann["class"]]
+    photo = np.array(_Image.open(row["path"]).convert("RGB"))
+    m = _label_mask(ann["segmentation"], int(row["height"]), int(row["width"])).astype(bool)
+    photo[m] = (0.45 * photo[m] + 0.55 * np.array(_rgb(color))).astype(np.uint8)
+    im = _Image.fromarray(photo)
+    x, y, w, h = ann["bbox"]
+    _ImageDraw.Draw(im).rectangle([x, y, x + w, y + h], outline=_rgb(color), width=max(3, im.width // 150))
+    im.thumbnail((_ONE_SIZE, _ONE_SIZE))
+    caption = (
+        f"<b style='color:{color}'>class: {ann['class']}</b> · box (x, y, width, height) = "
+        f"{[round(v) for v in ann['bbox']]} px · mask covers {m.mean():.0%} of the photo"
+    )
+    return _jpeg(im), caption
+
+
+class OnePhotoBrowser:
+    """Class picker + ◀ ▶: one photo with its single animal's box and mask."""
+
+    def __init__(self) -> None:
+        single = images[images["n_animals"] == 1]
+        self.pool = single if len(single) else images
+        self.picker = widgets.Dropdown(options=["any class", *CLASSES], description="Class:")
+        self.prev, self.next = _button("◀", "previous photo"), _button("▶", "next photo")
+        self.where = widgets.Label()
+        self.image = widgets.Image(format="jpeg", layout=widgets.Layout(max_width=f"{_ONE_SIZE}px"))
+        self.caption = widgets.HTML()
+        self.picker.observe(lambda _: self.show(0), names="value")
+        self.prev.on_click(lambda _: self.show(self.i - 1))
+        self.next.on_click(lambda _: self.show(self.i + 1))
+        self.view = widgets.VBox(
+            [widgets.HBox([self.picker, self.prev, self.next, self.where]), self.image, self.caption]
+        )
+        self.show(0)
+
+    def show(self, i: int) -> None:
+        cls = self.picker.value
+        rows = self.pool if cls == "any class" else self.pool[self.pool["class"] == cls]
+        order = _shuffled(rows)
+        self.i = i % len(order)
+        self.image.value, self.caption.value = _one_photo(images.loc[order[self.i]])
+        self.where.value = f"photo {self.i + 1} of {len(order)}"
+
+
+display(OnePhotoBrowser().view)
+
+# %% [markdown]
+# Before judging the dataset, look at it: six photos of each class. **🔀 Other photos** shows six new ones per
+# class; ◀ goes back.
+
+# %%
+# @title Six photos per class, framed in the class colour { display-mode: "form" }
+_TILE, _GAP, _HEAD = 180, 8, 28  # px: one photo's square, the space between, the class-name row
+
+
+def _class_grid(page: int, per_class: int = 6) -> bytes:
+    """One picture: a column per class, `per_class` photos each, the page-th set of each class's order."""
+    width = len(CLASSES) * (_TILE + _GAP) + _GAP
+    height = _HEAD + per_class * (_TILE + _GAP) + _GAP
+    grid = _Image.new("RGB", (width, height), "white")
+    draw = _ImageDraw.Draw(grid)
+    font = _ImageFont.load_default(size=16)
+    upcoming = []
+    for j, c in enumerate(CLASSES):
+        order = _shuffled(images[images["class"] == c])
+        x0 = _GAP + j * (_TILE + _GAP)
+        draw.text((x0 + _TILE // 2, _HEAD // 2), c, fill=_rgb(INK), font=font, anchor="mm")
+        for i in range(per_class):
+            k = (page * per_class + i) % len(order)
+            y0 = _HEAD + _GAP + i * (_TILE + _GAP)
+            tile = _thumb(images.loc[order[k], "path"], _TILE)
+            grid.paste(tile, (x0 + (_TILE - tile.width) // 2, y0 + (_TILE - tile.height) // 2))
+            frame = [x0 - 2, y0 - 2, x0 + _TILE + 1, y0 + _TILE + 1]
+            draw.rectangle(frame, outline=_rgb(CLASS_COLORS[c]), width=4)
+            upcoming.append(images.loc[order[(k + per_class) % len(order)], "path"])
+    _prefetch(upcoming, _TILE)
+    return _jpeg(grid)
+
+
+class ClassGridBrowser:
+    """🔀 / ◀ through sets of six photos per class."""
+
+    def __init__(self) -> None:
+        self.page = 0
+        self.more = _button("🔀 Other photos", "six new photos per class")
+        self.back = _button("◀", "previous set")
+        self.where = widgets.Label()
+        self.image = widgets.Image(format="jpeg", layout=widgets.Layout(max_width="100%"))
+        self.more.on_click(lambda _: self.show(self.page + 1))
+        self.back.on_click(lambda _: self.show(self.page - 1))
+        self.view = widgets.VBox([widgets.HBox([self.back, self.more, self.where]), self.image])
+        self.show(0)
+
+    def show(self, page: int) -> None:
+        self.page = max(0, page)
+        self.image.value = _class_grid(self.page)
+        self.where.value = f"set {self.page + 1}"
+
+
+display(ClassGridBrowser().view)
 
 # %% [markdown]
 # <!-- callout: questions | Questions -->
