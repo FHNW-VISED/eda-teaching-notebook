@@ -17,13 +17,8 @@ import build  # noqa: E402
 
 
 def _built_notebook() -> nbformat.NotebookNode:
-    cells = []
-    for path in build.section_files():
-        import jupytext
-
-        for k, cell in enumerate(jupytext.read(path, fmt="py:percent").cells):
-            cells.append(build.convert_callout(cell, f"{path.name} {k}"))
-    return nbformat.v4.new_notebook(cells=cells)
+    build.build()
+    return nbformat.read(build.OUT, as_version=4)
 
 
 def test_port_round_trip(tmp_path: Path) -> None:
@@ -38,11 +33,12 @@ def test_port_round_trip(tmp_path: Path) -> None:
         if cell.cell_type == "code" and "callout" not in cell.source:
             cell.outputs = [nbformat.v4.new_output("stream", name="stdout", text="ran\n")]
 
-    plain = next(i for i, c in enumerate(her.cells) if c.cell_type == "markdown" and "## 2." in c.source)
+    md = [i for i, c in enumerate(her.cells) if c.cell_type == "markdown"]
+    plain = next(i for i in md if "2. Become one" in her.cells[i].source)
     her.cells[plain].source = her.cells[plain].source.replace("Become one with the data", "Meet the data")
     box = next(i for i, c in enumerate(her.cells) if 'class="callout callout-recipe"' in c.source)
     her.cells[box].source = her.cells[box].source.replace("This step is critical.", "This step is ESSENTIAL.")
-    start = next(i for i, c in enumerate(her.cells) if c.cell_type == "markdown" and "## 3." in c.source)
+    start = next(i for i in md if "3. Image inspection" in her.cells[i].source)
     gone = next(i for i in range(start + 1, len(her.cells)) if her.cells[i].cell_type == "markdown")
     gone_text = her.cells[gone].source
     del her.cells[gone]
@@ -54,7 +50,7 @@ def test_port_round_trip(tmp_path: Path) -> None:
     assert port.main([str(her_path), "--sections", str(sections), "--report", str(tmp_path / "r.md")]) == 0
 
     s02 = (sections / "02_become_one.py").read_text()
-    assert "## 2. Meet the data" in s02
+    assert "2. Meet the data" in s02
     assert "A sentence Susanne added." in s02
     assert "This step is ESSENTIAL." in s02 and "<!-- callout: recipe | Recipe · Step 1" in s02
     assert gone_text.strip().splitlines()[-1] not in (sections / "03_image_inspection.py").read_text()

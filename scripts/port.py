@@ -18,6 +18,7 @@ Then: review `git diff sections/` and the report, run `just check`.
 from __future__ import annotations
 
 import argparse
+import copy
 import datetime
 import difflib
 import html as htmllib
@@ -31,7 +32,7 @@ import nbformat
 from markdownify import markdownify
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from build import CALLOUT_KINDS, convert_callout  # noqa: E402
+from build import CALLOUT_KINDS, build_cell  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 CALLOUT_SRC_RE = re.compile(r'HTML\(r"""(?P<html>.*)"""\)\s*$', re.S)
@@ -62,18 +63,18 @@ def _visible_text(html: str) -> str:
 
 
 def base_cells(sections_dir: Path) -> list[Cell]:
+    """Every cell as the build renders it (to compare), with the section source it came from (to keep)."""
     cells = []
-    for path in sorted(sections_dir.glob("[0-9][0-9]_*.py")):
+    for number, path in enumerate(sorted(sections_dir.glob("[0-9][0-9]_*.py"))):
         nb = jupytext.read(path, fmt="py:percent")
         for k, src_cell in enumerate(nb.cells):
-            built = convert_callout(src_cell, f"{path.name} cell {k}")
+            built = build_cell(copy.deepcopy(src_cell), k, number, path)
+            text = _clean(src_cell.source)
             if built.metadata.get("callout"):
                 html = _callout_html_of(built.source)
-                text = _clean(src_cell.source)
                 cells.append(Cell(path.stem, "callout", text, "CALLOUT " + html, html, src_cell))
             else:
-                text = _clean(src_cell.source)
-                norm = f"{src_cell.cell_type} {text}"
+                norm = f"{built.cell_type} {_clean(built.source)}"
                 cells.append(Cell(path.stem, src_cell.cell_type, text, norm, "", src_cell))
     return cells
 

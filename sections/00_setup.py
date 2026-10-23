@@ -16,7 +16,7 @@
 # 3. Choose a split and a metric that match the use case, and explain how imbalance, object size and leakage
 #    look different for classification, detection and segmentation.
 #
-# Questions are marked 🟢 beginner · 🟡 intermediate · 🔴 advanced (optional).
+# Tasks are marked 🟢 beginner · 🟡 intermediate · 🔴 advanced (optional).
 
 # %% [markdown]
 # **Run the next three cells now, in order, and read on while they work.** The last downloads the
