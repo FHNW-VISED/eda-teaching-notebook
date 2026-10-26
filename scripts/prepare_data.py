@@ -46,6 +46,8 @@ COCO_EXCLUDE = {
     206838: "people in swimwear (course lead's request, 2026-10-26)",
     242724: "near-twin of 206838, same scene",
     121031: "bare-chested riders (same criterion, Simone 2026-10-26)",
+    286422: "woman in a bikini on a sailboat bow (visual check of all photos, 2026-10-26)",
+    66038: "people sunbathing in swimwear on a beach (same check)",
 }
 
 # --- CCT20 ------------------------------------------------------------------------------------------
