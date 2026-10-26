@@ -8,7 +8,7 @@ build:
 lint:
     uv run python scripts/lint_notebook.py
     uv run ruff check --quiet sections scripts tests
-    uv run pytest -q -p no:warnings tests/test_version.py
+    uv run pytest -q -p no:warnings tests/test_version.py tests/test_port.py
 
 # Execute the whole notebook headless on tiny data (NB_SMOKE=1)
 smoke: build
@@ -28,6 +28,11 @@ open: build
 # After editing eda-teaching-notebook.ipynb by hand in Jupyter/Colab: split it back into sections (review the diff!)
 sync:
     uv run python scripts/split.py
+
+# Bring a hand-edited copy (e.g. a Colab download) back into sections/: aligns by content, restores callouts,
+# writes reviews/port-<date>.md. Run it on a branch from the commit the copy was made from.
+port notebook:
+    uv run python scripts/port.py "{{notebook}}"
 
 # Committed notebook must equal a fresh build (catches hand edits that skipped `just sync`)
 drift: build
