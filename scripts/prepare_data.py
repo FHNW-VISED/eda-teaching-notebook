@@ -41,6 +41,12 @@ COCO_OUT = DATA / "coco_animals_subset.json"
 COCO_CLASSES = ["cat", "dog", "bird", "horse", "sheep", "zebra"]
 COCO_CAP = {"cat": 130, "dog": 130}
 COCO_MAX_BYTES = 2 * 1024 * 1024
+# Photos left out of the teaching set on request, removed after sampling so every other photo stays the same.
+COCO_EXCLUDE = {
+    206838: "people in swimwear (course lead's request, 2026-10-26)",
+    242724: "near-twin of 206838, same scene",
+    121031: "bare-chested riders (same criterion, Simone 2026-10-26)",
+}
 
 # --- CCT20 ------------------------------------------------------------------------------------------
 CCT_URL = "https://storage.googleapis.com/public-datasets-lila/caltechcameratraps/eccv_18_annotations.tar.gz"
@@ -128,6 +134,7 @@ def build_coco() -> dict:
         if cap is not None and len(ids) > cap:
             ids = sorted(rng.sample(ids, cap))
         keep.update(ids)
+    keep -= set(COCO_EXCLUDE)
 
     image_fields = [
         "id", "file_name", "width", "height", "license", "flickr_url", "coco_url", "date_captured",
@@ -159,7 +166,8 @@ def build_coco() -> dict:
             "url": "https://cocodataset.org",
             "classes": COCO_CLASSES,
             "selection": "images containing exactly one of the six classes; cat and dog capped at 130 "
-            f"images each (seed {SEED})",
+            f"images each (seed {SEED}); {len(COCO_EXCLUDE)} photos excluded on request",
+            "excluded": sorted(COCO_EXCLUDE),
             "note": "Images are not redistributed: each image keeps its license and flickr_url and is "
             "downloaded from coco_url at runtime.",
         },
