@@ -24,9 +24,9 @@ lecture 3 is classification, so no training happens here (walkthrough 2026-10-23
 Default path 🟢/🟡, with optional 🔴 parts.
 **Freedom (N-028): low to medium** (G-14, G-21):
 - **Most cells:** run, then read one sentence on what to look at.
-- **✏️ change a value:** at most one per section, plain variables, no Colab sliders (G-12).
-- **Photo browsers** (class picker, ◀ ▶) in section 1 are run-and-look widgets, not ✏️ cells, so G-12 does not
-  apply to them (S14, N-057).
+- **✏️ change a value:** at most one per section, a plain variable or a Colab form control (slider, dropdown), whichever
+  reads better (G-12 withdrawn by Simone, 2026-10-26).
+- **Photo browsers** (class picker, ◀ ▶) in section 1 are run-and-look widgets (S14, N-057).
 - **✍️ write a small function:** ~4 in the notebook, each with a given signature and run through `use(...)` (N-029), so they never block "Run all".
 - **The Challenge** is the most open part, and it never blocks either.
 
@@ -202,7 +202,6 @@ Time = participant minutes at lab pace. **Estimate, not re-timed:** ≈ 108 afte
 ## 7. Out of scope / limitations
 - **No model training** (that's next week). Only the 🔴 nearest-neighbour "ruler" on colour features.
 - **No data augmentation as a technique** (G-6). Augmentation appears only as pre-augmented copies to detect, plus links at the end.
-- **No Colab sliders or forms for values** (G-12).
 - COCO has no camera groups. Any group structure on COCO would be planted, so real groups come only from CCT20.
 
 ## 8. Notebook-specific rules
