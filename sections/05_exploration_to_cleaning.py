@@ -18,13 +18,7 @@
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }
-from IPython.display import HTML, display
-
-display(HTML("""
-<details style="background:#F5F5F5; border:1px solid #9CA3AF;
-                border-radius:6px; padding:12px 16px; color:#374151;">
-<summary style="cursor:pointer;"><strong>💡 Sample Answer</strong></summary>
-
+callout("answer", "💡 Sample Answer", r"""
 <ul>
   <li><strong>Cleaning decisions:</strong> Remove unreadable images and
   confirmed duplicates, keeping one image per duplicate group.
@@ -44,24 +38,12 @@ display(HTML("""
 
 <p><strong>Key takeaway:</strong> Dataset cleaning requires justified
 decisions, not automatic removal of every unusual or similar image.</p>
+""")
 
-</details>
-"""))
 
 # %%
 # @title 📘 Image Dataset Quality Checklist { display-mode: "form" }
-from IPython.display import HTML, display
-
-display(HTML(r"""
-<div class="callout callout-theory"
-     style="background:#E3F2FD;color:#0D47A1;border-left:6px solid #0D47A1;
-            border-radius:6px;padding:12px 14px;line-height:1.5;
-            font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;
-            font-size:14px;width:100%;box-sizing:border-box;
-            white-space:normal;overflow-wrap:break-word;margin:2px 0;">
-
-<div style="font-weight:bold;">📘 Image Dataset Quality Checklist</div>
-
+callout("theory", "📘 Image Dataset Quality Checklist", r"""
 <p style="margin:6px 0;">Before using an image dataset for computer vision, check:</p>
 
 <div style="font-weight:bold;margin:10px 0 4px 0;">Qualitative Inspection</div>
@@ -83,6 +65,6 @@ display(HTML(r"""
 <li style="margin:5px 0;">☐ <strong>Outliers:</strong> Are unusual images identified using different visual features and inspected before deciding whether to keep or remove them?</li>
 <li style="margin:5px 0;">☐ <strong>Duplicates and data leakage:</strong> Are exact and potential near-duplicates reviewed, and are related images kept within the same data split?</li>
 </ul>
+""")
 
-</div>
-"""))
+

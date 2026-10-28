@@ -38,7 +38,7 @@
 # - How do the object sizes vary, and why might this matter for object detection?
 
 # %%
-# @title Box helpers (draw boxes on thumbnails) { display-mode: "form" }
+# @title Helpers: Bounding Boxes { display-mode: "form" }
 def box_area_bucket(w: float, h: float) -> str:
     """COCO's size buckets from a box's width and height in pixels: small < 32², medium < 96², else large."""
     area = w * h
@@ -148,18 +148,16 @@ boxview_show_page()
 # - Which classes change most in their relative frequency?
 # - Why might image-level and object-level class imbalance lead to different conclusions?
 
-# %%
-# @title
-from IPython.display import HTML; HTML(r"""<div class="callout callout-your-turn" style="background:#FFF4D6;color:#7A4A00;border-left:6px solid #7A4A00;border-radius:6px;padding:12px 14px;line-height:1.5;font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;margin:2px 0;">
-<div style="font-weight:bold;">✏️ Your turn · <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">count_boxes_per_class</code></div>
-<p style="margin:6px 0 0 0;">Write the function in the next cell: given an annotations table (one row per animal, with a <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">class</code>
-column), return a dict <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">{class: number of boxes}</code> with <strong>every</strong> class in <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">CLASSES</code> as a key, counts as
-plain <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">int</code>s. <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">use()</code> checks it against the reference and continues with the reference either way.</p>
-</div>""")
+# %% [markdown]
+# **✏️ Your turn · `count_boxes_per_class`**
+#
+# Write the function in the next cell: given an annotations table (one row per animal, with a `class`
+# column), return a dict `{class: number of boxes}` with **every** class in `CLASSES` as a key, counts as
+# plain `int`s. `use()` checks it against the reference and continues with the reference either way.
 
 
 # %%
-# @title Reference solution — peek only if you are stuck { display-mode: "form" }
+# @title Reference solution — run this cell; open it only if you are stuck { display-mode: "form" }
 def _ref_count_boxes_per_class(annotations):
     counts = annotations["class"].value_counts()
     return {c: int(counts.get(c, 0)) for c in CLASSES}
@@ -223,11 +221,8 @@ display(fig)
 plt.close(fig)
 
 # %%
-# @title 💡 Sample Answer
-from IPython.display import HTML; HTML(r"""
-<details style="background:#F5F5F5; border:1px solid #9CA3AF; border-radius:6px; padding:12px 16px; color:#374151;">
-<summary><strong>Sample Answer</strong></summary>
-
+# @title 💡 Sample Answer { display-mode: "form" }
+callout("answer", "💡 Sample Answer", r"""
 <p>
 The class ranking changes because some images contain many animals. Bird and sheep move up when counting bounding boxes, while cat and dog move down because they typically appear individually.
 </p>
@@ -235,9 +230,8 @@ The class ranking changes because some images contain many animals. Bird and she
 <p>
 Image-level counts describe how frequently classes appear in photos, whereas box-level counts describe how many object instances are annotated. Therefore, class imbalance can look very different depending on which unit is counted.
 </p>
-
-</details>
 """)
+
 
 # %% [markdown]
 # ### 🟢 Object Sizes: How Small Are the Animals?
@@ -458,13 +452,7 @@ size_show_page()
 
 # %%
 # @title 💡 Sample Answer: Object Sizes { display-mode: "form" }
-
-from IPython.display import HTML, display
-
-display(HTML("""
-<details style="background:#F5F5F5; border:1px solid #9CA3AF; border-radius:6px; padding:12px 16px; color:#374151;">
-<summary><strong>Sample Answer</strong></summary>
-
+callout("answer", "💡 Sample Answer", r"""
 <p>
 Birds have the smallest bounding boxes by a wide margin, while cats, dogs, and horses are mostly represented by large boxes. Object sizes can vary considerably within a class, depending on the animal's distance from the camera.
 </p>
@@ -472,9 +460,8 @@ Birds have the smallest bounding boxes by a wide margin, while cats, dogs, and h
 <p>
 Small objects are particularly challenging because they contain fewer pixels and less visual detail. This may make distant birds difficult to detect reliably.
 </p>
+""")
 
-</details>
-"""))
 
 # %% [markdown]
 # ### 🟢 Object Positions: Where Are the Animals?
@@ -527,12 +514,7 @@ plt.close(fig)
 
 # %%
 # @title 💡 Sample Answer: Object Positions { display-mode: "form" }
-
-from IPython.display import HTML, display
-
-display(HTML("""
-<details style="background:#F5F5F5; border:1px solid #9CA3AF; border-radius:6px; padding:12px 16px; color:#374151;">
-<summary><strong>Sample Answer</strong></summary>
+callout("answer", "💡 Sample Answer", r"""
 <p>
 Bounding-box centres are concentrated near the middle of the images, suggesting
 that animals are often photographed centrally. Birds and sheep show a wider
@@ -543,8 +525,8 @@ A detector trained mainly on centrally positioned animals may perform less
 reliably near image edges, where fewer training examples are available.
 However, the heatmaps alone do not establish how well the detector performs.
 </p>
-</details>
-"""))
+""")
+
 
 # %% [markdown]
 # ### 🟢 Crowding: How Many Animals Appear Together?
@@ -731,16 +713,10 @@ crowd_show_page()
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }
-
-from IPython.display import HTML, display
-
-display(HTML("""
-<details style="background:#F5F5F5; border:1px solid #9CA3AF; border-radius:6px; padding:12px 16px; color:#374151;">
-<summary><strong>Sample Answer</strong></summary>
+callout("answer", "💡 Sample Answer", r"""
 <p>Images of herd animals, such as sheep or zebras, may contain more annotated objects than images of cats or dogs. Images with many objects often show animals close together, but some animals may still be clearly separated.</p>
 <p>A higher object count does not necessarily mean more crowding. Object size, spacing, and occlusion also matter. Closely packed animals can be difficult to detect individually, increasing the risk of missed or duplicate detections.</p>
-</details>
-"""))
+""")
 
 
 # %% [markdown]
@@ -766,7 +742,7 @@ display(HTML("""
 # - Why is bounding-box overlap only an approximation of how crowded a scene is?
 
 # %%
-# @title IOU Helper Function { display-mode: "form" }
+# @title Helpers: IOU { display-mode: "form" }
 OVERLAP_IOU = 0.1  # two boxes count as overlapping above this IoU
 
 
@@ -854,16 +830,11 @@ display(widgets.VBox([x_slider, y_slider]), overlap_output)
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }
-
-from IPython.display import HTML, display
-
-display(HTML("""
-<details style="background:#F5F5F5; border:1px solid #9CA3AF; border-radius:6px; padding:12px 16px; color:#374151;">
-<summary><strong>Sample Answer</strong></summary>
+callout("answer", "💡 Sample Answer", r"""
 <p>IOU increases as the boxes overlap more strongly, reaching 1 when they are identical. When the boxes move apart, IOU decreases and becomes 0 when they no longer intersect.</p>
 <p>Bounding-box overlap is only an approximation of crowding. Boxes can overlap even when the animals themselves do not, and animals can partially occlude one another without their boxes having a high IOU.</p>
-</details>
-"""))
+""")
+
 
 # %% [markdown]
 # ### 🔴 Crowding: Bounding Box Overlap Across Classes
@@ -972,16 +943,11 @@ display(
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }
-
-from IPython.display import HTML, display
-
-display(HTML("""
-<details style="background:#F5F5F5; border:1px solid #9CA3AF; border-radius:6px; padding:12px 16px; color:#374151;">
-<summary><strong>Sample Answer</strong></summary>
+callout("answer", "💡 Sample Answer", r"""
 <p>Classes with many animals per image may have more overlapping box pairs. However, the ranking can change when comparing the proportion of overlapping pairs, because images with more boxes also have more possible pairs.</p>
 <p>Overlapping boxes make it harder to distinguish individual animals and assign accurate bounding boxes. This can lead to missed objects, inaccurate localization, or duplicate detections. The overlap statistics describe bounding boxes, not necessarily actual occlusion between animals.</p>
-</details>
-"""))
+""")
+
 
 # %% [markdown]
 # ### 🟢 Bounding Box Quality: How Well Do the Boxes Fit?
@@ -1090,17 +1056,12 @@ update_quality_images()
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }
-
-from IPython.display import HTML, display
-
-display(HTML("""
-<details style="background:#F5F5F5; border:1px solid #9CA3AF; border-radius:6px; padding:12px 16px; color:#374151;">
-<summary><strong>Sample Answer</strong></summary>
+callout("answer", "💡 Sample Answer", r"""
 <p>Bounding boxes do not always fit tightly around animals. For example, cats with long tails may require large boxes even though much of the box contains background. In another image, a cat wearing a hat has only its face annotated rather than its entire body.</p>
 <p>Animals are not always fully visible; sometimes only parts of their bodies appear in the image. A reflection of a cat on a car is not annotated, although it looks like a real cat. These examples raise questions about annotation guidelines and which visible objects or parts should be labeled.</p>
 <p>For very small animals, it is difficult to judge box accuracy. Partial visibility, occlusion, unusual poses, and unclear boundaries make annotation challenging. Inconsistent annotations can affect how accurately an object detector learns to localize animals.</p>
-</details>
-"""))
+""")
+
 
 # %% [markdown]
 # ### 🟢 Missing Annotations: Find the Missing Box
@@ -1242,16 +1203,11 @@ missing_inspect()
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }
-
-from IPython.display import HTML, display
-
-display(HTML("""
-<details style="background:#F5F5F5; border:1px solid #9CA3AF; border-radius:6px; padding:12px 16px; color:#374151;">
-<summary><strong>Sample Answer</strong></summary>
+callout("answer", "💡 Sample Answer", r"""
 <p><strong>Finding the error:</strong> Comparing the recorded number of animals with the remaining bounding boxes reveals the affected image. Inspecting that image shows an animal without a bounding box.</p>
 <p><strong>Why it matters:</strong> Missing annotations can be difficult to notice in crowded scenes, particularly when animals overlap or are partially hidden. During training, an unannotated animal may be treated as background, potentially confusing the detector. During evaluation, a correct detection of that animal may incorrectly count as a false positive.</p>
-</details>
-"""))
+""")
+
 
 # %% [markdown]
 # #### Visualizing a Missing Annotation
@@ -1310,14 +1266,7 @@ plt.close(fig)
 
 # %%
 # @title 📘 What Matters for Object Detection? { display-mode: "form" }
-
-from IPython.display import HTML, display
-
-display(HTML("""
-<div style="background:#E3F2FD; border-left:4px solid #0D47A1;
-            padding:14px 18px; border-radius:6px; color:#0D47A1;">
-
-<strong>📘 What Matters for Object Detection?</strong>
+callout("theory", "📘 What Matters for Object Detection?", r"""
 <p>Beyond image classification, object detection requires us to understand
 the characteristics and quality of individual object annotations.</p>
 
@@ -1333,6 +1282,6 @@ the characteristics and quality of individual object annotations.</p>
 <strong>Key principle:</strong> Always consider what is being counted and how
 dataset characteristics relate to the intended computer vision task.
 </p>
+""")
 
-</div>
-"""))
+

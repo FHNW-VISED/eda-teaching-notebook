@@ -2,9 +2,8 @@
 # ## 10. Your project dataset
 
 # %%
-# @title Checklist Dataset Mini-Project
-from IPython.display import HTML; HTML(r"""<div class="callout callout-theory" style="background:#E3F2FD;color:#0D47A1;border-left:6px solid #0D47A1;border-radius:6px;padding:12px 14px;line-height:1.5;font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;margin:2px 0;">
-<div style="font-weight:bold;">📘 Theory · What makes a good dataset</div>
+# @title Checklist Dataset Mini-Project { display-mode: "form" }
+callout("theory", "📘 Theory · What makes a good dataset", r"""
 <ul style="margin:6px 0 0 0;padding-left:22px;">
 <li style="margin:2px 0;"><strong>Does it fit the question?</strong> The images, the classes and the setting must match the job you want the
   model to do.<br><em>Park example:</em> the alert needs a dog seen from a fixed camera in the sheep paddock, not a
@@ -46,23 +45,12 @@ from IPython.display import HTML; HTML(r"""<div class="callout callout-theory" s
   photo they cover. Is it the same for each class? Can you already see imbalances just by looking?</li>
 </ul>
 </details>
-</div>""")
+""")
+
 
 # %%
 # @title 🔗 Resources: Image Datasets and Annotation Tools { display-mode: "form" }
-
-from IPython.display import HTML, display
-
-display(HTML(r"""
-<div style="background:#F3F4F6;color:#4B5563;
-            border-left:6px solid #4B5563;border-radius:6px;
-            padding:12px 14px;line-height:1.5;
-            font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;
-            font-size:14px;width:100%;box-sizing:border-box;
-            white-space:normal;overflow-wrap:break-word;margin:2px 0;">
-
-<div style="font-weight:bold;">🔗 Resources: Image Datasets and Annotation Tools</div>
-
+callout("deeper", "🔗 Resources: Image Datasets and Annotation Tools", r"""
 <p style="margin:6px 0 0 0;">
 Where to find existing image datasets and tools for annotating your own images.
 </p>
@@ -86,12 +74,11 @@ Where to find existing image datasets and tools for annotating your own images.
 <li style="margin:2px 0;"><a href="https://roboflow.com/annotate" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">Roboflow Annotate</a>: browser-based labeling with export to common formats.</li>
 <li style="margin:2px 0;"><a href="https://labelstud.io" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">Label Studio</a>: open-source annotation software that can run locally.</li>
 </ul>
+""")
 
-</div>
-"""))
 
 # %%
-# @title
+# @title 🎯 Objective { display-mode: "form" }
 from IPython.display import HTML; HTML(r"""<div class="callout callout-objective" style="background:#B9E3EA;color:#08505C;border-left:6px solid #08505C;border-radius:6px;padding:12px 14px;line-height:1.5;font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;margin:2px 0;">
 <div style="font-weight:bold;">🎯 Objective</div>
 <p style="margin:6px 0 0 0;">Run the checklist of sections 3 to 6 on your own folder-per-class dataset, and answer the guiding questions
@@ -111,7 +98,7 @@ for it the way we answered them for the park.</p>
 # ```
 
 # %%
-# @title
+# @title ✏️ Your Turn: Point the Notebook at Your Dataset { display-mode: "form" }
 from IPython.display import HTML; HTML(r"""<div class="callout callout-your-turn" style="background:#FFF4D6;color:#7A4A00;border-left:6px solid #7A4A00;border-radius:6px;padding:12px 14px;line-height:1.5;font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;margin:2px 0;">
 <div style="font-weight:bold;">✏️ Your turn · Point the notebook at your dataset (you change one line)</div>
 <p style="margin:6px 0 0 0;">Colab cannot see your laptop's folders, so the dataset first goes where Colab can read it. Pick <strong>one</strong> of
@@ -435,7 +422,7 @@ fig.tight_layout()
 plt.show()
 
 # %%
-# @title
+# @title 🔍 Go Deeper: Detection or Segmentation Project, and Big Datasets { display-mode: "form" }
 from IPython.display import HTML; HTML(r"""<div class="callout callout-go-deeper" style="background:#F3F4F6;color:#4B5563;border-left:6px solid #4B5563;border-radius:6px;padding:12px 14px;line-height:1.5;font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;margin:2px 0;">
 <div style="font-weight:bold;">🔍 Go deeper · Detection or segmentation project, and big datasets</div>
 <p style="margin:6px 0 0 0;">Put all images in one folder inside <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">MY_DATASET_DIR</code> (e.g. <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">…/project/all/</code>). The class counts then say
@@ -624,7 +611,7 @@ RESULTS["swap_in"] = {"source": my_source, "n_images": int(len(my_files)), "n_cl
 # one? Then run the checks on your own dataset and compare.
 
 # %%
-# @title
+# @title 💡 Worked Answer { display-mode: "form" }
 from IPython.display import HTML; HTML(r"""<div class="callout callout-answer" style="background:#F6EFE4;color:#5C4027;border-left:6px solid #5C4027;border-radius:6px;padding:12px 14px;line-height:1.5;font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;margin:2px 0;">
 
 <details style="margin:0;"><summary style="cursor:pointer;font-weight:bold;">💡 Worked answer (Q25, on the sample)</summary>
@@ -664,7 +651,7 @@ from IPython.display import HTML; HTML(r"""<div class="callout callout-answer" s
 #   lower `HASH_THRESHOLD` in section 5 and rerun.
 
 # %%
-# @title
+# @title 🔍 Go Deeper: The Split Is Only a Suggestion { display-mode: "form" }
 from IPython.display import HTML; HTML(r"""<div class="callout callout-go-deeper" style="background:#F3F4F6;color:#4B5563;border-left:6px solid #4B5563;border-radius:6px;padding:12px 14px;line-height:1.5;font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;margin:2px 0;">
 <div style="font-weight:bold;">🔍 Go deeper · The split is only a suggestion</div>
 <p style="margin:6px 0 0 0;">The split comes from what the folders show. Only you know what else ties photos together, such as one
@@ -711,7 +698,7 @@ than the model will earn.</p>
 #    - *Your dataset:*
 
 # %%
-# @title
+# @title ✅ Takeaway { display-mode: "form" }
 from IPython.display import HTML; HTML(r"""<div class="callout callout-takeaway" style="background:#E2F0C4;color:#3A5A0B;border-left:6px solid #3A5A0B;border-radius:6px;padding:12px 14px;line-height:1.5;font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;margin:2px 0;">
 <div style="font-weight:bold;">✅ Takeaway</div>
 <ul style="margin:6px 0 0 0;padding-left:22px;">

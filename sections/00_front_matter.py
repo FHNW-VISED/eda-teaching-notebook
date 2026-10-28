@@ -266,6 +266,40 @@ def use(fn, *args, reference, **kwargs):
     return expected
 
 
+# --- callout(): the notebook's four kinds of box, each with one look (N-025, SN-015) ---
+def callout(kind: str, title: str, body_html: str, fig=None) -> HTML:
+    """One box as HTML, shown when it is the last line of a cell.
+
+    kind: "answer" (💡 Sample Answer, a grey toggle, closed until opened), "theory" (📘 blue), "recipe" (🧾 yellow,
+    Karpathy's quotes) or "deeper" (🔍 grey). `title` is shown as written, icon included; `body_html` is the
+    box's content. `fig`, a matplotlib figure, is drawn inside the box where the body says <!-- fig -->
+    (at the end if it does not).
+    """
+    background, ink, bar = {
+        "answer": ("#F5F5F5", "#374151", "#9CA3AF"),
+        "theory": ("#E3F2FD", "#0D47A1", "#0D47A1"),
+        "recipe": ("#FFF8D6", "#333333", "#F5C400"),
+        "deeper": ("#F3F4F6", "#4B5563", "#4B5563"),
+    }[kind]
+    if fig is not None:
+        buf = BytesIO()
+        fig.savefig(buf, format="png", dpi=130, bbox_inches="tight")
+        plt.close(fig)
+        png = base64.b64encode(buf.getvalue()).decode("utf-8")
+        img = f'<img src="data:image/png;base64,{png}" style="width:100%; height:auto; margin:12px 0;">'
+        body_html = body_html.replace("<!-- fig -->", img) if "<!-- fig -->" in body_html else body_html + img
+    style = (f"background:{background};color:{ink};border-left:6px solid {bar};border-radius:6px;"
+             "padding:12px 14px;line-height:1.5;font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;"
+             "font-size:14px;width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;"
+             "margin:2px 0;")
+    if kind == "answer":
+        inner = (f'<details style="margin:0;">\n<summary style="cursor:pointer;font-weight:bold;">{title}</summary>'
+                 f"\n{body_html}\n</details>")
+    else:
+        inner = f'<div style="font-weight:bold;">{title}</div>\n{body_html}'
+    return HTML(f'<div class="callout callout-{kind}" style="{style}">\n{inner}\n</div>')
+
+
 print(f"Colab: {IN_COLAB} · smoke mode: {SMOKE} · seed: {SEED} · imagehash: ", end="")
 try:
     import imagehash  # noqa: F401
@@ -275,7 +309,7 @@ except ImportError:
     print("missing (run this cell again)")
 
 # %%
-# @title Data helpers (download with cache, build the tables) { display-mode: "form" }
+# @title Helpers: Data Download and Tables { display-mode: "form" }
 import json
 import urllib.error
 import urllib.request

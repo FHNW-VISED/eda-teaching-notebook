@@ -9,16 +9,7 @@
 
 # %%
 # @title 🧾 Recipe · Step 1, continued: Dataset Errors { display-mode: "form" }
-from IPython.display import HTML
-
-HTML(r"""
-<div style="background:#FFF8D6;color:#333333;border-left:6px solid #F5C400;
-            border-radius:6px;padding:12px 14px;line-height:1.5;
-            font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;
-            font-size:14px;width:100%;box-sizing:border-box;margin:2px 0;">
-  <div style="font-weight:bold;margin-bottom:6px;">
-    🧾 Recipe · Step 1, continued: Dataset Errors
-  </div>
+callout("recipe", "🧾 Recipe · Step 1, continued: Dataset Errors", r"""
   <div style="font-style:italic;margin-bottom:6px;">
     “One time I discovered that the data contained duplicate examples.
     Another time I found corrupted images / labels.”
@@ -30,20 +21,20 @@ HTML(r"""
       A Recipe for Training Neural Networks
     </a> (2019).
   </div>
-</div>
 """)
 
+
 # %%
-# @title
-from IPython.display import HTML; HTML(r"""<div class="callout callout-go-deeper" style="background:#F3F4F6;color:#4B5563;border-left:6px solid #4B5563;border-radius:6px;padding:12px 14px;line-height:1.5;font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;margin:2px 0;">
-<div style="font-weight:bold;">🔍 Go deeper · This is ordinary: two Kaggle stories</div>
+# @title 🔍 Go Deeper: Two Kaggle Stories { display-mode: "form" }
+callout("deeper", "🔍 Go deeper · This is ordinary: two Kaggle stories", r"""
 <details style="margin:6px 0 0 0;">
 <summary style="cursor:pointer;font-weight:bold;">Datasets built with care that still shipped duplicates</summary>
 <p style="margin:6px 0 0 0;"><strong>PetFinder.my Pawpularity</strong> (2021) shipped near-identical photos with <em>different</em> scores, and <strong>Cassava
 Leaf Disease</strong> (2020) identical leaf photos with two different labels. Both were built with care. Yours
 will have duplicates too, unless you look.</p>
 </details>
-</div>""")
+""")
+
 
 # %% [markdown]
 # #### 🟢 Duplicate Images: What Can We Detect?
@@ -75,16 +66,7 @@ will have duplicates too, unless you look.</p>
 
 # %%
 # @title 📘 Detecting Duplicates: MD5 vs. Perceptual Hashing { display-mode: "form" }
-from IPython.display import HTML
-
-HTML(r"""
-<div style="background:#E3F2FD;color:#0D47A1;border-left:6px solid #0D47A1;
-            border-radius:6px;padding:12px 14px;line-height:1.5;
-            font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;
-            font-size:14px;width:100%;box-sizing:border-box;margin:2px 0;">
-  <div style="font-weight:bold;margin-bottom:6px;">
-    📘 Detecting Duplicates: MD5 vs. Perceptual Hashing
-  </div>
+callout("theory", "📘 Detecting Duplicates: MD5 vs. Perceptual Hashing", r"""
   <ul style="margin:6px 0;padding-left:22px;">
     <li><strong>MD5:</strong> Computes a hash from file bytes. Identical files have identical hashes, but resizing or recompressing changes the hash.</li>
     <li><strong>Perceptual hashing (pHash):</strong> Represents coarse visual structure using a compact 64-bit hash. Visually similar images often produce similar hashes, even after resizing or recompression.</li>
@@ -98,11 +80,11 @@ HTML(r"""
     The threshold identifies <strong>candidates for visual inspection</strong>,
     not confirmed duplicates.
   </div>
-</div>
 """)
 
+
 # %%
-# @title 🔎 Helpers: Duplicate Detection and Image Quality { display-mode: "form" }
+# @title Helpers: Duplicate Detection and Image Quality { display-mode: "form" }
 MAX_PAIR_BITS = 20  # pairs up to this many differing bits are kept as candidates for the pair browser
 PAIR_THRESHOLD = 8  # the bit distance threshold a pair browser and the copy comparison start with
 
@@ -255,17 +237,7 @@ dup_update_browser()
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }
-from IPython.display import HTML
-
-HTML(r"""
-<div class="callout callout-answer"
-     style="background:#F5F5F5;color:#374151;border-left:6px solid #9CA3AF;
-            border-radius:6px;padding:12px 14px;line-height:1.5;
-            font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;
-            font-size:14px;width:100%;box-sizing:border-box;
-            white-space:normal;overflow-wrap:break-word;margin:2px 0;">
-<details style="margin:0;">
-<summary style="cursor:pointer;font-weight:bold;">💡 Sample Answer</summary>
+callout("answer", "💡 Sample Answer", r"""
 <ul style="margin:6px 0 0 0;padding-left:22px;">
 <li><strong>Exact duplicates:</strong> No byte-identical files were found among the 638 images. MD5 detects identical files, but recompressing an image changes its hash. Even curated datasets should be checked, especially when new images are added or exported.</li>
 
@@ -275,9 +247,8 @@ HTML(r"""
 <li><strong>Go Deeper:</strong> A small bit distance does not prove duplication. Flagged pairs should be inspected before deciding whether to remove or group them during dataset splitting.</li>
 </ul>
 <p style="margin:8px 0 0;"><em>Counts may differ for the smaller smoke-test subset or other thresholds.</em></p>
-</details>
-</div>
 """)
+
 
 # %% [markdown]
 # ### 🔴 Bit Distance Distribution (Optional)
@@ -320,25 +291,14 @@ plt.close(fig)
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }
-from IPython.display import HTML
-
-HTML(r"""
-<div class="callout callout-answer"
-     style="background:#F5F5F5;color:#374151;border-left:6px solid #9CA3AF;
-            border-radius:6px;padding:12px 14px;line-height:1.5;
-            font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;
-            font-size:14px;width:100%;box-sizing:border-box;
-            white-space:normal;overflow-wrap:break-word;margin:2px 0;">
-<details style="margin:0;">
-<summary style="cursor:pointer;font-weight:bold;">💡 Sample Answer</summary>
+callout("answer", "💡 Sample Answer", r"""
 <ul style="margin:6px 0 0 0;padding-left:22px;">
 <li><strong>Distribution:</strong> Most images have a nearest-neighbor bit distance well above a strict duplicate threshold. Only a few pairs have very small distances.</li>
 <li><strong>Threshold:</strong> Increasing the threshold flags more potential duplicates, while decreasing it flags fewer. The underlying distance distribution remains unchanged.</li>
 <li><strong>Trade-off:</strong> A low threshold may miss genuine near-duplicates; a high threshold may flag unrelated images. There is no universally correct threshold, so visual inspection is important.</li>
 </ul>
-</details>
-</div>
 """)
+
 
 # %% [markdown]
 # ### 🔴 How Does Perceptual Hashing Work? (Optional)
@@ -449,26 +409,15 @@ plt.close(fig)
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }
-from IPython.display import HTML
-
-HTML(r"""
-<div class="callout callout-answer"
-     style="background:#F5F5F5;color:#374151;border-left:6px solid #9CA3AF;
-            border-radius:6px;padding:12px 14px;line-height:1.5;
-            font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;
-            font-size:14px;width:100%;box-sizing:border-box;
-            white-space:normal;overflow-wrap:break-word;margin:2px 0;">
-<details style="margin:0;">
-<summary style="cursor:pointer;font-weight:bold;">💡 Sample Answer</summary>
+callout("answer", "💡 Sample Answer", r"""
 <ul style="margin:6px 0 0 0;padding-left:22px;">
 <li><strong>Hash construction:</strong> The image is resized, converted to grayscale, and transformed using the DCT. Selected low-frequency coefficients are converted into a 64-bit hash.</li>
 <li><strong>Near-duplicate:</strong> The recompressed image produces the same hash (0 differing bits), despite changes to its file representation.</li>
 <li><strong>Unrelated image:</strong> The hashes differ in 38 of 64 bits, reflecting different visual structures.</li>
 <li><strong>Interpretation:</strong> pHash captures coarse visual similarity rather than semantic content. Small bit distances suggest potential duplicates but do not guarantee them.</li>
 </ul>
-</details>
-</div>
 """)
+
 
 # %% [markdown]
 # ### 🔴 Detecting Flipped and Rotated Duplicates (Optional)
@@ -629,12 +578,7 @@ print(f"MD5 + transformation-aware pHash detected:\t{score_hunt(variant, duplica
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }
-from IPython.display import HTML
-
-HTML("""
-<details style="background:#F5F5F5;color:#374151;border-left:6px solid #9CA3AF;
-                border-radius:6px;padding:12px 14px;line-height:1.5;">
-  <summary><strong>💡 Sample Answer</strong></summary>
+callout("answer", "💡 Sample Answer", r"""
   <ul>
     <li><strong>MD5:</strong> Detects exact copies because their file bytes are identical.</li>
     <li><strong>Standard pHash:</strong> Can also detect recompressed images, but may miss flipped or rotated copies.</li>
@@ -642,8 +586,8 @@ HTML("""
     <li><strong>Trade-off:</strong> Checking more transformations increases computation and may also produce more false positives.</li>
   </ul>
   <p><strong>Interpretation:</strong> In this experiment, standard hashing detects 3 of 5 known duplicates, compared with 5 of 5 for transformation-aware hashing. This does not mean the latter is always more accurate: unrelated images may also be flagged.</p>
-</details>
 """)
+
 
 # %% [markdown]
 # Why, on one photo and five kinds of copy: the pHash distance to the original, plain vs variant.
@@ -712,20 +656,15 @@ plt.close(fig)
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }
-from IPython.display import HTML
-
-HTML("""
-<details style="background:#F5F5F5;color:#374151;border-left:6px solid #9CA3AF;
-                border-radius:6px;padding:12px 14px;line-height:1.5;">
-  <summary><strong>💡 Sample Answer</strong></summary>
+callout("answer", "💡 Sample Answer", r"""
   <ul>
     <li><strong>Standard pHash:</strong> Detects exact, resized, and recompressed copies, but may miss flipped or rotated images because their bit distances are larger.</li>
     <li><strong>Transformation-aware pHash:</strong> Also detects flipped and rotated copies by comparing multiple transformations. Reversing a flip or rotation can reduce the bit distance to zero.</li>
     <li><strong>Trade-off:</strong> Computing additional hashes increases computational cost and may produce more false positives.</li>
   </ul>
   <p><strong>Important:</strong> A bit distance of zero means the perceptual hashes match, not necessarily that the image files are identical.</p>
-</details>
 """)
+
 
 # %% [markdown]
 # ### 🔴 Identifying Unusual Images (Optional)
@@ -802,19 +741,14 @@ _show_class()
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }
-from IPython.display import HTML
-
-HTML("""
-<details style="background:#F5F5F5;color:#374151;border-left:6px solid #9CA3AF;
-                border-radius:6px;padding:12px 14px;line-height:1.5;">
-  <summary><strong>💡 Sample Answer</strong></summary>
+callout("answer", "💡 Sample Answer", r"""
   <ul>
     <li><strong>Unusual images:</strong> High histogram distances may result from different backgrounds, lighting, colors, or framing.</li>
     <li><strong>Data quality:</strong> Unusual images are not necessarily problematic. They may represent valid variations within a class. Images and labels should be checked before making changes.</li>
     <li><strong>Limitations:</strong> Color histograms ignore spatial structure and object identity. They cannot reliably distinguish unusual backgrounds from incorrect labels or other data quality issues.</li>
   </ul>
-</details>
 """)
+
 
 # %% [markdown]
 # ### 🔴 Exploring Image Embeddings (Optional)
@@ -840,12 +774,7 @@ HTML("""
 
 # %%
 # @title 📘 Image Embeddings, Similarity, and UMAP { display-mode: "form" }
-display(HTML("""
-<div style="background:#E3F2FD; border-left:4px solid #0D47A1;
-            padding:14px 18px; border-radius:6px; color:#0D47A1;">
-
-<strong>📘 Image Embeddings, Similarity, and UMAP</strong>
-
+callout("theory", "📘 Image Embeddings, Similarity, and UMAP", r"""
 <p>Different image representations capture different information:</p>
 
 <ul>
@@ -856,9 +785,8 @@ display(HTML("""
 </ul>
 
 <p><strong>Important:</strong> Similar images are not necessarily duplicates, and unusual images are not necessarily mislabeled. Results depend on the representation and should always be checked against the original images.</p>
+""")
 
-</div>
-"""))
 
 # %%
 # @title Helpers: Image Embeddings { display-mode: "form" }
@@ -1172,13 +1100,7 @@ for c in CLASSES:
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }
-from IPython.display import HTML, display
-
-display(HTML("""
-<details style="background:#F5F5F5; border:1px solid #9CA3AF;
-                border-radius:6px; padding:12px 16px; color:#374151;">
-<summary style="cursor:pointer;"><strong>💡 Sample Answer</strong></summary>
-
+callout("answer", "💡 Sample Answer", r"""
 <ul>
   <li><strong>UMAP:</strong> Pretrained embeddings may group visually similar
   animals more clearly than color histograms. However, overlapping clusters
@@ -1209,6 +1131,6 @@ display(HTML("""
 <p><strong>Key takeaway:</strong> Image similarity depends on the chosen
 representation. Comparing representations reveals different aspects
 of visual diversity and potential data quality issues.</p>
+""")
 
-</details>
-"""))
+

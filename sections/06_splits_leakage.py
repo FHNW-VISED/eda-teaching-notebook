@@ -7,14 +7,7 @@
 
 # %%
 # @title 📘 Data Leakage and Generalization { display-mode: "form" }
-from IPython.display import HTML, display
-
-display(HTML("""
-<div style="background:#E3F2FD; border-left:4px solid #0D47A1;
-            padding:14px 18px; border-radius:6px; color:#0D47A1;">
-
-<strong>📘 Data Leakage and Generalization</strong>
-
+callout("theory", "📘 Data Leakage and Generalization", r"""
 <p>A test set should provide an independent estimate of how well a model
 performs on unseen data.</p>
 
@@ -36,9 +29,8 @@ its evaluation. For example:</p>
 <p><strong>Key principle:</strong> Choose a splitting strategy that reflects
 the intended application. If the model must generalize to new animals,
 cameras, or locations, these groups should be kept separate across splits.</p>
+""")
 
-</div>
-"""))
 
 # %% [markdown]
 # ### 🟢 Random vs. Stratified Splitting: How Do Class Distributions Differ?
@@ -104,12 +96,7 @@ RESULTS["split_drift_stratified_pp"] = float(_drift["stratified · test"].max())
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }
-from IPython.display import HTML, display
-
-display(HTML("""
-<details style="background:#F5F5F5; border:1px solid #9CA3AF;
-                border-radius:6px; padding:12px 16px; color:#374151;">
-<summary style="cursor:pointer;"><strong>💡 Sample Answer</strong></summary>
+callout("answer", "💡 Sample Answer", r"""
 <ul>
 <li><strong>Before running:</strong> Smaller classes may show larger relative deviations because a few images can substantially change their proportions.</li>
 <li><strong>Random split:</strong> Class proportions can differ from the full dataset. The class with the largest relative deviation depends on the random split and should be identified from the results.</li>
@@ -117,8 +104,8 @@ display(HTML("""
 <li><strong>Smaller classes:</strong> Stratification helps ensure that underrepresented classes are represented proportionally in both sets, although very small classes may still have too few test images for reliable evaluation.</li>
 </ul>
 <p><strong>Key takeaway:</strong> Stratification improves class balance across splits, but does not prevent data leakage from duplicate or related images.</p>
-</details>
-"""))
+""")
+
 
 # %% [markdown]
 # ### 🟢 Cross-Validation: How Do We Choose Validation Sets?
@@ -143,14 +130,7 @@ display(HTML("""
 
 # %%
 # @title 📘 Cross-Validation Strategies { display-mode: "form" }
-from IPython.display import HTML, display
-
-display(HTML("""
-<div style="background:#E3F2FD; border-left:4px solid #0D47A1;
-            padding:14px 18px; border-radius:6px; color:#0D47A1;">
-
-<strong>📘 Cross-Validation Strategies</strong>
-
+callout("theory", "📘 Cross-Validation Strategies", r"""
 <p>Cross-validation evaluates a model across multiple training and validation
 splits to estimate its performance and variability.</p>
 
@@ -174,9 +154,8 @@ groups. It requires meaningful group identifiers.</li>
 reflects the intended application. Stratification helps preserve class balance,
 while group-based splitting prevents related images from appearing in both
 training and validation sets.</p>
+""")
 
-</div>
-"""))
 
 # %% [markdown]
 # The diagram shows four strategies using 12 example images from three cameras (D = dog, the rare class). Magenta indicates validation images; gray-blue indicates training images.
@@ -256,12 +235,7 @@ plt.close(fig)
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }
-from IPython.display import HTML, display
-
-display(HTML("""
-<details style="background:#F5F5F5; border:1px solid #9CA3AF;
-                border-radius:6px; padding:12px 16px; color:#374151;">
-<summary style="cursor:pointer;"><strong>💡 Sample Answer</strong></summary>
+callout("answer", "💡 Sample Answer", r"""
 <ul>
 <li><strong>Before running:</strong> Different strategies may produce different class distributions and levels of independence between training and validation images.</li>
 <li><strong>K-fold vs. stratified k-fold:</strong> Standard k-fold may produce folds without examples of a rare class. Stratification aims to preserve class proportions across folds.</li>
@@ -270,8 +244,8 @@ display(HTML("""
 <li><strong>Go Deeper:</strong> Leave-one-out requires one training run per image, making it computationally expensive.</li>
 </ul>
 <p><strong>Key takeaway:</strong> Cross-validation strategies differ in class balance, computational cost, and independence between training and validation data.</p>
-</details>
-"""))
+""")
+
 
 # %% [markdown]
 # ### 🔴 Cross-Validation in Practice (Optional)
@@ -328,20 +302,15 @@ display(pd.DataFrame(cv_rows))
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }
-from IPython.display import HTML, display
-
-display(HTML("""
-<details style="background:#F5F5F5; border:1px solid #9CA3AF;
-                border-radius:6px; padding:12px 16px; color:#374151;">
-<summary style="cursor:pointer;"><strong>💡 Sample Answer</strong></summary>
+callout("answer", "💡 Sample Answer", r"""
 <ul>
 <li><strong>Training runs:</strong> K-fold and stratified k-fold each require 5 training runs. Leave-one-out requires one training run per image (40 in this example, or 12 in smoke mode).</li>
 <li><strong>Small subset:</strong> Leave-one-out is demonstrated on fewer images to limit computational cost. On the full dataset, it would require one training run for every image.</li>
 <li><strong>Single-image validation:</strong> Each LOO fold produces a prediction for only one image. Individual fold accuracy is therefore either 0 or 1, and per-class performance cannot be meaningfully estimated from a single fold.</li>
 </ul>
 <p><strong>Key takeaway:</strong> More folds increase computational cost. Leave-one-out uses nearly all available images for training in each fold, but requires substantially more training runs than k-fold.</p>
-</details>
-"""))
+""")
+
 
 # %% [markdown]
 # ### Group-Based Splitting: The Trail-Camera Dataset
@@ -355,14 +324,8 @@ display(HTML("""
 # The farm park has installed motion-triggered cameras in its woodland reserve. Each camera can capture several images of the same animal within a short period. Such a sequence of closely related images is called a burst.
 
 # %%
-# @title Group-Based Splitting and Data Leakage { display-mode: "form" }
-from IPython.display import HTML, display
-
-display(HTML("""
-<div style="background:#E3F2FD; border-left:4px solid #0D47A1; padding:14px 18px; border-radius:6px; color:#0D47A1;">
-
-<strong>📘 Group-Based Splitting and Data Leakage</strong>
-
+# @title 📘 Group-Based Splitting and Data Leakage { display-mode: "form" }
+callout("theory", "📘 Group-Based Splitting and Data Leakage", r"""
 <p>
 Images captured in the same burst are often very similar. If some appear in training and others in testing, the model may achieve overly optimistic test results. This is a form of <strong>data leakage</strong>.
 </p>
@@ -381,12 +344,11 @@ Different splitting strategies address different goals:
 <p>
 The <strong>sibling rate</strong> measures the percentage of test images that have at least one image from the same burst in the training set. A higher rate indicates greater potential for leakage.
 </p>
+""")
 
-</div>
-"""))
 
 # %%
-# @title Prepare Trail-Camera Helpers { display-mode: "form" }
+# @title Helpers: Trail Cameras { display-mode: "form" }
 CCT_DIR = DATA_DIR / "cache" / "cct20"
 CCT_SIDE = 512
 CCT_CLASSES = ["opossum", "raccoon", "coyote", "bobcat", "rabbit"]
@@ -672,12 +634,7 @@ split_update()
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }
-from IPython.display import HTML, display
-
-display(HTML("""
-<details style="background:#F5F5F5; border:1px solid #9CA3AF; border-radius:6px; padding:12px 16px; color:#374151;">
-<summary><strong>💡 Sample Answer</strong></summary>
-
+callout("answer", "💡 Sample Answer", r"""
 <ul>
   <li><strong>Random splitting:</strong> Images from the same burst can appear in both training and test sets, potentially leading to overly optimistic results.</li>
   <li><strong>Stratified splitting:</strong> Preserves class proportions but does not prevent burst-level leakage.</li>
@@ -692,9 +649,8 @@ Group-based splitting may produce a test share different from 20% because entire
 <p>
 <strong>Choosing a strategy:</strong> Grouping by burst is appropriate for evaluating new observations at existing cameras. Grouping by camera provides a more realistic evaluation when deploying a model at new camera locations.
 </p>
+""")
 
-</details>
-"""))
 
 # %%
 # @title 🔴 Splitting for Object Detection and Segmentation { display-mode: "form" }

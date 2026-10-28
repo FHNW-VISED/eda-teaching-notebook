@@ -14,15 +14,8 @@
 #
 
 # %%
-# @title Semantic Segmentation: Masks and Pixels { display-mode: "form" }
-from IPython.display import HTML, display
-
-display(HTML("""
-<div style="background:#E3F2FD; border-left:4px solid #0D47A1;
-            padding:14px 18px; border-radius:6px; color:#0D47A1;">
-
-<strong>📘 Semantic Segmentation: Masks and Pixels</strong>
-
+# @title 📘 Semantic Segmentation: Masks and Pixels { display-mode: "form" }
+callout("theory", "📘 Semantic Segmentation: Masks and Pixels", r"""
 <ul>
 <li><strong>Binary mask:</strong> A two-dimensional array indicating which pixels
 belong to an object (1) and which do not (0).</li>
@@ -38,9 +31,8 @@ separate masks, even when they belong to the same class.</li>
 Our COCO dataset provides instance-level segmentation annotations.
 We can combine these masks to obtain pixel-level class labels for semantic segmentation.
 </p>
+""")
 
-</div>
-"""))
 
 # %% [markdown]
 # ### 🟢 Exploring Segmentation Masks
@@ -60,7 +52,7 @@ We can combine these masks to obtain pixel-level class labels for semantic segme
 # - Which animal characteristics might make accurate segmentation difficult?
 
 # %%
-# @title Mask helpers and data preparation { display-mode: "form" }
+# @title Helpers: Masks and Data Preparation { display-mode: "form" }
 MIN_JUDGED_AREA = 32**2  # masks under COCO's "small" limit (32×32 px) are too few pixels to judge their shape
 THIN_PX = 7  # parts narrower than this many photo pixels count as thin (about 2 px at 224×224)
 BLOB_SHARE = 0.005  # pieces and holes under 0.5 % of the mask (or 16 px) are rasterisation noise, not shape
@@ -253,13 +245,7 @@ maskview_show_page()
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }
-from IPython.display import HTML, display
-
-display(HTML("""
-<details style="background:#F5F5F5; border:1px solid #9CA3AF;
-                border-radius:6px; padding:12px 16px; color:#374151;">
-<summary><strong>Sample Answer</strong></summary>
-
+callout("answer", "💡 Sample Answer", r"""
 <ul>
 <li><strong>Animal vs. background:</strong> The proportion of animal pixels varies
 considerably. Some animals occupy large parts of an image, while others cover
@@ -272,9 +258,8 @@ closely, excluding background pixels that fall inside bounding boxes.</li>
 and beaks, as well as small or partially hidden animals, can be difficult
 to segment accurately.</li>
 </ul>
+""")
 
-</details>
-"""))
 
 # %% [markdown]
 # ### 🟢 Pixel-Level Class Imbalance
@@ -294,16 +279,8 @@ to segment accurately.</li>
 # - How might these differences affect the training and evaluation of a segmentation model?
 
 # %%
-# @title Pixel-Level Class Imbalance { display-mode: "form" }
-
-from IPython.display import HTML, display
-
-display(HTML("""
-<div style="background:#E3F2FD; border-left:4px solid #0D47A1;
-            padding:14px 18px; border-radius:6px; color:#0D47A1;">
-
-<strong>📘 Pixel-Level Class Imbalance</strong>
-
+# @title 📘 Pixel-Level Class Imbalance { display-mode: "form" }
+callout("theory", "📘 Pixel-Level Class Imbalance", r"""
 <p>In semantic segmentation, each pixel is assigned a class label,
 including background. This changes how we measure class imbalance.</p>
 
@@ -316,9 +293,8 @@ than small animals, even when both count as one object.</li>
 larger regions generally contribute more loss terms. Class weighting or
 alternative loss functions can help address this imbalance.</li>
 </ul>
+""")
 
-</div>
-"""))
 
 # %%
 
@@ -453,13 +429,7 @@ plt.close(fig)
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }
-from IPython.display import HTML, display
-
-display(HTML("""
-<details style="background:#F5F5F5; border:1px solid #9CA3AF;
-                border-radius:6px; padding:12px 16px; color:#374151;">
-<summary><strong>Sample Answer</strong></summary>
-
+callout("answer", "💡 Sample Answer", r"""
 <ul>
 <li><strong>Background dominance:</strong> About 85% of all pixels belong to the background.
 Animals occupy only about 15%.</li>
@@ -474,9 +444,8 @@ images, objects, or pixels. Background dominance and small animal regions
 can make segmentation challenging, particularly when using an unweighted
 pixel-wise loss.</li>
 </ul>
+""")
 
-</details>
-"""))
 
 # %% [markdown]
 # ### 🟢 Mask Size, Shape, and Fine Structures
@@ -672,16 +641,8 @@ show_masks(images_by_id.loc[list(_most_thin["image_id"])].reset_index(), masks,
            cols=N_THIN_SHOW)
 
 # %%
-
 # @title 💡 Sample Answer { display-mode: "form" }
-
-from IPython.display import HTML, display
-
-display(HTML("""
-<details style="background:#F5F5F5; border:1px solid #9CA3AF;
-                border-radius:6px; padding:12px 16px; color:#374151;">
-<summary><strong>Sample Answer</strong></summary>
-
+callout("answer", "💡 Sample Answer", r"""
 <ul>
 <li><strong>Mask size:</strong> Cats and dogs often occupy larger portions
 of an image, while birds tend to have smaller masks.</li>
@@ -712,9 +673,7 @@ during preprocessing.</li>
 <p><strong>Key insight:</strong> Mask geometry depends on both object
 size and shape. Comparing all masks with sufficiently large masks
 helps distinguish small-object effects from genuinely thin structures.</p>
-
-</details>
-"""))
+""")
 
 
 # %% [markdown]
@@ -763,15 +722,8 @@ display(fig)
 plt.close(fig)
 
 # %%
-
 # @title 💡 Sample Answer { display-mode: "form" }
-
-from IPython.display import HTML, display
-
-display(HTML("""
-<details style="background:#F5F5F5; border:1px solid #9CA3AF;
-                border-radius:6px; padding:12px 16px; color:#374151;">
-<summary><strong>Sample Answer</strong></summary>
+callout("answer", "💡 Sample Answer", r"""
 <ul>
   <li><strong>Observation:</strong> Animal pixels are concentrated near
       the image center across all classes. Cats and dogs occupy
@@ -788,8 +740,7 @@ display(HTML("""
 <p><strong>Limitation:</strong> The heatmaps show how frequently each
 pixel location belongs to an animal, not where individual animals
 always appear. Averaging also hides variation between images.</p>
-</details>
-"""))
+""")
 
 
 # %% [markdown]
@@ -815,7 +766,7 @@ always appear. Averaging also hides variation between images.</p>
 # - Why might a valid COCO mask be flagged as suspicious?
 
 # %%
-# @title Simulate Mask Annotation Errors { display-mode: "form" }
+# @title Helpers: Simulate Mask Annotation Errors { display-mode: "form" }
 
 MASK_ERROR_KINDS = ["another animal", "chunk missing", "shifted", "swollen", "crude polygon"]
 SHIFT_PX = 15
@@ -1316,29 +1267,14 @@ fig.suptitle(
 )
 fig.tight_layout()
 
-# Convert the figure to an image without displaying it separately.
-_buf = BytesIO()
-fig.savefig(_buf, format="png", dpi=130, bbox_inches="tight")
-plt.close(fig)
-
-_img = base64.b64encode(_buf.getvalue()).decode("utf-8")
 _items = "".join(f"<li>{escape(line)}</li>" for line in _lines)
 
-# Display the complete answer inside one collapsible grey box.
-display(HTML(f"""
-<details style="background:#F5F5F5; border:1px solid #9CA3AF;
-                border-radius:6px; padding:12px 16px;
-                color:#374151; line-height:1.5;">
-
-<summary style="cursor:pointer;">
-  <strong>Sample Answer</strong>
-</summary>
-
+# The complete answer inside one collapsible grey box; the figure goes where the body says <!-- fig -->.
+callout("answer", "💡 Sample Answer", f"""
 <p><strong>Which errors were detected?</strong></p>
 <ul>{_items}</ul>
 
-<img src="data:image/png;base64,{_img}"
-     style="width:100%; height:auto; margin:12px 0;">
+<!-- fig -->
 
 <p><strong>Why did these checks detect the errors?</strong></p>
 <ul>
@@ -1376,9 +1312,7 @@ display(HTML(f"""
 potential geometric inconsistencies, not necessarily incorrect
 annotations. Combining checks helps prioritize visual inspection,
 but cannot replace it.</p>
-
-</details>
-"""))
+""", fig=fig)
 
 
 # %% [markdown]

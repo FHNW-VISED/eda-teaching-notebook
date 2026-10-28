@@ -6,17 +6,14 @@
 # The park ranger wants to use computer vision for three different tasks:
 
 # %%
-
-# @title Computer Vision Tasks
-from IPython.display import HTML
-HTML(r"""<div class="callout callout-theory" style="background:#E3F2FD;color:#0D47A1;border-left:6px solid #0D47A1;border-radius:6px;padding:12px 14px;line-height:1.5;font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;margin:2px 0;">
-<div style="font-weight:bold;">📘 Three Computer Vision Tasks</div>
+# @title 📘 Computer Vision Tasks { display-mode: "form" }
+callout("theory", "📘 Three Computer Vision Tasks", r"""
 <ol style="margin:6px 0 0 0;padding-left:22px;">
 <li style="margin:2px 0;"><strong>Classification – Recognize:</strong> What animal is shown in the image? The park ranger wants to identify dogs entering the sheep paddock so they can intervene before the sheep are harmed.</li>
 <li style="margin:2px 0;"><strong>Object Detection – Count:</strong> How many sheep, zebras, or birds are visible, and where are they located?</li>
 <li style="margin:2px 0;"><strong>Segmentation – Monitor Space Usage:</strong> Which areas of the image are occupied by animals? The park ranger wants to understand how animals use the space in their enclosures.</li>
 </ol>
-</div>""")
+""")
 
 
 # %% [markdown]
@@ -34,20 +31,8 @@ HTML(r"""<div class="callout callout-theory" style="background:#E3F2FD;color:#0D
 # - `annotations`: One row per annotated animal, including its bounding box and segmentation mask.
 
 # %%
-
 # @title 🧾 Karpathy's Recipe · Step 1 { display-mode: "form" }
-from IPython.display import HTML
-
-HTML(r"""
-<div class="callout callout-recipe"
-     style="background:#FFF8D6;color:#333333;border-left:6px solid #F5C400;
-            border-radius:6px;padding:12px 14px;line-height:1.5;
-            font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;
-            font-size:14px;width:100%;box-sizing:border-box;
-            white-space:normal;overflow-wrap:break-word;margin:2px 0;">
-
-<div style="font-weight:bold;">🧾 Recipe · Step 1: Become one with the data</div>
-
+callout("recipe", "🧾 Recipe · Step 1: Become one with the data", r"""
 <p style="margin:6px 0 0 0;"><em>
 "The first step to training a neural net is to not touch any neural net code at all and instead begin by
 thoroughly inspecting your data. This step is critical. I like to spend copious amount of time (measured in
@@ -62,8 +47,6 @@ Andrej Karpathy,
    style="color:inherit;text-decoration:underline;">
 A Recipe for Training Neural Networks</a> (2019).
 </p>
-
-</div>
 """)
 
 
@@ -95,7 +78,7 @@ A Recipe for Training Neural Networks</a> (2019).
 # - Which images might be challenging for an image classification model, and why?
 
 # %%
-# @title 🔎 Sample example photos per class, framed in the class colour { display-mode: "form" }
+# @title 🔎 Explore Example Images per Class { display-mode: "form" }
 _per_class = 6
 fig, axes = plt.subplots(_per_class, len(CLASSES), figsize=(13, 2.2 * _per_class))
 for j, c in enumerate(CLASSES):
@@ -239,21 +222,8 @@ display(
 # 3. …
 
 # %%
-
 # @title 💡 Sample Answer { display-mode: "form" }
-from IPython.display import HTML
-
-HTML(r"""
-<div class="callout callout-answer"
-     style="background:#F5F5F5;color:#374151;border-left:6px solid #9CA3AF;
-            border-radius:6px;padding:12px 14px;line-height:1.5;
-            font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;
-            font-size:14px;width:100%;box-sizing:border-box;
-            white-space:normal;overflow-wrap:break-word;margin:2px 0;">
-
-<details style="margin:0;">
-<summary style="cursor:pointer;font-weight:bold;">💡 Sample Answer</summary>
-
+callout("answer", "💡 Sample Answer", r"""
 <p style="margin:6px 0 0 0;">
 Example observations from different animal classes. Your findings may differ.
 </p>
@@ -271,9 +241,6 @@ Example observations from different animal classes. Your findings may differ.
 <p style="margin:6px 0 0 0;">
 Keep your observations in mind when evaluating your own dataset for the mini-project.
 </p>
-
-</details>
-</div>
 """)
 
 
@@ -288,28 +255,14 @@ Keep your observations in mind when evaluating your own dataset for the mini-pro
 #
 
 # %%
-
-# @title 💡 Sample Answer
-from IPython.display import HTML
-
-HTML(r"""
-<div class="callout callout-answer"
-     style="background:#F5F5F5;color:#374151;border-left:6px solid #9CA3AF;
-            border-radius:6px;padding:12px 14px;line-height:1.5;
-            font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;
-            font-size:14px;width:100%;box-sizing:border-box;
-            white-space:normal;overflow-wrap:break-word;margin:2px 0;">
-
-<details style="margin:0;">
-<summary style="cursor:pointer;font-weight:bold;">💡 Sample answer</summary>
+# @title 💡 Sample Answer { display-mode: "form" }
+callout("answer", "💡 Sample Answer", r"""
 <p style="margin:6px 0 0 0;">
 Cats and dogs often appear in indoor, close-up photos with people or furniture,
 making them less representative of the park's fixed outdoor cameras.
 Sheep, horses, and zebras are more often shown outdoors and at greater distances,
 making their images somewhat closer to the park's camera views.
 </p>
-</details>
-</div>
 """)
 
 
@@ -485,16 +438,7 @@ ann_show_image(0)
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }
-from IPython.display import HTML
-
-HTML(r"""
-<div style="background:#F5F5F5;color:#374151;border-left:6px solid #9CA3AF;
-            border-radius:6px;padding:12px 14px;line-height:1.5;
-            font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;
-            font-size:14px;width:100%;box-sizing:border-box;margin:2px 0;">
-
-<details style="margin:0;">
-<summary style="cursor:pointer;font-weight:bold;">💡 Sample Answer</summary>
+callout("answer", "💡 Sample Answer", r"""
 <p style="margin:6px 0 0 0;">
 <strong>Class labels</strong> identify the animal category.
 <strong>Bounding boxes</strong> indicate where animals are located using rectangles,
@@ -502,9 +446,8 @@ while <strong>segmentation masks</strong> outline their shapes more precisely.
 Annotations are not always accurate: some masks extend beyond the animal,
 some body parts are missing, and groups of animals may be annotated inconsistently.
 </p>
-</details>
-</div>
 """)
+
 
 # %% [markdown]
 # #### 🔴 Image Classification: One Label per Image
@@ -513,16 +456,7 @@ some body parts are missing, and groups of animals may be annotated inconsistent
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }
-from IPython.display import HTML
-
-HTML(r"""
-<div style="background:#F5F5F5;color:#374151;border-left:6px solid #9CA3AF;
-            border-radius:6px;padding:12px 14px;line-height:1.5;
-            font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;
-            font-size:14px;width:100%;box-sizing:border-box;margin:2px 0;">
-
-<details style="margin:0;">
-<summary style="cursor:pointer;font-weight:bold;">💡 Sample Answer</summary>
+callout("answer", "💡 Sample Answer", r"""
 <p style="margin:6px 0 0 0;">
 A single class label does not indicate how many animals are present,
 where they are located, or whether other classes appear in the image.
@@ -532,6 +466,6 @@ This can make classification difficult because the label may not reflect
 the most prominent image content. Image classification is also unsuitable
 when the goal is to locate or count individual animals.
 </p>
-</details>
-</div>
 """)
+
+

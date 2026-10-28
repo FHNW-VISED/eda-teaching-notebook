@@ -7,18 +7,7 @@
 
 # %%
 # @title 🧾 Recipe · Step 1, continued { display-mode: "form" }
-from IPython.display import HTML
-
-HTML(r"""
-<div class="callout callout-recipe"
-     style="background:#FFF8D6;color:#333333;border-left:6px solid #F5C400;
-            border-radius:6px;padding:12px 14px;line-height:1.5;
-            font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;
-            font-size:14px;width:100%;box-sizing:border-box;
-            white-space:normal;overflow-wrap:break-word;margin:2px 0;">
-
-<div style="font-weight:bold;">🧾 Recipe · Step 1, continued: Search, Filter, Sort</div>
-
+callout("recipe", "🧾 Recipe · Step 1, continued: Search, Filter, Sort", r"""
 <p style="margin:6px 0 0 0;"><em>
 "Once you get a qualitative sense it is also a good idea to write some simple code to search/filter/sort
 by whatever you can think of (e.g. type of label, size of annotations, number of annotations, etc.) and
@@ -32,24 +21,12 @@ Andrej Karpathy,
    target="_blank" rel="noopener"
    style="color:inherit;text-decoration:underline;">A Recipe for Training Neural Networks</a> (2019).
 </p>
-
-</div>
 """)
+
 
 # %%
 # @title 📘 Image Properties: What Can We Measure? { display-mode: "form" }
-from IPython.display import HTML
-
-HTML(r"""
-<div class="callout callout-theory"
-     style="background:#E3F2FD;color:#0D47A1;border-left:6px solid #0D47A1;
-            border-radius:6px;padding:12px 14px;line-height:1.5;
-            font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;
-            font-size:14px;width:100%;box-sizing:border-box;
-            white-space:normal;overflow-wrap:break-word;margin:2px 0;">
-
-<div style="font-weight:bold;">📘 Image Properties: What Can We Measure?</div>
-
+callout("theory", "📘 Image Properties: What Can We Measure?", r"""
 <p style="margin:6px 0;">
 We can measure image properties to identify patterns, unusual values, and potential data quality issues.
 These measurements do not require class labels and can be applied to any image dataset.
@@ -62,15 +39,14 @@ These measurements do not require class labels and can be applied to any image d
 <li style="margin:4px 0;"><strong>Contrast:</strong> Variation in pixel intensity, indicating differences between dark and bright regions.</li>
 <li style="margin:4px 0;"><strong>Colorfulness:</strong> How strongly image colors differ from gray.</li>
 </ul>
-
-</div>
 """)
+
 
 # %% [markdown]
 # The next code cells calculate these properties for each image and store the results in a table called `image_stats`.
 
 # %%
-# @title Measurement helpers { display-mode: "form" }
+# @title Helpers: Measurement { display-mode: "form" }
 HIST_BINS = 32
 CHANNEL_COLORS = {"R": "#C0392B", "G": "#27AE60", "B": "#2980B9"}
 COLOR_MODES = ["RGB", "L", "RGBA", "CMYK"]  # the modes we always report, even when the count is 0
@@ -267,28 +243,14 @@ show_min_median_max(image_stats, STAT_COLUMNS)
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }
-from IPython.display import HTML
-
-HTML(r"""
-<div class="callout callout-answer"
-     style="background:#F5F5F5;color:#374151;border-left:6px solid #9CA3AF;
-            border-radius:6px;padding:12px 14px;line-height:1.5;
-            font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;
-            font-size:14px;width:100%;box-sizing:border-box;
-            white-space:normal;overflow-wrap:break-word;margin:2px 0;">
-
-<details style="margin:0;">
-<summary style="cursor:pointer;font-weight:bold;">💡 Sample Answer</summary>
-
+callout("answer", "💡 Sample Answer", r"""
 <ul style="margin:6px 0 0 0;padding-left:22px;">
 <li style="margin:4px 0;"><strong>Image dimensions:</strong> Most images are relatively small, with widths up to 640 pixels. Some have unusual aspect ratios, such as a very wide zebra image.</li>
 <li style="margin:4px 0;"><strong>Brightness:</strong> Images range from very dark to very bright. Animals may be harder to recognize in extreme lighting conditions.</li>
 <li style="margin:4px 0;"><strong>Potential issues:</strong> Extreme aspect ratios and lighting conditions deserve closer inspection. They are not necessarily errors, but may affect model performance.</li>
 </ul>
-
-</details>
-</div>
 """)
+
 
 # %% [markdown]
 # #### 🟢 Image Dimensions: What Do Their Distributions Reveal?
@@ -362,25 +324,14 @@ plt.close(fig)
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }
-from IPython.display import HTML
-
-HTML(r"""
-<div class="callout callout-answer"
-     style="background:#F5F5F5;color:#374151;border-left:6px solid #9CA3AF;
-            border-radius:6px;padding:12px 14px;line-height:1.5;
-            font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;
-            font-size:14px;width:100%;box-sizing:border-box;
-            white-space:normal;overflow-wrap:break-word;margin:2px 0;">
-<details style="margin:0;">
-<summary style="cursor:pointer;font-weight:bold;">💡 Sample Answer</summary>
+callout("answer", "💡 Sample Answer", r"""
 <ul style="margin:6px 0 0 0;padding-left:22px;">
 <li><strong>Image dimensions:</strong> The scatter plot shows horizontal and vertical bands around 500 and 640 pixels. Many images share the same width or height, suggesting standardized image sizes rather than completely random dimensions.</li>
 <li><strong>Aspect ratios:</strong> Images include both landscape and portrait orientations, with common ratios around 4:3 and 3:4. The animal classes overlap considerably, although their distributions may differ.</li>
 <li><strong>Implications:</strong> Images may require resizing or padding before training. At the park, fixed cameras could produce characteristic image sizes. If these correlate with animal classes, a model might learn camera-specific shortcuts instead of recognizing the animals.</li>
 </ul>
-</details>
-</div>
 """)
+
 
 # %% [markdown]
 # #### 🟢 Color Modes and Colors: What Do They Reveal?
@@ -486,17 +437,7 @@ plt.close(fig)
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }
-from IPython.display import HTML
-
-HTML(r"""
-<div class="callout callout-answer"
-     style="background:#F5F5F5;color:#374151;border-left:6px solid #9CA3AF;
-            border-radius:6px;padding:12px 14px;line-height:1.5;
-            font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;
-            font-size:14px;width:100%;box-sizing:border-box;
-            white-space:normal;overflow-wrap:break-word;margin:2px 0;">
-<details style="margin:0;">
-<summary style="cursor:pointer;font-weight:bold;">💡 Sample Answer</summary>
+callout("answer", "💡 Sample Answer", r"""
 <ul style="margin:6px 0 0 0;padding-left:22px;">
 <li><strong>Color modes:</strong> 637 images are RGB (three channels) and one is grayscale (L, one channel of brightness values from 0 to 255). Converting an L image to RGB duplicates its brightness values across three channels, ensuring consistent model inputs.</li>
 <li><strong>Grayscale appearance:</strong> 17 images appear grayscale, but most are stored as RGB. Appearance and storage mode are not necessarily the same.</li>
@@ -509,9 +450,8 @@ HTML(r"""
 <li><strong>Variability bands:</strong> The shaded areas show the 25th–75th percentile of pixel-intensity frequencies across images within each class. Wider bands indicate greater variation between images, while narrow bands indicate more consistent distributions.</li>
 <li><strong>Potential shortcuts:</strong> A model might associate certain colors or backgrounds with particular animals instead of learning their visual features. Such shortcuts could fail when the animals are photographed in different environments, such as the park.</li>
 </ul>
-</details>
-</div>
 """)
+
 
 # %% [markdown]
 # #### 🟢 Image Properties: Are Extreme Values Problematic?
@@ -539,25 +479,14 @@ show_extremes(image_stats, STAT_TO_SHOW, N_IMAGES)
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }
-from IPython.display import HTML
-
-HTML(r"""
-<div class="callout callout-answer"
-     style="background:#F5F5F5;color:#374151;border-left:6px solid #9CA3AF;
-            border-radius:6px;padding:12px 14px;line-height:1.5;
-            font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;
-            font-size:14px;width:100%;box-sizing:border-box;
-            white-space:normal;overflow-wrap:break-word;margin:2px 0;">
-<details style="margin:0;">
-<summary style="cursor:pointer;font-weight:bold;">💡 Sample Answer</summary>
+callout("answer", "💡 Sample Answer", r"""
 <ul style="margin:6px 0 0 0;padding-left:22px;">
 <li><strong>Extreme values:</strong> Very dark images may show animals in shadows or at dusk, while bright images may contain snow, sand, or overexposed regions. Unusual aspect ratios can indicate very wide or tall images.</li>
 <li><strong>Data quality:</strong> Extreme values are not necessarily errors. Images showing realistic lighting or unusual viewpoints may be valuable for training.</li>
 <li><strong>Further inspection:</strong> Uniform gray images, photos of screens, or images where the animal is barely recognizable deserve closer inspection. Depending on the use case, they may need cleaning, exclusion, or special handling.</li>
 </ul>
-</details>
-</div>
 """)
+
 
 # %% [markdown]
 # #### 🔴 Brightness: How Do Distributions Differ Between Classes? (Optional)
@@ -597,17 +526,7 @@ plt.close(fig)
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }
-from IPython.display import HTML
-
-HTML(r"""
-<div class="callout callout-answer"
-     style="background:#F5F5F5;color:#374151;border-left:6px solid #9CA3AF;
-            border-radius:6px;padding:12px 14px;line-height:1.5;
-            font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;
-            font-size:14px;width:100%;box-sizing:border-box;
-            white-space:normal;overflow-wrap:break-word;margin:2px 0;">
-<details style="margin:0;">
-<summary style="cursor:pointer;font-weight:bold;">💡 Sample Answer</summary>
+callout("answer", "💡 Sample Answer", r"""
 <ul style="margin:6px 0 0 0;padding-left:22px;">
 <li><strong>Median brightness:</strong> Some animal classes have higher median brightness than others, suggesting differences in typical lighting or backgrounds.</li>
 <li><strong>Variation:</strong> Wider and taller violins indicate greater variation in brightness. Some classes contain both very dark and very bright images.</li>
@@ -618,9 +537,8 @@ HTML(r"""
 <li><strong>Potential shortcuts:</strong> A model might associate certain brightness levels with particular animals instead of recognizing their visual features. This could reduce performance under different lighting conditions.</li>
 <li><strong>Beyond summary statistics:</strong> Violin plots reveal where brightness values are concentrated, how widely they vary, and how much the classes overlap. Medians and ranges alone cannot show these patterns.</li>
 </ul>
-</details>
-</div>
 """)
+
 
 # %% [markdown]
 # #### 🟢 Class Distribution: Are All Animal Classes Equally Represented?
@@ -636,16 +554,7 @@ HTML(r"""
 
 # %%
 # @title 🧾 Recipe · Step 1, continued: Imbalances and Biases { display-mode: "form" }
-from IPython.display import HTML
-
-HTML(r"""
-<div style="background:#FFF8D6;color:#333333;border-left:6px solid #F5C400;
-            border-radius:6px;padding:12px 14px;line-height:1.5;
-            font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;
-            font-size:14px;width:100%;box-sizing:border-box;margin:2px 0;">
-  <div style="font-weight:bold;margin-bottom:6px;">
-    🧾 Recipe · Step 1, continued: Imbalances and Biases
-  </div>
+callout("recipe", "🧾 Recipe · Step 1, continued: Imbalances and Biases", r"""
   <div style="font-style:italic;margin-bottom:6px;">
     “I look for data imbalances and biases.”
   </div>
@@ -656,8 +565,8 @@ HTML(r"""
       A Recipe for Training Neural Networks
     </a> (2019).
   </div>
-</div>
 """)
+
 
 # %%
 # @title 🔎 Explore Class Distribution { display-mode: "form" }
@@ -686,17 +595,7 @@ plt.close(fig)
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }
-from IPython.display import HTML
-
-HTML(r"""
-<div class="callout callout-answer"
-     style="background:#F5F5F5;color:#374151;border-left:6px solid #9CA3AF;
-            border-radius:6px;padding:12px 14px;line-height:1.5;
-            font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;
-            font-size:14px;width:100%;box-sizing:border-box;
-            white-space:normal;overflow-wrap:break-word;margin:2px 0;">
-<details style="margin:0;">
-<summary style="cursor:pointer;font-weight:bold;">💡 Sample Answer</summary>
+callout("answer", "💡 Sample Answer", r"""
 <ul style="margin:6px 0 0 0;padding-left:22px;">
 <li><strong>Class distribution:</strong> Cats and dogs have the most images (130 each), while sheep have the fewest (59). The largest classes contain about 2.2 times as many images as the smallest.</li>
 <li><strong>Dataset bias:</strong> People may photograph pets more frequently than sheep. The distribution reflects the Flickr photo collection, not necessarily what the park's cameras will capture.</li>
@@ -704,9 +603,8 @@ HTML(r"""
 <li><strong>Park use case:</strong> Dogs are common in the Play Dataset but may rarely enter the sheep paddock. Detecting these rare events reliably is important, even if dogs are well represented in the training data. Overall accuracy alone may not reflect this performance.</li>
 </ul>
 <p style="margin:8px 0 0;"><em>Note: The smaller smoke-test dataset may have a different, more balanced class distribution.</em></p>
-</details>
-</div>
 """)
+
 
 # %% [markdown]
 # #### 🟢 Animals per Image: How Common Are Multiple Animals?
@@ -752,17 +650,7 @@ show_rows(_crowded, "the most crowded photos", lambda r: f"{r['n_objects']} × {
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }
-from IPython.display import HTML
-
-HTML(r"""
-<div class="callout callout-answer"
-     style="background:#F5F5F5;color:#374151;border-left:6px solid #9CA3AF;
-            border-radius:6px;padding:12px 14px;line-height:1.5;
-            font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;
-            font-size:14px;width:100%;box-sizing:border-box;
-            white-space:normal;overflow-wrap:break-word;margin:2px 0;">
-<details style="margin:0;">
-<summary style="cursor:pointer;font-weight:bold;">💡 Sample Answer</summary>
+callout("answer", "💡 Sample Answer", r"""
 <ul style="margin:6px 0 0 0;padding-left:22px;">
 <li><strong>Multiple animals:</strong> On the full Play Dataset, 244 of 638 images (38%) contain more than one annotated animal. The most crowded image contains 26.</li>
 <li><strong>Class differences:</strong> Sheep have the highest average (5.7 animals per image), followed by birds (3.4) and zebras (3.2). Cats and dogs usually appear individually.</li>
@@ -773,22 +661,12 @@ HTML(r"""
 <ul style="margin:4px 0 0 0;padding-left:22px;">
 <li><strong>Classification limitation:</strong> One image label does not describe how many animals are present or where they are located. This matters if the park needs to count animals or monitor their movements; object detection or segmentation would be more suitable.</li>
 </ul>
-</details>
-</div>
 """)
+
 
 # %%
 # @title 📘 Labeling Strategies: One Label or Multiple Animals? { display-mode: "form" }
-from IPython.display import HTML
-
-HTML(r"""
-<div style="background:#E3F2FD;color:#0D47A1;border-left:6px solid #0D47A1;
-            border-radius:6px;padding:12px 14px;line-height:1.5;
-            font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;
-            font-size:14px;width:100%;box-sizing:border-box;margin:2px 0;">
-  <div style="font-weight:bold;margin-bottom:6px;">
-    📘 Labeling Strategies: One Label or Multiple Animals?
-  </div>
+callout("theory", "📘 Labeling Strategies: One Label or Multiple Animals?", r"""
   <ul style="margin:6px 0;padding-left:22px;">
     <li><strong>Single-label classification:</strong> Assigns one class to an entire image, even if several animals are present.</li>
     <li><strong>Multi-label classification:</strong> Identifies all animal classes present, such as both sheep and dog.</li>
@@ -798,8 +676,8 @@ HTML(r"""
     Our COCO subset excludes images containing multiple selected animal classes.
     This removes examples such as dogs among sheep—exactly the situations the park's dog alert needs to recognize.
   </div>
-</div>
 """)
+
 
 # %% [markdown]
 # #### 🔴 Class Imbalance: Can High Accuracy Be Misleading?
@@ -888,17 +766,7 @@ print(
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }
-from IPython.display import HTML
-
-HTML(r"""
-<div class="callout callout-answer"
-     style="background:#F5F5F5;color:#374151;border-left:6px solid #9CA3AF;
-            border-radius:6px;padding:12px 14px;line-height:1.5;
-            font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;
-            font-size:14px;width:100%;box-sizing:border-box;
-            white-space:normal;overflow-wrap:break-word;margin:2px 0;">
-<details style="margin:0;">
-<summary style="cursor:pointer;font-weight:bold;">💡 Sample Answer</summary>
+callout("answer", "💡 Sample Answer", r"""
 <ul style="margin:6px 0 0 0;padding-left:22px;">
 <li><strong>Rule A:</strong> In the full COCO subset, the largest class contains 130 of 638 images, giving approximately 20% accuracy. Dog recall is 0% if the rule always predicts cat, or 100% if it always predicts dog.</li>
 <li><strong>Rule B:</strong> Always predicting "no dog" gives 98% accuracy but 0% dog recall when 2% of images contain dogs. None of these dogs triggers an alert.</li>
@@ -906,6 +774,6 @@ HTML(r"""
 <li><strong>Implications:</strong> High accuracy can be misleading for imbalanced datasets. For the park's dog alert, detecting dogs is essential, so dog recall matters; false alarms must also be considered.</li>
 </ul>
 <p style="margin:8px 0 0;"><em>Results for Rule A may differ when using the smaller smoke-test subset.</em></p>
-</details>
-</div>
 """)
+
+
