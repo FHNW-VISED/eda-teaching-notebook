@@ -394,19 +394,23 @@ def build_tables(coco: dict, paths: dict[int, Path]) -> tuple[pd.DataFrame, pd.D
     cat_name = {c["id"]: c["name"] for c in coco["categories"]}
     lic_name = {lic["id"]: lic["name"] for lic in coco.get("licenses", [])}
     anns = pd.DataFrame(
-        {
-            "id": a["id"],
-            "image_id": a["image_id"],
-            "class": cat_name[a["category_id"]],
-            "bbox": a["bbox"],
-            "area": a["area"],
-            "segmentation": a["segmentation"],
-            "iscrowd": a["iscrowd"],
-        }
-        for a in coco["annotations"]
-        if a["image_id"] in paths
+        [
+            {
+                "id": a["id"],
+                "image_id": a["image_id"],
+                "class": cat_name[a["category_id"]],
+                "bbox": a["bbox"],
+                "area": a["area"],
+                "segmentation": a["segmentation"],
+                "iscrowd": a["iscrowd"],
+            }
+            for a in coco["annotations"]
+            if a["image_id"] in paths
+        ],
+        columns=["id", "image_id", "class", "bbox", "area", "segmentation", "iscrowd"],
     )
-    per_image_class = anns.groupby("image_id")["class"].first()
+    # An image's class is its most frequent annotation class (ties: the first seen); no annotation: "(no objects)".
+    per_image_class = anns.groupby("image_id")["class"].agg(lambda s: Counter(s).most_common(1)[0][0])
     n_objects = anns.groupby("image_id").size()
     imgs = pd.DataFrame(
         {
@@ -415,7 +419,7 @@ def build_tables(coco: dict, paths: dict[int, Path]) -> tuple[pd.DataFrame, pd.D
             "path": str(paths[im["id"]]),
             "width": im["width"],
             "height": im["height"],
-            "class": per_image_class.get(im["id"]),
+            "class": per_image_class.get(im["id"], "(no objects)"),
             "n_objects": int(n_objects.get(im["id"], 0)),
             "license": lic_name.get(im["license"], str(im["license"])),
         }
@@ -427,26 +431,34 @@ def build_tables(coco: dict, paths: dict[int, Path]) -> tuple[pd.DataFrame, pd.D
     return imgs, anns
 
 
-# %%
+PARK_CLASSES = ("cat", "dog", "bird", "horse", "sheep", "zebra")  # the Play Dataset's animals, in setup's order
+
+
+def load_play_dataset(per_class: int | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """The Play Dataset as `images` and `annotations`: download its images (cached), build the tables.
+
+    per_class=None takes the whole Play Dataset; a number takes that many images per class, sampled with SEED.
+    """
+    coco = json.loads(fetch_manifest("coco_animals_subset.json").read_text())
+    cat_name = {c["id"]: c["name"] for c in coco["categories"]}
+    image_class = {a["image_id"]: cat_name[a["category_id"]] for a in coco["annotations"]}
+    rows = coco["images"]
+    if per_class is not None:
+        rng = random.Random(SEED)
+        rows = []
+        for c in PARK_CLASSES:
+            of_class = [im for im in coco["images"] if image_class[im["id"]] == c]
+            rows += sorted(rng.sample(of_class, min(per_class, len(of_class))), key=lambda im: im["id"])
+    print(f"{len(rows)} images to fetch from images.cocodataset.org (cached in {IMAGE_CACHE}/)")
+    paths = download_images(rows)
+    if len(paths) < len(rows):
+        print(f"  ⚠️ {len(rows) - len(paths)} images could not be downloaded and are left out; run again.")
+    return build_tables(coco, paths)
+
+
+# %% edition="teaching"
 # @title Load the manifest, download the images, build the tables { display-mode: "form" }
-coco_raw = json.loads(fetch_manifest("coco_animals_subset.json").read_text())
-_cat_name = {c["id"]: c["name"] for c in coco_raw["categories"]}
-_image_class = {a["image_id"]: _cat_name[a["category_id"]] for a in coco_raw["annotations"]}
-
-_rows = coco_raw["images"]
-if SMOKE:  # same code path, fewer images (N-014)
-    _rng = random.Random(SEED)
-    _rows = []
-    for c in CLASSES:
-        _of_class = [im for im in coco_raw["images"] if _image_class[im["id"]] == c]
-        _rows += sorted(_rng.sample(_of_class, SMOKE_IMAGES_PER_CLASS), key=lambda im: im["id"])
-
-print(f"{len(_rows)} images to fetch from images.cocodataset.org (cached in {IMAGE_CACHE}/)")
-_paths = download_images(_rows)
-if len(_paths) < len(_rows):
-    print(f"  ⚠️ {len(_rows) - len(_paths)} images could not be downloaded and are left out; run again.")
-
-images, annotations = build_tables(coco_raw, _paths)
+images, annotations = load_play_dataset(SMOKE_IMAGES_PER_CLASS if SMOKE else None)  # fewer in smoke (N-014)
 images_by_id = images.set_index("id")  # the same table, looked up by image id
 RESULTS["n_images"] = int(len(images))
 
