@@ -383,20 +383,27 @@ class CocoBuilder:
 
     def __init__(self):
         self.images, self.annotations, self.paths, self.categories = [], [], {}, {}
+        self.unreadable = []  # files that cannot be opened as images: left out, and counted in the report card
 
     def category(self, name) -> int:
         return self.categories.setdefault(str(name), len(self.categories) + 1)
 
-    def image(self, path: Path, root: Path) -> int:
-        with Image.open(path) as im:  # reads the file header only
-            width, height = im.size
+    def image(self, path: Path, root: Path) -> int | None:
+        try:
+            with Image.open(path) as im:  # reads the file header only
+                width, height = im.size
+        except OSError:  # not an image after all, or a broken file
+            self.unreadable.append(str(path.relative_to(root)))
+            return None
         image_id = len(self.images) + 1
         self.images.append({"id": image_id, "file_name": str(path.relative_to(root)), "width": width,
                             "height": height, "license": "your dataset"})
         self.paths[image_id] = path
         return image_id
 
-    def annotation(self, image_id: int, name, bbox=None, segmentation=None, area=None) -> None:
+    def annotation(self, image_id: int | None, name, bbox=None, segmentation=None, area=None) -> None:
+        if image_id is None:  # its image could not be opened
+            return
         if area is None:
             area = float(bbox[2] * bbox[3]) if bbox is not None else None
         self.annotations.append({"id": len(self.annotations) + 1, "image_id": image_id,
@@ -405,7 +412,11 @@ class CocoBuilder:
 
     def result(self) -> tuple[dict, dict]:
         cats = [{"id": i, "name": n} for n, i in self.categories.items()]
-        return {"images": self.images, "annotations": self.annotations, "categories": cats}, self.paths
+        if self.unreadable:
+            print(f"⚠️ {len(self.unreadable)} files cannot be opened as images and are left out, e.g. "
+                  f"{self.unreadable[0]}.")
+        return {"images": self.images, "annotations": self.annotations, "categories": cats,
+                "unreadable": self.unreadable}, self.paths
 
 
 def _images_under(root: Path, skip_dirs=()) -> list[Path]:
@@ -509,7 +520,7 @@ def read_coco(root: Path) -> tuple[dict, dict]:
         if path is None:
             missing += 1
             continue
-        new_id[im["id"]] = coco.image(path, root)
+        new_id[im["id"]] = coco.image(path, root)  # None if it cannot be opened: its annotations are skipped
     for a in raw["annotations"]:
         if a["image_id"] in new_id:
             coco.annotation(new_id[a["image_id"]], names[a["category_id"]], bbox=a.get("bbox"),
@@ -554,6 +565,8 @@ def read_yolo(root: Path) -> tuple[dict, dict]:
             unmatched += 1
             continue
         image_id = coco.image(path, root)
+        if image_id is None:
+            continue
         width, height = coco.images[-1]["width"], coco.images[-1]["height"]
         for n, line in enumerate(t.read_text().splitlines(), 1):
             values = line.split()
@@ -593,6 +606,8 @@ def read_voc(root: Path) -> tuple[dict, dict]:
             print(f"⚠️ {x.name}: no image named {name}: skipped.")
             continue
         image_id = coco.image(path, root)
+        if image_id is None:
+            continue
         for obj in tree.iter("object"):
             box = obj.find("bndbox")
             x0, y0, x1, y1 = (float(box.findtext(k)) for k in ("xmin", "ymin", "xmax", "ymax"))
@@ -613,7 +628,7 @@ def read_png_masks(root: Path) -> tuple[dict, dict]:
     for path in _images_under(root, skip_dirs=MASK_DIRS):
         image_id = coco.image(path, root)
         mask_path = masks.get(path.stem)
-        if mask_path is None:
+        if image_id is None or mask_path is None:
             continue
         with Image.open(mask_path) as m:
             if m.mode not in ("L", "P", "I", "I;16"):
