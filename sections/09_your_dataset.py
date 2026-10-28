@@ -77,7 +77,7 @@ Where to find existing image datasets and tools for annotating your own images.
 """)
 
 
-# %%
+# %% edition="own"
 # @title 🎯 Objective { display-mode: "form" }
 from IPython.display import HTML; HTML(r"""<div class="callout callout-objective" style="background:#B9E3EA;color:#08505C;border-left:6px solid #08505C;border-radius:6px;padding:12px 14px;line-height:1.5;font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;margin:2px 0;">
 <div style="font-weight:bold;">🎯 Objective</div>
@@ -85,7 +85,7 @@ from IPython.display import HTML; HTML(r"""<div class="callout callout-objective
 for it the way we answered them for the park.</p>
 </div>""")
 
-# %% [markdown]
+# %% [markdown] edition="own"
 # Your project has its own dataset, and it deserves the same twenty minutes of looking before anybody trains
 # on it. This section runs the checklist on **any folder-per-class dataset**: one sub-folder per class, the
 # images inside. The sub-folder names become the class names.
@@ -97,264 +97,17 @@ for it the way we answered them for the park.</p>
 # └── tulip/      …
 # ```
 
-# %%
-# @title ✏️ Your Turn: Point the Notebook at Your Dataset { display-mode: "form" }
-from IPython.display import HTML; HTML(r"""<div class="callout callout-your-turn" style="background:#FFF4D6;color:#7A4A00;border-left:6px solid #7A4A00;border-radius:6px;padding:12px 14px;line-height:1.5;font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;margin:2px 0;">
-<div style="font-weight:bold;">✏️ Your turn · Point the notebook at your dataset (you change one line)</div>
-<p style="margin:6px 0 0 0;">Colab cannot see your laptop's folders, so the dataset first goes where Colab can read it. Pick <strong>one</strong> of
-the three options, then do the last step.</p>
-<p style="margin:6px 0 0 0;"><strong>Option A · Upload it to this Colab session</strong> (fastest; gone when the session ends)</p>
-<ol style="margin:6px 0 0 0;padding-left:22px;">
-<li style="margin:2px 0;"><strong>Zip the dataset folder</strong> on your laptop: Mac, right-click the folder → <em>Compress</em>; Windows,
-   right-click → <em>Send to</em> → <em>Compressed (zipped) folder</em>. Colab uploads files, not folders.</li>
-<li style="margin:2px 0;">Click the 📁 <strong>Files</strong> icon in Colab's left bar and <strong>drag the zip into it</strong> (or use the upload icon at
-   the top of the pane). Wait until the progress circle at the bottom left disappears.</li>
-<li style="margin:2px 0;"><strong>Right-click the zip → Copy path.</strong> It looks like <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">/content/my_dataset.zip</code>; the notebook unzips it.</li>
-</ol>
-<p style="margin:6px 0 0 0;">⚠️ Colab deletes uploaded files when the session ends (closing the tab for a while, or <em>Disconnect and
-delete runtime</em>): next time, upload the zip again.</p>
-<p style="margin:6px 0 0 0;"><strong>Option B · Use Google Drive</strong> (stays between sessions; slower the first time)</p>
-<ol style="margin:6px 0 0 0;padding-left:22px;">
-<li style="margin:2px 0;"><strong>Put the dataset on your Drive</strong> at <a href="https://drive.google.com" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">drive.google.com</a>: <em>New → Folder upload</em>
-   for the folder, or <em>File upload</em> for a zip.</li>
-<li style="margin:2px 0;"><strong>Connect Drive to Colab:</strong> in the 📁 Files pane, click the <strong>Mount Drive</strong> icon (a folder with the
-   Drive logo) and allow access in the window that opens. A <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">drive/</code> folder appears in the pane.</li>
-<li style="margin:2px 0;">Open <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">drive/MyDrive/</code>, find the folder whose sub-folders are your classes (or the zip), <strong>right-click →
-   Copy path.</strong> It looks like <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">/content/drive/MyDrive/project/my_dataset</code>.</li>
-</ol>
-<p style="margin:6px 0 0 0;"><strong>Option C · Paste a Google Drive link to a zip</strong> (no mounting, no browsing)</p>
-<ol style="margin:6px 0 0 0;padding-left:22px;">
-<li style="margin:2px 0;">In Drive, right-click the <strong>zip</strong> → <em>Share</em> → <em>Copy link</em>. It looks like
-   <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">https://drive.google.com/file/d/1I9D…/view?usp=drive_link</code>.</li>
-<li style="margin:2px 0;">Paste the whole link as the path. If the zip is shared as <em>Anyone with the link</em>, it downloads straight
-   away; if it is private, Colab asks you to sign in with the Google account that can open it.</li>
-</ol>
-<p style="margin:6px 0 0 0;">Links to a Drive <em>folder</em> do not work: zip the folder first, or use option B.</p>
-<p style="margin:6px 0 0 0;"><strong>Last step, all options:</strong> paste the path between the quotes in the next cell, click into that cell, and
-run everything from there: <strong>Runtime → Run cell and below</strong>. If the path is not right, the cell after it
-stops with a plain message that says what to change.</p>
-<ul style="margin:6px 0 0 0;padding-left:22px;">
-<li style="margin:2px 0;">✅ <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">/content/my_dataset.zip</code> (A), <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">/content/drive/MyDrive/project/my_dataset</code> (B) or
-  <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">https://drive.google.com/file/d/…/view</code> (C): the folder that holds <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">daisy/</code>, <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">rose/</code>, <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">tulip/</code>, or a zip
-  of it.</li>
-<li style="margin:2px 0;">❌ <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">…/my_dataset/daisy</code>: one class folder, one level too deep.</li>
-<li style="margin:2px 0;">❌ a folder that holds <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">train/</code> and <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">val/</code>: point at <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">…/train</code> instead (then at <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">…/val</code>, if you like).</li>
-</ul>
-<p style="margin:6px 0 0 0;">Leave it at <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">None</code> to see the whole section on a small park sample first.</p>
-</div>""")
-
-# %%
+# %% edition="own"
 # ✏️ YOUR TURN
 MY_DATASET_DIR = None  # paste your path between quotes, e.g. "/content/my_dataset.zip"
 
-# %%
-# @title Dataset reader: finds your class folders, or says exactly what to change { display-mode: "form" }
-import zipfile
-
-IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tif", ".tiff", ".webp"}
-SPLIT_NAMES = {"train", "training", "val", "valid", "validation", "test", "testing", "dev"}
-MY_MAX_IMAGES = 2000  # larger datasets are sampled down to this many photos, stratified by class
-
-
-def _visible(folder: Path) -> list[Path]:
-    """The entries of `folder` that are not hidden or system files (.DS_Store, __MACOSX, …)."""
-    return sorted(f for f in folder.iterdir() if not f.name.startswith((".", "_")))
-
-
-def _is_image(f: Path) -> bool:
-    return f.is_file() and f.suffix.lower() in IMAGE_SUFFIXES
-
-
-def _contents(folder: Path, limit: int = 8) -> str:
-    """One line per entry: 'name/ (12 images)' for folders, the name for files."""
-    lines = []
-    for f in _visible(folder)[:limit]:
-        n = sum(_is_image(g) for g in f.rglob("*")) if f.is_dir() else None
-        lines.append(f"    {f.name}/  ({n} images)" if f.is_dir() else f"    {f.name}")
-    more = len(_visible(folder)) - limit
-    return "\n".join(lines + ([f"    … and {more} more"] if more > 0 else [])) or "    (empty)"
-
-
-def drive_file_id(url: str) -> str:
-    """The file id in a Google Drive share link; stops with advice for a folder link or another site.
-
-    e.g. drive_file_id("https://drive.google.com/file/d/1I9De…/view?usp=drive_link") → "1I9De…"
-    """
-    if "drive.google.com/drive/folders" in url:
-        raise SystemExit("❌ MY_DATASET_DIR: this is a link to a Drive *folder*. Zip the folder, upload the "
-                         "zip to Drive and share the zip's link, or use option B (Mount Drive, Copy path).")
-    found = re.search(r"/file/d/([\w-]+)", url) or re.search(r"[?&]id=([\w-]+)", url)
-    if "drive.google.com" not in url or not found:
-        raise SystemExit("❌ MY_DATASET_DIR: links work only for a Google Drive file, like "
-                         "https://drive.google.com/file/d/<id>/view. For anything else, download it and use "
-                         "option A.")
-    return found[1]
-
-
-def _drive_public_download(file_id: str, dest: Path) -> bool:
-    """Download a file shared as 'Anyone with the link'. False if Drive answers with a page, not the file."""
-    url = f"https://drive.usercontent.google.com/download?id={file_id}&export=download&confirm=t"
-    try:
-        with urllib.request.urlopen(url, timeout=60) as r:
-            first = r.read(4)
-            if first[:2] != b"PK":  # not a zip: the sign-in page (private file) or a 'not found' page
-                return False
-            part = dest.with_suffix(".part")  # renamed only when complete, so a cut download is not reused
-            with open(part, "wb") as f:
-                f.write(first)
-                while chunk := r.read(1 << 20):
-                    f.write(chunk)
-                    if f.tell() % (25 << 20) < (1 << 20):
-                        print(f"\r  downloading {dest.name}: {f.tell() / 1e6:.0f} MB", end="", flush=True)
-            part.rename(dest)
-        print(f"\r  downloaded {dest.name}: {dest.stat().st_size / 1e6:.0f} MB")
-        return True
-    except urllib.error.HTTPError:  # 404: a wrong id, or a file that is gone
-        return False
-    except OSError as err:  # the connection dropped: say so, and start over next time
-        dest.with_suffix(".part").unlink(missing_ok=True)
-        raise SystemExit(f"❌ the download from Drive stopped halfway ({err}). Run the cell again: it starts "
-                         "over.") from None
-
-
-def _drive_signed_in_download(file_id: str, folder: Path) -> Path:
-    """Colab only: sign in with Google and download a private file through the Drive API."""
-    from google.colab import auth
-    from googleapiclient.discovery import build
-    from googleapiclient.http import MediaIoBaseDownload
-
-    print("ℹ️ the file is not shared publicly: sign in with the Google account that can open it.")
-    auth.authenticate_user()
-    drive = build("drive", "v3")
-    meta = drive.files().get(fileId=file_id, fields="name,mimeType", supportsAllDrives=True).execute()
-    if meta["mimeType"] == "application/vnd.google-apps.folder":
-        drive_file_id("drive.google.com/drive/folders/")  # stops with the folder advice
-    dest = folder / meta["name"]
-    part = dest.with_suffix(".part")  # renamed only when complete, so a cut download is not reused
-    with open(part, "wb") as f:
-        download = MediaIoBaseDownload(f, drive.files().get_media(fileId=file_id, supportsAllDrives=True))
-        done = False
-        while not done:
-            status, done = download.next_chunk()
-            print(f"\r  downloading {dest.name}: {status.progress():.0%}", end="", flush=True)
-    part.rename(dest)
-    print()
-    return dest
-
-
-def fetch_drive_link(url: str) -> Path:
-    """Download the zip behind a Google Drive share link (once per session) and return its local path."""
-    file_id = drive_file_id(url)
-    folder = DATA_DIR / "cache" / "my_upload" / f"drive_{file_id}"
-    done = sorted(folder.glob("*.zip")) if folder.exists() else []
-    if done:
-        return done[0].resolve()
-    folder.mkdir(parents=True, exist_ok=True)
-    if _drive_public_download(file_id, folder / "dataset.zip"):
-        return (folder / "dataset.zip").resolve()
-    if IN_COLAB:
-        return _drive_signed_in_download(file_id, folder).resolve()
-    raise SystemExit("❌ MY_DATASET_DIR: Drive did not hand out this file without a sign-in, so it is "
-                     "private (or the link is wrong). In Colab the notebook asks you to sign in; elsewhere, "
-                     "open the file in Drive → Share → General access → 'Anyone with the link'.")
-
-
-def find_dataset(path) -> Path:
-    """The folder that holds the class folders. Stops with a plain message saying what to change if the
-    path cannot be used; unzips a .zip and steps into a lone wrapper folder on its own.
-
-    e.g. find_dataset("/content/flowers.zip") → Path("data/cache/my_upload/flowers/flowers")
-    """
-    text = str(path).strip().strip("'\"")
-    p = fetch_drive_link(text) if text.startswith(("http://", "https://")) else Path(text).expanduser()
-    if str(p).startswith("/content/drive") and IN_COLAB and not Path("/content/drive/MyDrive").exists():
-        from google.colab import drive  # Step 1, Drive route: connect it on first use
-
-        drive.mount("/content/drive")
-    if p.is_file() and p.suffix.lower() == ".zip":
-        dest = (DATA_DIR / "cache" / "my_upload" / p.stem).resolve()  # absolute, so messages are pastable
-        if not dest.exists():
-            with zipfile.ZipFile(p) as z:
-                z.extractall(dest)
-        print(f"ℹ️ unzipped {p.name} into {dest}")
-        p = dest
-    if not p.exists():
-        parent = next(q for q in p.parents if q.exists())
-        raise SystemExit(f"❌ MY_DATASET_DIR: {p} does not exist (a typo, or the upload is not there).\n"
-                         f"   The nearest folder that exists is {parent}, which holds:\n{_contents(parent)}\n"
-                         "   Copy the path from the Files pane: right-click the folder → Copy path.")
-    if p.is_file():
-        raise SystemExit(f"❌ MY_DATASET_DIR: {p} is a file. Point at the folder that holds your class "
-                         f"folders, or at a .zip. It sits in {p.parent}, which holds:\n{_contents(p.parent)}")
-    while True:  # a zip often wraps everything in one more folder: step into it
-        subdirs = [d for d in _visible(p) if d.is_dir()]
-        loose = [f for f in _visible(p) if _is_image(f)]
-        if len(subdirs) == 1 and not loose and any(d.is_dir() for d in _visible(subdirs[0])):
-            print(f"ℹ️ {p.name}/ holds only the folder {subdirs[0].name}/: using that.")
-            p = subdirs[0]
-            continue
-        break
-    names = {d.name.lower() for d in subdirs}
-    if subdirs and names <= SPLIT_NAMES:
-        first = p / sorted(d.name for d in subdirs)[0]
-        raise SystemExit(f"❌ MY_DATASET_DIR: {p} holds split folders ({', '.join(sorted(names))}), "
-                         f"not class folders. Point at one of them, e.g. {first}, and run the section "
-                         "again for the other.")
-    if not subdirs and loose:
-        raise SystemExit(f"❌ MY_DATASET_DIR: {p} holds {len(loose)} images but no class folders. If this "
-                         f"is one class folder, point one level up, at {p.parent}. If your project has no "
-                         "classes (detection, segmentation), move the images into one folder inside, e.g. "
-                         f"{p / 'all'}.")
-    if not any(_is_image(f) for f in p.rglob("*")):
-        raise SystemExit(f"❌ MY_DATASET_DIR: {p} holds no image files "
-                         f"({', '.join(sorted(IMAGE_SUFFIXES))}). "
-                         f"It holds:\n{_contents(p)}")
-    return p
-
-
-def list_folder_per_class(root) -> pd.DataFrame:
-    """One row per image file under `root`: columns path, file, class (the top-level folder it sits in).
-
-    e.g. a row: {"path": "/content/flowers/rose/img_7.jpg", "file": "rose/img_7.jpg", "class": "rose"}
-    """
-    rows = []
-    for class_dir in (d for d in _visible(Path(root)) if d.is_dir()):
-        for f in sorted(class_dir.rglob("*")):
-            if _is_image(f) and not f.name.startswith("."):
-                rows.append({"path": str(f), "file": str(f.relative_to(root)), "class": class_dir.name})
-    return pd.DataFrame(rows, columns=["path", "file", "class"])
-
-
-def folder_notes(root: Path, files: pd.DataFrame) -> list[str]:
-    """Warnings about what the reader skipped or what makes the checks weak (one line each)."""
-    root = Path(root)
-    notes = []
-    loose = [f.name for f in _visible(root) if _is_image(f)]
-    if loose:
-        notes.append(f"⚠️ {len(loose)} images sit directly in {root.name}/, outside any class folder: "
-                     "skipped.")
-    others = [f for d in _visible(root) if d.is_dir() for f in d.rglob("*")
-              if f.is_file() and not _is_image(f) and not f.name.startswith(".")]
-    skipped = Counter(f.suffix.lower() or "(no extension)" for f in others)
-    if skipped:
-        notes.append("⚠️ skipped files that are not images: "
-                     + ", ".join(f"{n} × {ext}" for ext, n in skipped.most_common()))
-    empty = [d.name for d in _visible(root) if d.is_dir() and d.name not in set(files["class"])]
-    if empty:
-        notes.append(f"⚠️ class folders with no images: {', '.join(empty)}.")
-    if files["class"].nunique() == 1:
-        notes.append("⚠️ only one class folder: check 1 has nothing to compare (fine for a detection "
-                     "project).")
-    return notes
-
-
-# %% [markdown]
+# %% [markdown] edition="own"
 # The next cell reads your folder (or, with `None`, builds the park sample: 20 cleaned photos per class plus
 # **three planted problems**, an exact copy of a cat, a mirrored dog and a grayscale bird). It prints what it
 # found and shows three images per class: **check that these are your images and your class names** before
 # reading anything else.
 
-# %%
+# %% edition="own"
 # @title Read your folder (or build the sample), and show what was found { display-mode: "form" }
 MY_SAMPLE_DIR = DATA_DIR / "cache" / "my_dataset"
 MY_SAMPLE_PER_CLASS = 4 if SMOKE else 20  # photos per class in the sample (N-014: fewer in smoke mode)
@@ -421,7 +174,7 @@ fig.suptitle("A first look: are these your images and your classes?", color=INK)
 fig.tight_layout()
 plt.show()
 
-# %%
+# %% edition="own"
 # @title 🔍 Go Deeper: Detection or Segmentation Project, and Big Datasets { display-mode: "form" }
 from IPython.display import HTML; HTML(r"""<div class="callout callout-go-deeper" style="background:#F3F4F6;color:#4B5563;border-left:6px solid #4B5563;border-radius:6px;padding:12px 14px;line-height:1.5;font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;margin:2px 0;">
 <div style="font-weight:bold;">🔍 Go deeper · Detection or segmentation project, and big datasets</div>
@@ -431,12 +184,12 @@ Images deeper inside a class folder count, other files are listed and skipped. D
 <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">MY_MAX_IMAGES</code> photos are sampled down, keeping the class shares, so the checks stay at a minute or two.</p>
 </div>""")
 
-# %% [markdown]
+# %% [markdown] edition="own"
 # Four checks run next and end in one report card. Check 1 counts the images per folder, as Class Distribution did for
 # the park: the **ratio** is the
 # largest class divided by the smallest (in the park about 130 cats against 59 sheep, 2 : 1 to 3 : 1).
 
-# %%
+# %% edition="own"
 # @title Check 1: images per class, and the largest : smallest ratio { display-mode: "form" }
 my_counts = my_files["class"].value_counts().reindex(my_classes)
 fig, ax = plt.subplots(figsize=(max(5, 0.8 * len(my_classes) + 2), 3.2))
@@ -450,14 +203,14 @@ my_imbalance = float(my_counts.max() / my_counts.min())
 print(f"largest {my_counts.idxmax()} ({my_counts.max()}) · smallest {my_counts.idxmin()} ({my_counts.min()}) "
       f"· ratio {my_imbalance:.1f} : 1")
 
-# %% [markdown]
+# %% [markdown] edition="own"
 # 💡 Look at the ratio: up to 3 : 1 is common; from 10 : 1 accuracy hides the small class (Class Imbalance).
 
-# %% [markdown]
+# %% [markdown] edition="own"
 # Check 2 opens every file with `is_readable`, then reads its size (width × height) and its color mode (`RGB`
 # stores three color channels, `L` one gray channel).
 
-# %%
+# %% edition="own"
 # @title Check 2: readable? size and color mode of every file { display-mode: "form" }
 # (Quantitative Inspection's measure_image on a small thumbnail)
 _my_rows = []
@@ -486,15 +239,15 @@ print(f"distinct sizes: {_ok.groupby(['width', 'height']).ngroups} · "
       f"to {int(_ok[['width', 'height']].max(axis=1).max())} px")
 display(my_stats[my_stats["mode"] != "RGB"].head(10))
 
-# %% [markdown]
+# %% [markdown] edition="own"
 # 💡 Look for a second cluster of sizes or any mode that is not `RGB`: each is a second source to decide on.
 
-# %% [markdown]
+# %% [markdown] edition="own"
 # Check 3 is the duplicate checks of Common Dataset Errors & Cleaning: exact copies by file hash, and near, flipped and rotated copies by the
 # **distance** between perceptual hashes (differing bits out of 64). Pairs at or below your `HASH_THRESHOLD`
 # from Bit Distance Distribution count as copies.
 
-# %%
+# %% edition="own"
 # @title Check 3: exact, recompressed, flipped and rotated copies { display-mode: "form" }
 # (find_copies from Compare Duplicate Detection Methods: all pairs, in blocks to keep memory small)
 _readable = my_stats.index[my_stats["readable"]].to_numpy()
@@ -522,14 +275,14 @@ if len(_show):
     plt.tight_layout()
     plt.show()
 
-# %% [markdown]
+# %% [markdown] edition="own"
 # 💡 Look at the pairs across class folders first: one of the two labels is wrong.
 
-# %% [markdown]
+# %% [markdown] edition="own"
 # Check 4 suggests a split: it groups the copies, then makes a stratified (every class in both halves, in the
 # same shares), group-aware split.
 
-# %%
+# %% edition="own"
 # @title Check 4: a split suggestion, copies grouped, stratified by class { display-mode: "form" }
 # Copies form groups that stay on one side; the split is stratified by class.
 from sklearn.model_selection import StratifiedGroupKFold
@@ -572,15 +325,15 @@ _split_csv = DATA_DIR / "cache" / "my_split.csv"
 my_split.to_csv(_split_csv, index=False)
 print(f"split saved to {_split_csv}")
 
-# %% [markdown]
+# %% [markdown] edition="own"
 # 💡 Look at "copy pairs across train/test": it must be 0. The split is written to `data/cache/my_split.csv`,
 # and **Colab deletes that folder when the session ends**: download it now (Files pane → right-click the
 # file → Download) or copy it to your Drive, or it is gone next week.
 
-# %% [markdown]
+# %% [markdown] edition="own"
 # The checklist in one place, to paste into your project notes:
 
-# %%
+# %% edition="own"
 # @title The report card for this dataset { display-mode: "form" }
 _n_unreadable = int((~my_stats["readable"]).sum())
 _n_not_rgb = int(((my_stats["mode"] != "RGB") & my_stats["readable"]).sum())
@@ -599,18 +352,18 @@ RESULTS["swap_in_ok"] = bool(len(my_files) > 0 and len(my_stats) == len(my_split
 RESULTS["swap_in"] = {"source": my_source, "n_images": int(len(my_files)), "n_classes": len(my_classes),
                       "copies": int(len(my_copies)), "not_rgb": _n_not_rgb}
 
-# %% [markdown]
+# %% [markdown] edition="own"
 # ### After the lab · Read your results and answer the guiding questions
 #
 # Everything above runs in class. This block is for you to do afterwards, on your own dataset: it explains how
 # to read each check and ends with the seven guiding questions.
 
-# %% [markdown]
+# %% [markdown] edition="own"
 # 🟢 On the sample the folders are cat, dog, bird, horse, sheep and zebra with 20 photos each, plus
 # three planted problems (an exact copy of a cat, a mirrored dog, a grayscale bird). Which check caught each
 # one? Then run the checks on your own dataset and compare.
 
-# %%
+# %% edition="own"
 # @title 💡 Worked Answer { display-mode: "form" }
 from IPython.display import HTML; HTML(r"""<div class="callout callout-answer" style="background:#F6EFE4;color:#5C4027;border-left:6px solid #5C4027;border-radius:6px;padding:12px 14px;line-height:1.5;font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;margin:2px 0;">
 
@@ -627,14 +380,14 @@ from IPython.display import HTML; HTML(r"""<div class="callout callout-answer" s
 </details>
 </div>""")
 
-# %% [markdown]
+# %% [markdown] edition="own"
 # 💡 How to read the ratio:
 #
 # - **2 or 3 to 1:** common and harmless if you watch the small class's recall.
 # - **10 to 1 and beyond:** accuracy hides the small class completely (Class Imbalance: Can High Accuracy Be Misleading?).
 # - **Always ask:** is the *expensive* class the small one?
 
-# %% [markdown]
+# %% [markdown] edition="own"
 # 💡 How to read the sizes and modes:
 #
 # - **One tight cluster of sizes:** one source.
@@ -642,7 +395,7 @@ from IPython.display import HTML; HTML(r"""<div class="callout callout-answer" s
 #   instead of the animal.
 # - **Every file that is not RGB** is listed in check 2: decide whether to convert it or drop it.
 
-# %% [markdown]
+# %% [markdown] edition="own"
 # 💡 Every copy pair is a decision for a human:
 #
 # - **Keep one file of each pair.**
@@ -650,7 +403,7 @@ from IPython.display import HTML; HTML(r"""<div class="callout callout-answer" s
 # - **Many pairs on near-identical shots** (a fixed camera, a microscope) are genuinely different photos:
 #   lower `HASH_THRESHOLD` in Bit Distance Distribution and rerun.
 
-# %%
+# %% edition="own"
 # @title 🔍 Go Deeper: The Split Is Only a Suggestion { display-mode: "form" }
 from IPython.display import HTML; HTML(r"""<div class="callout callout-go-deeper" style="background:#F3F4F6;color:#4B5563;border-left:6px solid #4B5563;border-radius:6px;padding:12px 14px;line-height:1.5;font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;margin:2px 0;">
 <div style="font-weight:bold;">🔍 Go deeper · The split is only a suggestion</div>
@@ -659,7 +412,7 @@ camera, one day, one patient; Dataset Splitting &amp; Data Leakage showed that a
 than the model will earn.</p>
 </div>""")
 
-# %% [markdown]
+# %% [markdown] edition="own"
 # #### The guiding questions
 #
 # These questions are the notebook in short. Each one has the park's answer, and an empty line for yours.
@@ -667,7 +420,7 @@ than the model will earn.</p>
 # 🟢 Double-click the next cell and answer each guiding question for your project dataset, using
 # the output of the checklist above and what you know about where the data comes from.
 
-# %% [markdown]
+# %% [markdown] edition="own"
 # 1. **What is the task, and which mistake is the expensive one?**
 #    - *The park:* classification of who is in front of the camera; the expensive mistake is a missed dog
 #      in the sheep paddock, so the metric is recall on dog (Meet the Park).
@@ -697,7 +450,7 @@ than the model will earn.</p>
 #      photos, and resize without distorting the aspect ratio.
 #    - *Your dataset:*
 
-# %%
+# %% edition="own"
 # @title ✅ Takeaway { display-mode: "form" }
 from IPython.display import HTML; HTML(r"""<div class="callout callout-takeaway" style="background:#E2F0C4;color:#3A5A0B;border-left:6px solid #3A5A0B;border-radius:6px;padding:12px 14px;line-height:1.5;font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;margin:2px 0;">
 <div style="font-weight:bold;">✅ Takeaway</div>
