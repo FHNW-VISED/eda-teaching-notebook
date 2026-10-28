@@ -146,7 +146,7 @@ if IN_COLAB:  # Jupytext turns the commented magic below into a real `%pip insta
     pass
     # %pip install -q imagehash
 
-# --- Theme (SPEC L-003): white background, dark teal text, light grid, one colour per class everywhere ---
+# --- Theme (SPEC L-003): white background, dark teal text, light grid, one color per class everywhere ---
 CLASSES = ["cat", "dog", "bird", "horse", "sheep", "zebra"]
 CLASS_COLORS = {
     "cat": "#E07A5F",
@@ -270,8 +270,8 @@ def use(fn, *args, reference, **kwargs):
 def callout(kind: str, title: str, body_html: str, fig=None) -> HTML:
     """One box as HTML, shown when it is the last line of a cell.
 
-    kind: "answer" (💡 Sample Answer, a grey toggle, closed until opened), "theory" (📘 blue), "recipe" (🧾 yellow,
-    Karpathy's quotes) or "deeper" (🔍 grey). `title` is shown as written, icon included; `body_html` is the
+    kind: "answer" (💡 Sample Answer, a gray toggle, closed until opened), "theory" (📘 blue), "recipe" (🧾 yellow,
+    Karpathy's quotes) or "deeper" (🔍 gray). `title` is shown as written, icon included; `body_html` is the
     box's content. `fig`, a matplotlib figure, is drawn inside the box where the body says <!-- fig -->
     (at the end if it does not).
     """
@@ -453,7 +453,7 @@ RESULTS["n_images"] = int(len(images))
 _counts = Counter(images["class"])
 print(f"images: {len(images)} · animals (annotations): {len(annotations)}")
 print("per class: " + " · ".join(f"{c} {_counts[c]}" for c in CLASSES))
-images.drop(columns="license").head()  # the licence column stays in the table, not on screen (N-045)
+images.drop(columns="license").head()  # the license column stays in the table, not on screen (N-045)
 
 
 # %%

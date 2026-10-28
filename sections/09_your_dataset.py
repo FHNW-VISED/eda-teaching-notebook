@@ -1,5 +1,5 @@
 # %% [markdown]
-# ## 10. Your project dataset
+# ## Your Project Dataset
 
 # %%
 # @title Checklist Dataset Mini-Project { display-mode: "form" }
@@ -7,15 +7,15 @@ callout("theory", "📘 Theory · What makes a good dataset", r"""
 <ul style="margin:6px 0 0 0;padding-left:22px;">
 <li style="margin:2px 0;"><strong>Does it fit the question?</strong> The images, the classes and the setting must match the job you want the
   model to do.<br><em>Park example:</em> the alert needs a dog seen from a fixed camera in the sheep paddock, not a
-  dog in a holiday snapshot taken from two metres away.</li>
+  dog in a holiday snapshot taken from two meters away.</li>
 <li style="margin:2px 0;"><strong>Enough samples</strong>, <strong>2–10 classes</strong> and <strong>about 500×500 px</strong>: the numbers to check, explained below.</li>
 <li style="margin:2px 0;"><strong>Classes, distributions, imbalance, bias.</strong> Know them, and take them into account in training (for
   example with a weighted loss).<br>
   <em>Park example:</em> if 70 % of the photos are sheep and 3 % are dogs, the model sees few dogs to learn from,
-  and the dog is the animal the alert exists for (section 4).</li>
+  and the dog is the animal the alert exists for (Class Imbalance in Meet the Park).</li>
 <li style="margin:2px 0;"><strong>Variability matches the target population</strong>, and <strong>labels are present and validated</strong>: every image has
   a label, and someone checked a sample of them.<br>
-  <em>Park example:</em> a photo of a zebra labelled "horse" teaches the model the wrong thing, and nobody notices
+  <em>Park example:</em> a photo of a zebra labeled "horse" teaches the model the wrong thing, and nobody notices
   until the zebra headcount is off.</li>
 <li style="margin:2px 0;"><strong>Objects are identifiable and separable by eye.</strong></li>
 <li style="margin:2px 0;"><strong>What do experts and the literature say</strong> about this data and this task?</li>
@@ -64,7 +64,7 @@ Where to find existing image datasets and tools for annotating your own images.
 <li style="margin:2px 0;"><a href="https://universe.roboflow.com" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">Roboflow Universe</a>: community datasets, many already labeled with boxes or masks.</li>
 <li style="margin:2px 0;"><a href="https://lila.science" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">LILA</a>: wildlife and camera-trap images, the closest match to the park's cameras.</li>
 <li style="margin:2px 0;"><a href="https://pytorch.org/vision/stable/datasets.html" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">torchvision datasets</a>: classic datasets available directly through PyTorch.</li>
-<li style="margin:2px 0;"><a href="https://cocodataset.org" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">COCO</a>: a general-purpose dataset; our play dataset is a subset of it.</li>
+<li style="margin:2px 0;"><a href="https://cocodataset.org" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">COCO</a>: a general-purpose dataset; our Play Dataset is a subset of it.</li>
 </ul>
 
 <p style="margin:10px 0 0 0;"><strong>Label your own images</strong></p>
@@ -81,7 +81,7 @@ Where to find existing image datasets and tools for annotating your own images.
 # @title 🎯 Objective { display-mode: "form" }
 from IPython.display import HTML; HTML(r"""<div class="callout callout-objective" style="background:#B9E3EA;color:#08505C;border-left:6px solid #08505C;border-radius:6px;padding:12px 14px;line-height:1.5;font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;margin:2px 0;">
 <div style="font-weight:bold;">🎯 Objective</div>
-<p style="margin:6px 0 0 0;">Run the checklist of sections 3 to 6 on your own folder-per-class dataset, and answer the guiding questions
+<p style="margin:6px 0 0 0;">Run the checklist of Meet the Park, Common Dataset Errors &amp; Cleaning and Dataset Splitting &amp; Data Leakage on your own folder-per-class dataset, and answer the guiding questions
 for it the way we answered them for the park.</p>
 </div>""")
 
@@ -397,7 +397,7 @@ if len(my_files) > MY_MAX_IMAGES:
     print(f"⚠️ {_n_all} images found: the checks run on a stratified sample of {len(my_files)}.")
 my_files = my_files.sort_values(["class", "file"]).reset_index(drop=True)
 my_classes = sorted(my_files["class"].unique())
-# Park classes keep their colour; any other class name borrows one from the same palette (L-003).
+# Park classes keep their color; any other class name borrows one from the same palette (L-003).
 _palette = list(CLASS_COLORS.values())
 my_colors = {c: CLASS_COLORS.get(c, _palette[i % len(_palette)]) for i, c in enumerate(my_classes)}
 print(f"✅ source: {my_source} · {my_root} · {len(my_files)} images in {len(my_classes)} class folders: "
@@ -426,15 +426,15 @@ plt.show()
 from IPython.display import HTML; HTML(r"""<div class="callout callout-go-deeper" style="background:#F3F4F6;color:#4B5563;border-left:6px solid #4B5563;border-radius:6px;padding:12px 14px;line-height:1.5;font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;margin:2px 0;">
 <div style="font-weight:bold;">🔍 Go deeper · Detection or segmentation project, and big datasets</div>
 <p style="margin:6px 0 0 0;">Put all images in one folder inside <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">MY_DATASET_DIR</code> (e.g. <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">…/project/all/</code>). The class counts then say
-nothing, but sizes, modes, copies and the split still do (the box and mask checks are sections 7 and 8).
+nothing, but sizes, modes, copies and the split still do (the box and mask checks are Object Detection and Semantic Segmentation).
 Images deeper inside a class folder count, other files are listed and skipped. Datasets above
 <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">MY_MAX_IMAGES</code> photos are sampled down, keeping the class shares, so the checks stay at a minute or two.</p>
 </div>""")
 
 # %% [markdown]
-# Four checks run next and end in one report card. Check 1 counts the images per folder, as section 4 did for
+# Four checks run next and end in one report card. Check 1 counts the images per folder, as Class Distribution did for
 # the park: the **ratio** is the
-# largest class divided by the smallest (in the park about 130 cats against 50 sheep, 2 : 1 to 3 : 1).
+# largest class divided by the smallest (in the park about 130 cats against 59 sheep, 2 : 1 to 3 : 1).
 
 # %%
 # @title Check 1: images per class, and the largest : smallest ratio { display-mode: "form" }
@@ -451,15 +451,15 @@ print(f"largest {my_counts.idxmax()} ({my_counts.max()}) · smallest {my_counts.
       f"· ratio {my_imbalance:.1f} : 1")
 
 # %% [markdown]
-# 💡 Look at the ratio: up to 3 : 1 is common; from 10 : 1 accuracy hides the small class (section 4).
+# 💡 Look at the ratio: up to 3 : 1 is common; from 10 : 1 accuracy hides the small class (Class Imbalance).
 
 # %% [markdown]
-# Check 2 opens every file with `is_readable`, then reads its size (width × height) and its colour mode (`RGB`
-# stores three colour channels, `L` one gray channel).
+# Check 2 opens every file with `is_readable`, then reads its size (width × height) and its color mode (`RGB`
+# stores three color channels, `L` one gray channel).
 
 # %%
-# @title Check 2: readable? size and colour mode of every file { display-mode: "form" }
-# (section 3's measure_image on a small thumbnail)
+# @title Check 2: readable? size and color mode of every file { display-mode: "form" }
+# (Quantitative Inspection's measure_image on a small thumbnail)
 _my_rows = []
 for _, r in my_files.iterrows():
     ok = is_readable(r["path"])
@@ -480,7 +480,7 @@ ax.legend(frameon=False, fontsize=8, ncol=2 if len(my_classes) > 6 else 1)
 plt.tight_layout()
 plt.show()
 print(f"unreadable files: {int((~my_stats['readable']).sum())}")
-print("colour modes:", " · ".join(f"{m} {n}" for m, n in my_stats["mode"].value_counts().items()))
+print("color modes:", " · ".join(f"{m} {n}" for m, n in my_stats["mode"].value_counts().items()))
 print(f"distinct sizes: {_ok.groupby(['width', 'height']).ngroups} · "
       f"long side from {int(_ok[['width', 'height']].max(axis=1).min())} "
       f"to {int(_ok[['width', 'height']].max(axis=1).max())} px")
@@ -490,9 +490,9 @@ display(my_stats[my_stats["mode"] != "RGB"].head(10))
 # 💡 Look for a second cluster of sizes or any mode that is not `RGB`: each is a second source to decide on.
 
 # %% [markdown]
-# Check 3 is section 5's copy hunt: exact copies by file hash, and near, flipped and rotated copies by the
+# Check 3 is the duplicate checks of Common Dataset Errors & Cleaning: exact copies by file hash, and near, flipped and rotated copies by the
 # **distance** between perceptual hashes (differing bits out of 64). Pairs at or below your `HASH_THRESHOLD`
-# from section 5 count as copies.
+# from Bit Distance Distribution count as copies.
 
 # %%
 # @title Check 3: exact, recompressed, flipped and rotated copies { display-mode: "form" }
@@ -567,7 +567,7 @@ if _test_small < 10:
           "cross-validation with the same groups, and report the mean and the spread over the folds.")
 else:
     print("💡 a stratified 80/20 hold-out with these groups is enough; keep the test half for the end.")
-print("If photos share a camera, a session, a burst or a patient, add that to the groups (section 6).")
+print("If photos share a camera, a session, a burst or a patient, add that to the groups (Dataset Splitting & Data Leakage).")
 _split_csv = DATA_DIR / "cache" / "my_split.csv"
 my_split.to_csv(_split_csv, index=False)
 print(f"split saved to {_split_csv}")
@@ -606,7 +606,7 @@ RESULTS["swap_in"] = {"source": my_source, "n_images": int(len(my_files)), "n_cl
 # to read each check and ends with the seven guiding questions.
 
 # %% [markdown]
-# **Q25.** 🟢 On the sample the folders are cat, dog, bird, horse, sheep and zebra with 20 photos each, plus
+# 🟢 On the sample the folders are cat, dog, bird, horse, sheep and zebra with 20 photos each, plus
 # three planted problems (an exact copy of a cat, a mirrored dog, a grayscale bird). Which check caught each
 # one? Then run the checks on your own dataset and compare.
 
@@ -614,7 +614,7 @@ RESULTS["swap_in"] = {"source": my_source, "n_images": int(len(my_files)), "n_cl
 # @title 💡 Worked Answer { display-mode: "form" }
 from IPython.display import HTML; HTML(r"""<div class="callout callout-answer" style="background:#F6EFE4;color:#5C4027;border-left:6px solid #5C4027;border-radius:6px;padding:12px 14px;line-height:1.5;font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;margin:2px 0;">
 
-<details style="margin:0;"><summary style="cursor:pointer;font-weight:bold;">💡 Worked answer (Q25, on the sample)</summary>
+<details style="margin:0;"><summary style="cursor:pointer;font-weight:bold;">💡 Worked answer (on the sample)</summary>
 <ul style="margin:6px 0 0 0;padding-left:22px;">
 <li style="margin:2px 0;"><strong>Check 1:</strong> every folder holds the same number of photos, plus the planted copies in cat and dog, so
   the ratio is close to 1 : 1. That is a property of the sample, not of the park.</li>
@@ -622,7 +622,7 @@ from IPython.display import HTML; HTML(r"""<div class="callout callout-answer" s
   bird shows up as one <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">L</code> file.</li>
 <li style="margin:2px 0;"><strong>Check 3:</strong> the exact copy of the cat and the mirrored dog show up as an <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">exact</code> and a <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">flipped</code> pair,
   both inside one folder. The split keeps each pair on one side.</li>
-<li style="margin:2px 0;">If a check missed one of them, look at the <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">HASH_THRESHOLD</code> you set in section 5.</li>
+<li style="margin:2px 0;">If a check missed one of them, look at the <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">HASH_THRESHOLD</code> you set in Bit Distance Distribution.</li>
 </ul>
 </details>
 </div>""")
@@ -631,7 +631,7 @@ from IPython.display import HTML; HTML(r"""<div class="callout callout-answer" s
 # 💡 How to read the ratio:
 #
 # - **2 or 3 to 1:** common and harmless if you watch the small class's recall.
-# - **10 to 1 and beyond:** accuracy hides the small class completely (section 4's ⚠️ Pitfall).
+# - **10 to 1 and beyond:** accuracy hides the small class completely (Class Imbalance: Can High Accuracy Be Misleading?).
 # - **Always ask:** is the *expensive* class the small one?
 
 # %% [markdown]
@@ -648,14 +648,14 @@ from IPython.display import HTML; HTML(r"""<div class="callout callout-answer" s
 # - **Keep one file of each pair.**
 # - **Look twice at pairs from different class folders:** one of the two labels is wrong.
 # - **Many pairs on near-identical shots** (a fixed camera, a microscope) are genuinely different photos:
-#   lower `HASH_THRESHOLD` in section 5 and rerun.
+#   lower `HASH_THRESHOLD` in Bit Distance Distribution and rerun.
 
 # %%
 # @title 🔍 Go Deeper: The Split Is Only a Suggestion { display-mode: "form" }
 from IPython.display import HTML; HTML(r"""<div class="callout callout-go-deeper" style="background:#F3F4F6;color:#4B5563;border-left:6px solid #4B5563;border-radius:6px;padding:12px 14px;line-height:1.5;font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;margin:2px 0;">
 <div style="font-weight:bold;">🔍 Go deeper · The split is only a suggestion</div>
 <p style="margin:6px 0 0 0;">The split comes from what the folders show. Only you know what else ties photos together, such as one
-camera, one day, one patient; section 6 showed that a split which ignores such groups reports a better score
+camera, one day, one patient; Dataset Splitting &amp; Data Leakage showed that a split which ignores such groups reports a better score
 than the model will earn.</p>
 </div>""")
 
@@ -664,37 +664,37 @@ than the model will earn.</p>
 #
 # These questions are the notebook in short. Each one has the park's answer, and an empty line for yours.
 #
-# **Q26.** 🟢 Double-click the next cell and answer each guiding question for your project dataset, using
+# 🟢 Double-click the next cell and answer each guiding question for your project dataset, using
 # the output of the checklist above and what you know about where the data comes from.
 
 # %% [markdown]
 # 1. **What is the task, and which mistake is the expensive one?**
 #    - *The park:* classification of who is in front of the camera; the expensive mistake is a missed dog
-#      in the sheep paddock, so the metric is recall on dog (section 4).
+#      in the sheep paddock, so the metric is recall on dog (Meet the Park).
 #    - *Your dataset:*
 # 2. **Do the images look like what the model will see in use?**
 #    - *The park:* only partly. COCO has close-ups, sofas and people; a fixed paddock camera sees small
-#      animals on grass (section 2).
+#      animals on grass (Qualitative Inspection).
 #    - *Your dataset:*
 # 3. **How balanced are the classes, and is the expensive class a small one?**
-#    - *The park:* cat and dog about 130 photos each, sheep about 50, roughly 2 : 1 to 3 : 1. Dog is not
-#      rare, but accuracy would still hide a weak recall on dog (section 4).
+#    - *The park:* cat and dog about 130 photos each, sheep about 59, roughly 2 : 1 to 3 : 1. Dog is not
+#      rare, but accuracy would still hide a weak recall on dog (Meet the Park).
 #    - *Your dataset:*
-# 4. **Which sizes, aspect ratios and colour modes are there, and what must be resized or converted?**
+# 4. **Which sizes, aspect ratios and color modes are there, and what must be resized or converted?**
 #    - *The park:* nearly every photo has a long side of 640 or 500 px, in landscape and portrait; files
-#      that are not RGB get converted (section 3).
+#      that are not RGB get converted (Quantitative Inspection).
 #    - *Your dataset:*
 # 5. **Are there copies, flipped or rotated copies, unreadable or odd files, or doubtful labels?**
-#    - *The park:* a few copies, removed before splitting (section 5's "removed N, kept M"); photos with
-#      several animals make the label ambiguous (section 4).
+#    - *The park:* a few copies, removed before splitting; photos with
+#      several animals make the label ambiguous (Meet the Park).
 #    - *Your dataset:*
 # 6. **What ties photos together, and which split keeps those groups apart?**
 #    - *The park:* COCO has no groups, so a stratified split after deduplication; the trail cameras have
-#      bursts and locations, so they are split by camera (section 6).
+#      bursts and locations, so they are split by camera (Dataset Splitting & Data Leakage).
 #    - *Your dataset:*
 # 7. **What must be fixed before training?**
 #    - *The park:* drop the copies, convert the files that are not RGB, decide the label of multi-animal
-#      photos, and resize without distorting the aspect ratio (section 3's 🔀 Callout).
+#      photos, and resize without distorting the aspect ratio.
 #    - *Your dataset:*
 
 # %%

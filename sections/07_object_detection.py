@@ -9,7 +9,7 @@
 #
 
 # %% [markdown]
-# ### From Labels to Bounding Boxes
+# **From Labels to Bounding Boxes**
 #
 # Object detection datasets contain one annotation per object rather than one label per image. Each annotation specifies the object's class and bounding box.
 #
@@ -51,13 +51,13 @@ def box_area_bucket(w: float, h: float) -> str:
 
 def show_boxes(rows_df: pd.DataFrame, boxes_df: pd.DataFrame, title: str, caption=None, cols: int = 4,
                size: int = 384) -> None:
-    """Gallery of the photos in `rows_df` with their boxes from `boxes_df` drawn in the class colour.
+    """Gallery of the photos in `rows_df` with their boxes from `boxes_df` drawn in the class color.
 
     `caption(row) -> str` writes the title above each photo; by default the class and the number of boxes.
     """
     n = len(rows_df)
     if n == 0:
-        print(f"{title}: no photos to show.")
+        print(f"{title}: no images to show.")
         return
     cols = min(cols, n)
     n_rows = -(-n // cols)
@@ -142,7 +142,7 @@ boxview_show_page()
 # In this and subsequent coding exercises, you will implement small functions to explore the dataset. Complete the provided code cells and check your results. If you get stuck, you can reveal the reference solution. The notebook continues to work even if your implementation is incomplete.
 #
 # - Implement `count_boxes_per_class(annotations)` to return the number of bounding boxes per class.
-# - Run the validation and compare the resulting distribution with the image-level distribution from Section 4.
+# - Run the validation and compare the resulting distribution with the image-level distribution from Class Distribution: Are All Animal Classes Equally Represented?
 #
 # **Observe and interpret:**
 # - Which classes change most in their relative frequency?
@@ -187,15 +187,15 @@ RESULTS["n_boxes"] = int(len(boxes))
 by_photos = sorted(CLASSES, key=lambda c: -images_per_class[c])
 by_boxes = sorted(CLASSES, key=lambda c: -boxes_per_class[c])
 
-print(f"{len(images)} photos · {len(boxes)} boxes")
-print("Ranked by photos: " + " > ".join(f"{c} {images_per_class[c]}" for c in by_photos))
+print(f"{len(images)} images · {len(boxes)} boxes")
+print("Ranked by images: " + " > ".join(f"{c} {images_per_class[c]}" for c in by_photos))
 print("Ranked by boxes:  " + " > ".join(f"{c} {boxes_per_class[c]}" for c in by_boxes))
 
 for c in CLASSES:
     move = by_photos.index(c) - by_boxes.index(c)
     if move:
         print(
-            f"  {c}: rank {by_photos.index(c) + 1} by photos → "
+            f"  {c}: rank {by_photos.index(c) + 1} by images → "
             f"rank {by_boxes.index(c) + 1} by boxes "
             f"({'↑' if move > 0 else '↓'}{abs(move)})"
         )
@@ -206,7 +206,7 @@ for ax, counts, order, what in zip(
     axes,
     [images_per_class, boxes_per_class],
     [by_photos, by_boxes],
-    ["Photos", "Boxes"],
+    ["Images", "Boxes"],
     strict=True
 ):
     ax.bar(order, [counts[c] for c in order], color=[CLASS_COLORS[c] for c in order])
@@ -466,15 +466,15 @@ Small objects are particularly challenging because they contain fewer pixels and
 # %% [markdown]
 # ### 🟢 Object Positions: Where Are the Animals?
 #
-# A bounding box's centre is `(x + w/2, y + h/2)`. Dividing these coordinates by the image width and height gives normalized positions between 0 and 1, allowing us to compare images of different sizes.
+# A bounding box's center is `(x + w/2, y + h/2)`. Dividing these coordinates by the image width and height gives normalized positions between 0 and 1, allowing us to compare images of different sizes.
 #
-# A **heatmap** shows where bounding-box centres occur most frequently. Darker regions indicate more objects.
+# A **heatmap** shows where bounding-box centers occur most frequently. Darker regions indicate more objects.
 #
 # **Before running the code:**
 # - Do you expect animals to appear equally often across all image positions?
 #
 # **Explore:**
-# - Compare the box-centre heatmaps across classes.
+# - Compare the box-center heatmaps across classes.
 # - Look for differences in how concentrated or spread out the positions are.
 #
 # **Observe and interpret:**
@@ -484,7 +484,7 @@ Small objects are particularly challenging because they contain fewer pixels and
 
 # %%
 # @title 🔎 Explore Object Positions Across Classes { display-mode: "form" }
-# Box centres on the unit square, one heatmap per class in its own colour (white = no boxes there).
+# Box centers on the unit square, one heatmap per class in its own color (white = no boxes there).
 _img_w = boxes["image_id"].map(images_by_id["width"])
 _img_h = boxes["image_id"].map(images_by_id["height"])
 boxes["cx"] = (boxes["bbox"].map(lambda b: b[0] + b[2] / 2) / _img_w).clip(0, 1)
@@ -505,8 +505,8 @@ for ax, c in zip(axes, CLASSES, strict=True):
     ax.set_yticks([0, 0.5, 1])
     ax.tick_params(labelsize=7)
     ax.grid(False)
-axes[0].set_ylabel("box centre y (0 = top)")
-fig.suptitle(f"Where the box centres are · {_edge_share:.0%} of all boxes are in the outer 20 % of the frame",
+axes[0].set_ylabel("box center y (0 = top)")
+fig.suptitle(f"Where the box centers are · {_edge_share:.0%} of all boxes are in the outer 20 % of the frame",
              color=INK)
 fig.tight_layout()
 display(fig)
@@ -516,7 +516,7 @@ plt.close(fig)
 # @title 💡 Sample Answer: Object Positions { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <p>
-Bounding-box centres are concentrated near the middle of the images, suggesting
+Bounding-box centers are concentrated near the middle of the images, suggesting
 that animals are often photographed centrally. Birds and sheep show a wider
 spatial distribution, possibly because multiple animals appear together.
 </p>
@@ -720,29 +720,29 @@ callout("answer", "💡 Sample Answer", r"""
 
 
 # %% [markdown]
-# ### 🔴 Bounding Box Overlap: Understanding IOU
+# ### 🔴 Bounding Box Overlap: Understanding IoU (Optional)
 #
-# Counting objects tells us how many animals are annotated, but not how closely they appear together. We can measure bounding-box overlap using **Intersection over Union (IOU)**:
+# Counting objects tells us how many animals are annotated, but not how closely they appear together. We can measure bounding-box overlap using **Intersection over Union (IoU)**:
 #
 # $$
-# \mathrm{IOU} = \frac{\text{Area of Intersection}}{\text{Area of Union}}
+# \mathrm{IoU} = \frac{\text{Area of Intersection}}{\text{Area of Union}}
 # $$
 #
-# IOU ranges from 0 (no overlap) to 1 (identical boxes).
+# IoU ranges from 0 (no overlap) to 1 (identical boxes).
 #
 # **Before running the code:**
-# - What happens to IOU when two boxes move closer together?
+# - What happens to IoU when two boxes move closer together?
 #
 # **Explore:**
 # - Move the X and Y sliders to change how two bounding boxes overlap.
-# - Observe how IOU changes and when it exceeds the threshold of 0.1.
+# - Observe how IoU changes and when it exceeds the threshold of 0.1.
 #
 # **Observe and interpret:**
-# - How does IOU change as the boxes move apart?
+# - How does IoU change as the boxes move apart?
 # - Why is bounding-box overlap only an approximation of how crowded a scene is?
 
 # %%
-# @title Helpers: IOU { display-mode: "form" }
+# @title Helpers: IoU { display-mode: "form" }
 OVERLAP_IOU = 0.1  # two boxes count as overlapping above this IoU
 
 
@@ -756,7 +756,7 @@ def box_iou_dice(a: tuple, b: tuple) -> tuple[float, float]:
 
 
 # %%
-# @title 🔎 Explore Bounding Box Overlap (IOU) { display-mode: "form" }
+# @title 🔎 Explore Bounding Box Overlap (IoU) { display-mode: "form" }
 
 
 REFERENCE_BOX = (20, 20, 60, 40)
@@ -800,7 +800,7 @@ def show_overlap(x_shift, y_shift):
     ax.axis("off")
 
     ax.set_title(
-        f"IOU = {intersection} / {union} = {iou:.2f} "
+        f"IoU = {intersection} / {union} = {iou:.2f} "
         f"({'overlapping' if iou > OVERLAP_IOU else 'not counted'})",
         fontsize=11
     )
@@ -831,17 +831,17 @@ display(widgets.VBox([x_slider, y_slider]), overlap_output)
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
-<p>IOU increases as the boxes overlap more strongly, reaching 1 when they are identical. When the boxes move apart, IOU decreases and becomes 0 when they no longer intersect.</p>
-<p>Bounding-box overlap is only an approximation of crowding. Boxes can overlap even when the animals themselves do not, and animals can partially occlude one another without their boxes having a high IOU.</p>
+<p>IoU increases as the boxes overlap more strongly, reaching 1 when they are identical. When the boxes move apart, IoU decreases and becomes 0 when they no longer intersect.</p>
+<p>Bounding-box overlap is only an approximation of crowding. Boxes can overlap even when the animals themselves do not, and animals can partially occlude one another without their boxes having a high IoU.</p>
 """)
 
 
 # %% [markdown]
-# ### 🔴 Crowding: Bounding Box Overlap Across Classes
+# ### 🔴 Crowding: Bounding Box Overlap Across Classes (Optional)
 #
 # Images with many animals do not necessarily contain overlapping bounding boxes. Let's investigate how often bounding boxes overlap in our dataset.
 #
-# We consider two bounding boxes overlapping if their IOU exceeds 0.1.
+# We consider two bounding boxes overlapping if their IoU exceeds 0.1.
 #
 # **Before running the code:**
 # - Which animal classes do you expect to have the most overlapping bounding boxes?
@@ -1214,7 +1214,7 @@ callout("answer", "💡 Sample Answer", r"""
 #
 # The illustration below shows a simplified example: three animals are present, but only two have bounding boxes.
 #
-# The solid grey boxes represent existing annotations. The dashed yellow box indicates the missing annotation.
+# The solid gray boxes represent existing annotations. The dashed yellow box indicates the missing annotation.
 #
 # Consider how this mismatch could affect an object detector trained on these annotations.
 

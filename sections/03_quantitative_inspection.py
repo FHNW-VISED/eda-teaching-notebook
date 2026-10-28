@@ -56,7 +56,7 @@ def measure_image(path, thumb: int) -> tuple[dict, np.ndarray]:
     """Open one photo and return (stats, channel_hist).
 
     stats: width, height, mode (as stored in the file), aspect (width / height), long_side, megapixels,
-    brightness (mean grey level 0–255 on a thumbnail), contrast (its standard deviation), colorfulness
+    brightness (mean gray level 0–255 on a thumbnail), contrast (its standard deviation), colorfulness
     (Hasler & Süsstrunk 2003: 0 for a grayscale picture), mean_r / mean_g / mean_b.
     channel_hist: a (3, HIST_BINS) array, the density histogram of the R, G and B channels.
     """
@@ -66,7 +66,7 @@ def measure_image(path, thumb: int) -> tuple[dict, np.ndarray]:
         rgb = im.convert("RGB")
         rgb.thumbnail((thumb, thumb))
         arr = np.asarray(rgb, dtype=np.float32)
-    grey = arr.mean(axis=2)
+    gray = arr.mean(axis=2)
     channels = arr.reshape(-1, 3)
     rg = channels[:, 0] - channels[:, 1]  # red minus green
     yb = (channels[:, 0] + channels[:, 1]) / 2 - channels[:, 2]  # yellow (mean of R and G) minus blue
@@ -80,8 +80,8 @@ def measure_image(path, thumb: int) -> tuple[dict, np.ndarray]:
         "aspect": w / h,
         "long_side": max(w, h),
         "megapixels": w * h / 1e6,
-        "brightness": float(grey.mean()),
-        "contrast": float(grey.std()),
+        "brightness": float(gray.mean()),
+        "contrast": float(gray.std()),
         "colorfulness": float(np.hypot(rg.std(), yb.std()) + 0.3 * np.hypot(rg.mean(), yb.mean())),
         "mean_r": float(channels[:, 0].mean()),
         "mean_g": float(channels[:, 1].mean()),
@@ -91,9 +91,9 @@ def measure_image(path, thumb: int) -> tuple[dict, np.ndarray]:
 
 
 def show_rows(rows_df: pd.DataFrame, title: str, caption=None, cols: int = 6) -> None:
-    """A small gallery of the photos in `rows_df` (rows of image_stats), each framed in its class colour.
+    """A small gallery of the photos in `rows_df` (rows of image_stats), each framed in its class color.
 
-    `caption(row) -> str` writes the title above each photo; by default the size and the colour mode.
+    `caption(row) -> str` writes the title above each photo; by default the size and the color mode.
     """
     if caption is None:
 
@@ -102,7 +102,7 @@ def show_rows(rows_df: pd.DataFrame, title: str, caption=None, cols: int = 6) ->
 
     n = len(rows_df)
     if n == 0:
-        print(f"{title}: no photos to show.")
+        print(f"{title}: no images to show.")
         return
     cols = min(cols, n)
     n_rows = -(-n // cols)
@@ -132,7 +132,7 @@ def _closest_to_median(stats_df: pd.DataFrame, stat: str):
 
 
 def _photo(ax, row, caption: str) -> None:
-    """Draw one photo with a caption, framed in its class colour."""
+    """Draw one photo with a caption, framed in its class color."""
     ax.axis("on")
     ax.imshow(load_thumb(row["path"]))
     frame(ax, CLASS_COLORS[row["class"]])
@@ -163,7 +163,7 @@ def show_extremes(stats_df: pd.DataFrame, stat: str, n: int = 4) -> None:
     _photo(axes[1, n // 2], _closest_to_median(stats_df, stat), caption("median", _closest_to_median(stats_df, stat)))
     for ax, (_, row) in zip(axes[2], ordered.tail(n)[::-1].iterrows(), strict=False):
         _photo(ax, row, caption("highest", row))
-    fig.suptitle(f"{stat}: the {n} lowest, the typical (median) photo, the {n} highest", color=INK)
+    fig.suptitle(f"{stat}: the {n} lowest, the typical (median) image, the {n} highest", color=INK)
     fig.tight_layout()
     display(fig)
     plt.close(fig)
@@ -224,7 +224,7 @@ RESULTS["image_stats_n"] = int(len(image_stats))
 
 _same_size = image_stats[["width", "height"]].to_numpy() == images[["width", "height"]].to_numpy()
 _agree = int(_same_size.all(axis=1).sum())
-print(f"measured {len(image_stats)} photos · the manifest's width/height matches the file for {_agree}")
+print(f"measured {len(image_stats)} images · the manifest's width/height matches the file for {_agree}")
 STAT_COLUMNS = ["width", "height", "aspect", "megapixels", "brightness", "contrast", "colorfulness"]
 image_stats[STAT_COLUMNS].agg(["min", "median", "mean", "max"]).T.round(2)
 
@@ -270,7 +270,7 @@ callout("answer", "💡 Sample Answer", r"""
 _rng = np.random.default_rng(SEED)
 _line_w = _rng.uniform(300, 640, 40)
 _examples = {
-    "one point\nall photos the same size": (np.full(40, 640.0), np.full(40, 480.0)),
+    "one point\nall images the same size": (np.full(40, 640.0), np.full(40, 480.0)),
     "a line\nsizes differ, same shape": (_line_w, _line_w * 0.75),
     "a cloud\nany size, any shape": (_rng.uniform(200, 640, 40), _rng.uniform(200, 640, 40)),
 }
@@ -289,7 +289,7 @@ plt.close(fig)
 
 # %%
 # @title 🔎 Explore Image Dimensions and Aspect Ratios by Class { display-mode: "form" }
-# Left: every photo as a dot (width across, height up) in its class colour; the dashed line is a square
+# Left: every photo as a dot (width across, height up) in its class color; the dashed line is a square
 # photo. Right: the aspect ratio width/height, stacked by class.
 fig, (ax_sc, ax_hist) = plt.subplots(1, 2, figsize=(13, 4.8))
 for c in CLASSES:
@@ -316,7 +316,7 @@ for ratio, name in [(3 / 4, "3:4"), (1.0, "1:1"), (4 / 3, "4:3")]:
     ax_hist.axvline(ratio, color=INK, lw=0.8, ls=":")
     ax_hist.text(ratio, ax_hist.get_ylim()[1] * 0.97, name, ha="center", va="top", fontsize=8, color=INK)
 ax_hist.set_xlabel("aspect ratio = width / height  (left of 1: portrait, right: landscape)")
-ax_hist.set_ylabel("photos")
+ax_hist.set_ylabel("images")
 ax_hist.set_title("Aspect ratios")
 fig.tight_layout()
 display(fig)
@@ -360,10 +360,10 @@ mode_by_class = mode_by_class.reindex(index=_modes, columns=CLASSES, fill_value=
 image_stats["looks_gray"] = (image_stats["mode"] == "L") | (image_stats["colorfulness"] < 2.0)
 print("color modes: " + " · ".join(f"{m} {int(mode_by_class.loc[m].sum())}" for m in _modes))
 _n_gray = int(image_stats["looks_gray"].sum())
-print(f"photos that look grayscale (mode L, or RGB with colorfulness below 2): {_n_gray}")
+print(f"images that look grayscale (mode L, or RGB with colorfulness below 2): {_n_gray}")
 
 N_GRAY = 6 if SMOKE else 12
-show_rows(image_stats[image_stats["looks_gray"]].head(N_GRAY), "photos that look grayscale")
+show_rows(image_stats[image_stats["looks_gray"]].head(N_GRAY), "images that look grayscale")
 
 _n_rows = math.ceil(len(CLASSES) / 3)
 fig = plt.figure(figsize=(13, 2.3 * _n_rows))
@@ -383,7 +383,7 @@ for c in CLASSES:
     )
     _bottom += mode_by_class[c].to_numpy()
 
-ax_modes.set_ylabel("photos")
+ax_modes.set_ylabel("images")
 ax_modes.set_title("Color mode as stored in the file", fontsize=10)
 ax_modes.legend(frameon=False, fontsize=8)
 
@@ -412,7 +412,7 @@ for k, c in enumerate(CLASSES):
         )
 
     ax.set_title(
-        f"{c} ({len(_hists)} photos)",
+        f"{c} ({len(_hists)} images)",
         color=CLASS_COLORS[c], fontsize=10
     )
     ax.set_yticks([])
@@ -439,7 +439,7 @@ plt.close(fig)
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <ul style="margin:6px 0 0 0;padding-left:22px;">
-<li><strong>Color modes:</strong> 637 images are RGB (three channels) and one is grayscale (L, one channel of brightness values from 0 to 255). Converting an L image to RGB duplicates its brightness values across three channels, ensuring consistent model inputs.</li>
+<li><strong>Color modes:</strong> 632 images are RGB (three channels) and one is grayscale (L, one channel of brightness values from 0 to 255). Converting an L image to RGB duplicates its brightness values across three channels, ensuring consistent model inputs.</li>
 <li><strong>Grayscale appearance:</strong> 17 images appear grayscale, but most are stored as RGB. Appearance and storage mode are not necessarily the same.</li>
 <li><strong>RGB distributions:</strong> Histograms show how frequently different pixel intensities occur, but not where colors appear. The distributions differ between animal classes.</li>
 <li><strong>Implications:</strong> Color differences may reflect backgrounds, lighting, or camera conditions rather than animal features. Consistent preprocessing and evaluation on new camera images are important.</li>
@@ -498,13 +498,13 @@ callout("answer", "💡 Sample Answer", r"""
 # - Which classes show the greatest variation in brightness?
 # - Do the distributions overlap, or are there clear differences between classes?
 #
-# **Go Deeper:**
+# **Go Deeper (optional):**
 # - Could differences in brightness become misleading shortcuts for a classification model?
 # - What can the violin plots reveal that the summary statistics alone cannot?
 
 # %%
 # @title 🔎 Explore Brightness Distributions by Class { display-mode: "form" }
-# Brightness per class as violin plots, in class colours. The dotted lines mark "very dark" and "very bright".
+# Brightness per class as violin plots, in class colors. The dotted lines mark "very dark" and "very bright".
 fig, ax = plt.subplots(figsize=(9, 3.8))
 _data = [image_stats.loc[image_stats["class"] == c, "brightness"].to_numpy() for c in CLASSES]
 _violins = ax.violinplot(_data, widths=0.8, showmedians=True)
@@ -518,7 +518,7 @@ ax.set_xticks(range(1, len(CLASSES) + 1), CLASSES)
 for level in (40, 215):
     ax.axhline(level, color=INK, lw=0.8, ls=":")
 ax.set_ylim(0, 255)
-ax.set_ylabel("brightness (mean grey level)")
+ax.set_ylabel("brightness (mean gray level)")
 ax.set_title("Brightness per class")
 fig.tight_layout()
 display(fig)
@@ -577,7 +577,7 @@ _total = sum(images_per_class.values())
 _largest = max(images_per_class, key=images_per_class.get)
 _smallest = min(images_per_class, key=images_per_class.get)
 _ratio = images_per_class[_largest] / max(1, images_per_class[_smallest])
-print(f"{_total} photos · largest class {_largest} ({images_per_class[_largest]}) · smallest {_smallest} "
+print(f"{_total} images · largest class {_largest} ({images_per_class[_largest]}) · smallest {_smallest} "
       f"({images_per_class[_smallest]}) · ratio {_ratio:.1f}×")
 
 fig, ax = plt.subplots(figsize=(9, 3.8))
@@ -586,8 +586,8 @@ ax.bar(_order, [images_per_class[c] for c in _order], color=[CLASS_COLORS[c] for
 for i, c in enumerate(_order):
     ax.text(i, images_per_class[c], f"{100 * images_per_class[c] / _total:.0f} %", ha="center", va="bottom",
             fontsize=9)
-ax.set_ylabel("photos")
-ax.set_title("Images per class (one label per photo)")
+ax.set_ylabel("images")
+ax.set_title("Images per class (one label per image)")
 ax.set_ylim(0, max(images_per_class.values()) * 1.15)
 fig.tight_layout()
 display(fig)
@@ -597,7 +597,7 @@ plt.close(fig)
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <ul style="margin:6px 0 0 0;padding-left:22px;">
-<li><strong>Class distribution:</strong> Cats and dogs have the most images (130 each), while sheep have the fewest (59). The largest classes contain about 2.2 times as many images as the smallest.</li>
+<li><strong>Class distribution:</strong> Cats and dogs have the most images (130 and 129), while sheep have the fewest (59). The largest classes contain about 2.2 times as many images as the smallest.</li>
 <li><strong>Dataset bias:</strong> People may photograph pets more frequently than sheep. The distribution reflects the Flickr photo collection, not necessarily what the park's cameras will capture.</li>
 <li><strong>Implications:</strong> A model may learn common classes better than underrepresented ones. Overall accuracy could hide poor performance on sheep, so performance should also be evaluated per class.</li>
 <li><strong>Park use case:</strong> Dogs are common in the Play Dataset but may rarely enter the sheep paddock. Detecting these rare events reliably is important, even if dogs are well represented in the training data. Overall accuracy alone may not reflect this performance.</li>
@@ -625,9 +625,9 @@ callout("answer", "💡 Sample Answer", r"""
 # @title 🔎 Explore the Number of Animals per Image { display-mode: "form" }
 _max_n = int(images["n_objects"].max())
 _several = images[images["n_objects"] > 1]
-print(f"{len(_several)} of {len(images)} photos ({100 * len(_several) / len(images):.0f} %) hold more than "
-      f"one animal; the most crowded photo has {_max_n}.")
-print("mean animals per photo: " + " · ".join(
+print(f"{len(_several)} of {len(images)} images ({100 * len(_several) / len(images):.0f} %) hold more than "
+      f"one animal; the most crowded image has {_max_n}.")
+print("mean animals per image: " + " · ".join(
     f"{c} {images.loc[images['class'] == c, 'n_objects'].mean():.1f}" for c in CLASSES))
 
 fig, ax = plt.subplots(figsize=(9, 3.8))
@@ -636,9 +636,9 @@ _per_class = [images.loc[images["class"] == c, "n_objects"].clip(upper=10) for c
 ax.hist(_per_class, bins=_bins, stacked=True, color=[CLASS_COLORS[c] for c in CLASSES], label=CLASSES)
 ax.set_xticks(range(1, min(_max_n, 10) + 1))
 ax.set_xticklabels([str(i) if i < 10 else "10+" for i in range(1, min(_max_n, 10) + 1)])
-ax.set_xlabel("animals in the photo")
-ax.set_ylabel("photos")
-ax.set_title("Animals per photo")
+ax.set_xlabel("animals in the image")
+ax.set_ylabel("images")
+ax.set_title("Animals per image")
 ax.legend(frameon=False, fontsize=9)
 fig.tight_layout()
 display(fig)
@@ -646,16 +646,15 @@ plt.close(fig)
 
 N_CROWDED = 3 if SMOKE else 6  # how many crowded photos to show (N-014)
 _crowded = images.sort_values(["n_objects", "id"], ascending=[False, True]).head(N_CROWDED)
-show_rows(_crowded, "the most crowded photos", lambda r: f"{r['n_objects']} × {r['class']}", cols=N_CROWDED)
+show_rows(_crowded, "the most crowded images", lambda r: f"{r['n_objects']} × {r['class']}", cols=N_CROWDED)
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <ul style="margin:6px 0 0 0;padding-left:22px;">
-<li><strong>Multiple animals:</strong> On the full Play Dataset, 244 of 638 images (38%) contain more than one annotated animal. The most crowded image contains 26.</li>
+<li><strong>Multiple animals:</strong> On the full Play Dataset, 241 of 633 images (38%) contain more than one annotated animal. The most crowded image contains 26.</li>
 <li><strong>Class differences:</strong> Sheep have the highest average (5.7 animals per image), followed by birds (3.4) and zebras (3.2). Cats and dogs usually appear individually.</li>
 <li><strong>Crowded images:</strong> Images with many animals may contain overlapping or very small animals, making individual animals harder to distinguish.</li>
-<li><strong>Classification limitation:</strong> A single label cannot describe how many animals are present or where they are located. An image with thirty sheep and one with a single lamb both receive the label "sheep". For counting or locating animals, object detection or segmentation would be more suitable.</li>
 </ul>
 <p style="margin:12px 0 4px;"><strong>🔎 Go Deeper (optional)</strong></p>
 <ul style="margin:4px 0 0 0;padding-left:22px;">
@@ -680,7 +679,7 @@ callout("theory", "📘 Labeling Strategies: One Label or Multiple Animals?", r"
 
 
 # %% [markdown]
-# #### 🔴 Class Imbalance: Can High Accuracy Be Misleading?
+# #### 🔴 Class Imbalance: Can High Accuracy Be Misleading? (Optional)
 #
 # Imagine a camera monitoring a sheep paddock. Most images contain only sheep, while dogs appear rarely. A rule that always predicts the most common class might achieve high accuracy without detecting any dogs.
 #
@@ -702,7 +701,7 @@ callout("theory", "📘 Labeling Strategies: One Label or Multiple Animals?", r"
 # %%
 # @title 🔎 Explore Accuracy and Dog Recall Under Class Imbalance { display-mode: "form" }
 
-DOG_SHARE = 0.1 # @param {type:"slider", min:0.01, max:0.2, step:0.01}
+DOG_SHARE = 0.02 # @param {type:"slider", min:0.01, max:0.2, step:0.01}
 
 # Rule A: Always predict the most common class in the COCO subset
 _counts = images["class"].value_counts()
@@ -768,7 +767,7 @@ print(
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <ul style="margin:6px 0 0 0;padding-left:22px;">
-<li><strong>Rule A:</strong> In the full COCO subset, the largest class contains 130 of 638 images, giving approximately 20% accuracy. Dog recall is 0% if the rule always predicts cat, or 100% if it always predicts dog.</li>
+<li><strong>Rule A:</strong> In the full COCO subset, the largest class contains 130 of 633 images, giving approximately 20% accuracy. Dog recall is 0% if the rule always predicts cat, or 100% if it always predicts dog.</li>
 <li><strong>Rule B:</strong> Always predicting "no dog" gives 98% accuracy but 0% dog recall when 2% of images contain dogs. None of these dogs triggers an alert.</li>
 <li><strong>Changing DOG_SHARE:</strong> As the proportion of dog images increases, accuracy decreases, while dog recall remains 0%.</li>
 <li><strong>Implications:</strong> High accuracy can be misleading for imbalanced datasets. For the park's dog alert, detecting dogs is essential, so dog recall matters; false alarms must also be considered.</li>

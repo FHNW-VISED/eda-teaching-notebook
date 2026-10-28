@@ -5,7 +5,7 @@
 #
 
 # %% [markdown]
-# ### 🔴 Which potential data quality issues should be addressed before training a model?
+# ### 🔴 Data Quality: Which Issues Should Be Addressed Before Training? (Optional)
 #
 # **Reflect and justify:**
 # - Which images would you remove from this dataset, and why?

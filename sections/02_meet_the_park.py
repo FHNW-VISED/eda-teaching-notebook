@@ -450,7 +450,7 @@ some body parts are missing, and groups of animals may be annotated inconsistent
 
 
 # %% [markdown]
-# #### 🔴 Image Classification: One Label per Image
+# #### 🔴 Image Classification: One Label per Image (Optional)
 #
 # Image classification assigns one label to an entire image, even if it contains multiple animals or different classes. What information is lost, and when might this become a problem?
 

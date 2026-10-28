@@ -77,8 +77,8 @@ for ax, col in zip(axes, ["random · test", "stratified · test"], strict=True):
     ax.bar(x - 0.2, shares["whole table"], width=0.4, color="#DDE5E7", label="whole table")
     ax.bar(x + 0.2, shares[col], width=0.4, color=[CLASS_COLORS[c] for c in CLASSES], label=col)
     ax.set_xticks(x, CLASSES)
-    ax.set_title(f"{col} ({len(_te_rand)} photos)")
-    ax.set_ylabel("share of photos")
+    ax.set_title(f"{col} ({len(_te_rand)} images)")
+    ax.set_ylabel("share of images")
     ax.legend(frameon=False)
 plt.tight_layout()
 plt.show()
@@ -158,7 +158,7 @@ training and validation sets.</p>
 
 
 # %% [markdown]
-# The diagram shows four strategies using 12 example images from three cameras (D = dog, the rare class). Magenta indicates validation images; gray-blue indicates training images.
+# The diagram shows four strategies using 12 example images from three cameras (D = dog, the rare class). Yellow indicates validation images; gray indicates training images.
 
 # %%
 # @title 🔎 Visualize Cross-Validation Strategies { display-mode: "form" }
@@ -168,7 +168,7 @@ dogs = {2, 3, 6}  # Rare class in a toy dataset of 12 photos
 
 cv_folds = {
     "K-fold (a fold may miss the dog)": [{2, 3, 7, 10}, {0, 5, 8, 11}, {1, 4, 6, 9}],
-    "Stratified K-fold (each fold has one dog)": [{0, 2, 4, 9}, {1, 3, 7, 10}, {5, 6, 8, 11}],
+    "Stratified k-fold (each fold has one dog)": [{0, 2, 4, 9}, {1, 3, 7, 10}, {5, 6, 8, 11}],
     "LOO (12 folds, first three shown)": [{0}, {1}, {2}],
     "LOGO (one camera per fold)": [{0, 1, 2, 3}, {4, 5, 6, 7}, {8, 9, 10, 11}],
 }
@@ -225,7 +225,7 @@ axes[-1].set_xticks(
 axes[-1].tick_params(length=0)
 
 fig.suptitle(
-    "Cross-validation: grey = training, yellow = test, D = dog",
+    "Cross-validation: gray = training, yellow = validation, D = dog",
     color=INK
 )
 
@@ -315,13 +315,11 @@ callout("answer", "💡 Sample Answer", r"""
 # %% [markdown]
 # ### Group-Based Splitting: The Trail-Camera Dataset
 #
-# The farm park has installed motion-triggered cameras in its woodland reserve. Each camera can capture several images of the same animal within a short period, producing bursts of closely related images.
+# The farm park has installed motion-triggered cameras in its woodland reserve. Each camera can capture several images of the same animal within a short period, producing bursts of closely related images (a *burst*).
 #
 # We use a subset of the [Caltech Camera Traps (CCT20) dataset](https://lila.science/datasets/caltech-camera-traps) containing images from eight cameras and five animal classes: opossum, raccoon, coyote, bobcat, and rabbit.
 #
 # The following cells load the dataset and display example image bursts. The first run may take a few minutes to download and resize the images.
-#
-# The farm park has installed motion-triggered cameras in its woodland reserve. Each camera can capture several images of the same animal within a short period. Such a sequence of closely related images is called a burst.
 
 # %%
 # @title 📘 Group-Based Splitting and Data Leakage { display-mode: "form" }
@@ -409,7 +407,7 @@ def download_cct(table: pd.DataFrame, workers: int = 16) -> pd.DataFrame:
             done += 1
             if path is not None:
                 paths[name] = str(path)
-            print(f"\r  trail-camera photos ready: {done}/{len(table)}", end="", flush=True)
+            print(f"\r  trail-camera images ready: {done}/{len(table)}", end="", flush=True)
     print()
     out = table[table["file_name"].isin(paths)].copy()
     out["path"] = out["file_name"].map(paths)
@@ -417,7 +415,7 @@ def download_cct(table: pd.DataFrame, workers: int = 16) -> pd.DataFrame:
 
 
 def draw_cct_boxes(ax, row, thumb) -> None:
-    """Draw the animal's box(es) from the manifest on a thumbnail, in the class colour (none when empty)."""
+    """Draw the animal's box(es) from the manifest on a thumbnail, in the class color (none when empty)."""
     original = cct_original_size(Path(row["path"]))
     if not isinstance(row["bbox"], str) or original is None:
         return
@@ -428,7 +426,7 @@ def draw_cct_boxes(ax, row, thumb) -> None:
 
 
 def show_bursts(bursts: list[pd.DataFrame], size: int = 256, show_boxes: bool = True) -> None:
-    """One row per burst in `bursts` (one DataFrame each): its frames side by side, framed in the class colour,
+    """One row per burst in `bursts` (one DataFrame each): its frames side by side, framed in the class color,
     titled with the location."""
     cols = max(len(b) for b in bursts)
     fig, axes = plt.subplots(len(bursts), cols, figsize=(2.6 * cols, 2.1 * len(bursts)), squeeze=False)
@@ -458,11 +456,11 @@ cct_rows = select_cct_rows(cct_all)
 cct = download_cct(cct_rows)
 
 if len(cct) < len(cct_rows):
-    print(f"  ⚠️ {len(cct_rows) - len(cct)} photos could not be downloaded; run again.")
+    print(f"  ⚠️ {len(cct_rows) - len(cct)} images could not be downloaded; run again.")
 
 cct_locations = sorted(cct["location"].unique().tolist())
-print(f"{len(cct)} photos · {cct['seq_id'].nunique()} bursts · cameras {cct_locations}")
-print("photos per class: " + " · ".join(f"{c} {int((cct['label'] == c).sum())}" for c in CCT_CLASSES))
+print(f"{len(cct)} images · {cct['seq_id'].nunique()} bursts · cameras {cct_locations}")
+print("images per class: " + " · ".join(f"{c} {int((cct['label'] == c).sum())}" for c in CCT_CLASSES))
 
 # Prepare bursts for browsing
 burst_list = [b for _, b in cct.groupby("seq_id", sort=True) if len(b) > 1]
@@ -513,7 +511,7 @@ display(widgets.VBox([burst_box_toggle, burst_controls, burst_output]))
 burst_update_browser()
 
 # %% [markdown]
-# ### 🟢 Splitting Strategies: What Does Grouping Change?
+# #### 🟢 Splitting Strategies: What Does Grouping Change?
 #
 # Different splitting strategies determine which images can appear together in training and test sets. The appropriate strategy depends on what the model should generalize to.
 #
@@ -614,7 +612,7 @@ def split_update(change=None):
                     if split_box_toggle.value:
                         draw_cct_boxes(ax, row, thumb)
 
-                    frame(ax, "#4C78A8" if part == "Train" else "#E76F51")
+                    frame(ax, LIGHT_GRAY if part == "Train" else HIGHLIGHT)  # the train/test colors of the CV diagram
                     ax.set_title(
                         f"Camera {row['location']} · Frame {row['frame_num']} · {part}",
                         fontsize=9
@@ -651,6 +649,9 @@ Group-based splitting may produce a test share different from 20% because entire
 </p>
 """)
 
+
+# %% [markdown]
+# ### 🔴 Splitting for Object Detection and Segmentation (Optional)
 
 # %%
 # @title 🔴 Splitting for Object Detection and Segmentation { display-mode: "form" }

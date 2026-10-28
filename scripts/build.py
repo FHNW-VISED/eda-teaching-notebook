@@ -10,9 +10,10 @@ Callouts (SPEC L-001, RULES N-034): a markdown cell whose first line is
 `<!-- callout: KIND | TITLE -->` becomes a collapsed code cell that redraws a coloured HTML box, with the
 same HTML saved as its output so the box shows in Colab before anything runs.
 
-Her boxes (2026-10-28, C-12) are code cells that call the notebook's own `callout(kind, title, body)`. When such a
-cell is a `# @title` line plus one `callout(...)` call with literal arguments (no `fig=`), the build runs the
-notebook's `callout` (taken from the sections source) and saves its HTML as the cell's output, for the same reason.
+Her boxes (2026-10-28, C-12) are code cells that call the notebook's own `callout(kind, title, body)`.
+When such a cell is a `# @title` line plus one `callout(...)` call with literal arguments (no `fig=`), the
+build runs the notebook's `callout` (taken from the sections source) and saves its HTML as the cell's
+output, for the same reason.
 """
 
 from __future__ import annotations
@@ -194,7 +195,7 @@ def notebook_callout(sections: Path = SECTIONS):
 
 
 def prerender_callout(cell: nbformat.NotebookNode, callout) -> None:
-    """Save the box as the output of a code cell that is only `# @title …` + one literal `callout(...)` call."""
+    """Save the box as the output of a cell that is only `# @title …` + one literal `callout(...)` call."""
     if callout is None or cell.cell_type != "code" or "callout(" not in cell.source:
         return
     try:
@@ -214,8 +215,9 @@ def prerender_callout(cell: nbformat.NotebookNode, callout) -> None:
         return
     html = callout(*args).data
     cell.outputs = [
-        nbformat.v4.new_output("display_data", data={"text/html": html, "text/plain": f"<callout: {args[0]}>"},
-                               metadata={})
+        nbformat.v4.new_output(
+            "display_data", data={"text/html": html, "text/plain": f"<callout: {args[0]}>"}, metadata={}
+        )
     ]
 
 

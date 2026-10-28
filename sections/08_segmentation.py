@@ -55,7 +55,7 @@ We can combine these masks to obtain pixel-level class labels for semantic segme
 # @title Helpers: Masks and Data Preparation { display-mode: "form" }
 MIN_JUDGED_AREA = 32**2  # masks under COCO's "small" limit (32×32 px) are too few pixels to judge their shape
 THIN_PX = 7  # parts narrower than this many photo pixels count as thin (about 2 px at 224×224)
-BLOB_SHARE = 0.005  # pieces and holes under 0.5 % of the mask (or 16 px) are rasterisation noise, not shape
+BLOB_SHARE = 0.005  # pieces and holes under 0.5 % of the mask (or 16 px) are rasterization noise, not shape
 
 
 def thin_part(mask: np.ndarray) -> np.ndarray:
@@ -101,7 +101,7 @@ def show_masks(rows_df: pd.DataFrame, masks_df: pd.DataFrame, title: str, captio
     """Gallery of photos with optional segmentation masks and bounding boxes."""
     n = len(rows_df)
     if n == 0:
-        print(f"{title}: no photos to show.")
+        print(f"{title}: no images to show.")
         return
 
     cols = min(cols, n)
@@ -321,7 +321,7 @@ BACKGROUND_COLOR = "#D9DEDF"
 
 # Compare class distributions across counting units
 units = {
-    "photos": {
+    "images": {
         c: images_per_class[c] / sum(images_per_class.values())
         for c in CLASSES
     },
@@ -345,7 +345,7 @@ ax = axes[0]
 x = np.arange(len(CLASSES))
 
 for k, (unit, alpha) in enumerate([
-    ("photos", 0.3),
+    ("images", 0.3),
     ("boxes", 0.6),
     ("pixels", 1.0)
 ]):
@@ -377,12 +377,12 @@ for label in ax.get_xticklabels():
 
 ax.yaxis.set_major_formatter(mpl.ticker.PercentFormatter(1.0))
 ax.set_ylim(0, max(max(v.values()) for v in units.values()) * 1.18)
-ax.set_title("Class distribution among animals: photos vs. boxes vs. pixels")
+ax.set_title("Class distribution among animals: images vs. boxes vs. pixels")
 
 legend = [
     mpl.patches.Patch(color=INK, alpha=alpha, label=unit)
     for unit, alpha in [
-        ("photos", 0.3),
+        ("images", 0.3),
         ("boxes", 0.6),
         ("pixels", 1.0)
     ]
@@ -490,10 +490,10 @@ print(f"{len(animals)} animal masks measured · median fill ratio " + " · ".joi
     f"{c} {_fill[c]:.0%}" for c in CLASSES))
 
 fig, axes = plt.subplots(1, 2, figsize=(11, 3.6))
-for ax, col, label, log in [(axes[0], "photo_share", "mask area, share of the photo (log)", True),
+for ax, col, label, log in [(axes[0], "photo_share", "mask area, share of the image (log)", True),
                             (axes[1], "fill", "fill ratio = mask area / box area", False)]:
     data = [animals.loc[animals["class"] == c, col].clip(lower=1e-5).to_numpy() for c in CLASSES]
-    if log:  # violins are drawn on log10(value) so the KDE is smooth on a log axis; ticks are relabelled
+    if log:  # violins are drawn on log10(value) so the KDE is smooth on a log axis; ticks are relabeled
         data = [np.log10(v) for v in data]
     parts = ax.violinplot(data, showmedians=True, showextrema=False, widths=0.8)
     for body, c in zip(parts["bodies"], CLASSES, strict=True):
@@ -637,7 +637,7 @@ animals["thin_px"] = animals["thin"] * animals["mask_area"]
 _most_thin = animals.sort_values(["thin_px", "id"], ascending=[False, True]).drop_duplicates("image_id").head(
     N_THIN_SHOW)
 show_masks(images_by_id.loc[list(_most_thin["image_id"])].reset_index(), masks,
-           f"the photos with the most thin pixels (dark = narrower than {THIN_PX} px)", mark_thin=True,
+           f"the images with the most thin pixels (dark = narrower than {THIN_PX} px)", mark_thin=True,
            cols=N_THIN_SHOW)
 
 # %%
@@ -677,7 +677,7 @@ helps distinguish small-object effects from genuinely thin structures.</p>
 
 
 # %% [markdown]
-# ### 🔴 Where Are the Animal Pixels?
+# ### 🔴 Where Are the Animal Pixels? (Optional)
 #
 # Segmentation masks reveal not only how much of an image an animal occupies, but also where its pixels are located. By averaging masks across images, we can identify spatial patterns in the dataset.
 #
@@ -709,13 +709,13 @@ for ax, c in zip(axes, CLASSES, strict=True):
     n_photos = max(int((_class_of == c).sum()), 1)
     cmap = mpl.colors.LinearSegmentedColormap.from_list(c, ["white", CLASS_COLORS[c]])
     ax.imshow(heat[c] / n_photos, cmap=cmap, vmin=0, vmax=1, extent=[0, 1, 1, 0])
-    ax.set_title(f"{c} · {heat[c].sum() / n_photos / HEAT_RES**2:.0%} of a photo", fontsize=9,
+    ax.set_title(f"{c} · {heat[c].sum() / n_photos / HEAT_RES**2:.0%} of an image", fontsize=9,
                  color=CLASS_COLORS[c])
     ax.set_xticks([0, 0.5, 1])
     ax.set_yticks([0, 0.5, 1])
     ax.tick_params(labelsize=7)
     ax.grid(False)
-fig.suptitle("Where the animal pixels are (same scale for every class: white = never, full colour = always)",
+fig.suptitle("Where the animal pixels are (same scale for every class: white = never, full color = always)",
              color=INK)
 fig.tight_layout()
 display(fig)
@@ -744,7 +744,7 @@ always appear. Averaging also hides variation between images.</p>
 
 
 # %% [markdown]
-# ### 🔴 Mask Quality: Finding Annotation Errors
+# ### 🔴 Mask Quality: Finding Annotation Errors (Optional)
 #
 # Segmentation masks can contain annotation errors that are difficult to identify by inspecting images individually. In this activity, we deliberately introduce five types of errors into copies of existing COCO masks. The modified annotations are stored in `park_masks`; the original `masks` remain unchanged.
 #
@@ -817,7 +817,7 @@ def plant_mask_errors(animals_df: pd.DataFrame, table: pd.DataFrame,
         a = pool.loc[ann_id]
         x, y, w, h = a["bbox"]
         W, H = int(size.at[a["image_id"], "width"]), int(size.at[a["image_id"], "height"])
-        if kind == "another animal":  # prefer a neighbour in the same photo: a duplicated mask, as in COCO
+        if kind == "another animal":  # prefer a neighbor in the same photo: a duplicated mask, as in COCO
             others = pool[pool["image_id"] != a["image_id"]].index
             same = pool[(pool["image_id"] == a["image_id"]) & (pool.index != ann_id)].index
             for b in [*sorted(same), *[i for i in order if i in others]]:
@@ -875,12 +875,12 @@ def plant_mask_errors(animals_df: pd.DataFrame, table: pd.DataFrame,
 
 
 park_masks, mask_error_key = plant_mask_errors(animals, images, SEED)
-print(f"park_masks: {len(park_masks)} animal masks on {park_masks['image_id'].nunique()} photos. "
+print(f"park_masks: {len(park_masks)} animal masks on {park_masks['image_id'].nunique()} images. "
       "Five of them are ugly. Find them.")
 
 
 # %% [markdown]
-#  **Five simulated annotation errors** The following figure illustrates five possible annotation errors using a toy horse mask. Grey represents the original mask and bounding box (dashed); yellow represents the modified annotation.
+#  **Five simulated annotation errors** The following figure illustrates five possible annotation errors using a toy horse mask. Gray represents the original mask and bounding box (dashed); yellow represents the modified annotation.
 #
 # Look for differences in mask position, shape, coverage, and correspondence with the original horse.
 
@@ -918,7 +918,7 @@ outline, _ = cv2.findContours(horse, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 fig, axes = plt.subplots(1, 5, figsize=(13, 2.7))
 
 for ax, (kind, spoiled) in zip(axes, kinds.items(), strict=True):
-    # Original mask in grey
+    # Original mask in gray
     base = np.zeros((*horse.shape, 4))
     base[horse > 0] = (*mpl.colors.to_rgb(GRAY), 0.35)
     ax.imshow(base)
@@ -949,7 +949,7 @@ for ax, (kind, spoiled) in zip(axes, kinds.items(), strict=True):
     ax.set_title(kind, fontsize=9)
 
 fig.suptitle(
-    "Five simulated annotation errors",
+    "Picture A · Five simulated annotation errors",
     color=INK
 )
 fig.tight_layout()
@@ -962,7 +962,7 @@ plt.close(fig)
 #
 # | Check | What it measures | Flagged when |
 # |---|---|---|
-# | **Mask–box agreement** | IOU between the annotated box and the tightest box around the mask | IoU <escape><</escape> 0.90 |
+# | **Mask–box agreement** | IoU between the annotated box and the tightest box around the mask | IoU &lt; 0.90 |
 # | **Fill ratio** | Mask area divided by bounding box area | Outside 0.15–0.95 |
 # | **Connected components** | Number of separate mask regions | More than 3 |
 # | **Holes** | Enclosed background regions within the mask | At least 1 |
@@ -1031,7 +1031,7 @@ for r, (row_name, (mask, box)) in enumerate(rows.items()):
     for k, (name, rule, key, is_suspect, fmt) in enumerate(CHECK_RULES):
         ax = axes[r, k]
 
-        # Original reference in grey, evaluated mask in yellow
+        # Original reference in gray, evaluated mask in yellow
         ax.imshow(mask_layer(original, GRAY, 0.35))
         ax.imshow(mask_layer(mask, HIGHLIGHT, 0.8))
 
@@ -1095,7 +1095,7 @@ for r, (row_name, (mask, box)) in enumerate(rows.items()):
     axes[r, 0].set_ylabel(row_name, fontsize=12, color=INK)
 
 fig.suptitle(
-    "Five mask quality checks: original (top) vs. modified (bottom)",
+    "Picture B · Five mask quality checks: original (top) vs. modified (bottom)",
     color=INK, fontsize=13
 )
 fig.tight_layout()
@@ -1157,7 +1157,7 @@ _show = mask_suspects.drop_duplicates("image_id").head(N_SUSPECTS_SHOW).set_inde
 
 def _suspect_caption(r) -> str:
     s = _show.loc[r["id"]]
-    return (f"photo {r['id']} · {s['class']} · {s['checks']}\n"
+    return (f"image {r['id']} · {s['class']} · {s['checks']}\n"
             f"box IoU {s['box_iou']:.2f} · fill {s['fill']:.2f}")
 
 
@@ -1269,7 +1269,7 @@ fig.tight_layout()
 
 _items = "".join(f"<li>{escape(line)}</li>" for line in _lines)
 
-# The complete answer inside one collapsible grey box; the figure goes where the body says <!-- fig -->.
+# The complete answer inside one collapsible gray box; the figure goes where the body says <!-- fig -->.
 callout("answer", "💡 Sample Answer", f"""
 <p><strong>Which errors were detected?</strong></p>
 <ul>{_items}</ul>
@@ -1314,6 +1314,3 @@ annotations. Combining checks helps prioritize visual inspection,
 but cannot replace it.</p>
 """, fig=fig)
 
-
-# %% [markdown]
-# ## Continue here (SUS)

@@ -26,7 +26,7 @@ callout("recipe", "🧾 Recipe · Step 1, continued: Dataset Errors", r"""
 
 # %%
 # @title 🔍 Go Deeper: Two Kaggle Stories { display-mode: "form" }
-callout("deeper", "🔍 Go deeper · This is ordinary: two Kaggle stories", r"""
+callout("deeper", "🔍 Go Deeper · This is ordinary: two Kaggle stories", r"""
 <details style="margin:6px 0 0 0;">
 <summary style="cursor:pointer;font-weight:bold;">Datasets built with care that still shipped duplicates</summary>
 <p style="margin:6px 0 0 0;"><strong>PetFinder.my Pawpularity</strong> (2021) shipped near-identical photos with <em>different</em> scores, and <strong>Cassava
@@ -37,7 +37,7 @@ will have duplicates too, unless you look.</p>
 
 
 # %% [markdown]
-# #### 🟢 Duplicate Images: What Can We Detect?
+# ### 🟢 Duplicate Images: What Can We Detect?
 #
 # Duplicate images can lead to misleading evaluation results, especially when copies appear in both training and test sets.
 #
@@ -239,7 +239,7 @@ dup_update_browser()
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <ul style="margin:6px 0 0 0;padding-left:22px;">
-<li><strong>Exact duplicates:</strong> No byte-identical files were found among the 638 images. MD5 detects identical files, but recompressing an image changes its hash. Even curated datasets should be checked, especially when new images are added or exported.</li>
+<li><strong>Exact duplicates:</strong> No byte-identical files were found among the 633 images. MD5 detects identical files, but recompressing an image changes its hash. Even curated datasets should be checked, especially when new images are added or exported.</li>
 
 <li><strong>Near-duplicates:</strong> At a threshold of 8 bits, one pair is flagged: two images of the same cat in front of a brick wall, with slightly different head positions. Most other images have larger bit distances, but visually similar scenes can still produce false positives.</li>
 <li><strong>Threshold:</strong> Increasing the threshold flags more pairs, including unrelated images. A lower threshold may miss genuine near-duplicates.</li>
@@ -271,7 +271,7 @@ nearest_distance = _dist.min(axis=1)  # each photo's distance to its closest oth
 _i, _j = np.where(np.triu(_dist <= HASH_THRESHOLD, k=1))
 near_pairs = pd.DataFrame({"a": images["id"].to_numpy()[_i], "b": images["id"].to_numpy()[_j],
                            "distance": _dist[_i, _j]}).sort_values("distance").reset_index(drop=True)
-print(f"pairs within {HASH_THRESHOLD} bits: {len(near_pairs)} · median nearest-neighbour distance: "
+print(f"pairs within {HASH_THRESHOLD} bits: {len(near_pairs)} · median nearest-neighbor distance: "
       f"{np.median(nearest_distance):.0f} bits")
 
 fig, ax = plt.subplots(figsize=(9, 3.4))
@@ -280,9 +280,9 @@ ax.hist([nearest_distance[(images["class"] == c).to_numpy()] for c in CLASSES], 
         color=[CLASS_COLORS[c] for c in CLASSES], label=CLASSES)
 ax.axvline(HASH_THRESHOLD + 0.5, color=INK, ls=":", lw=1)
 ax.text(HASH_THRESHOLD + 1, ax.get_ylim()[1] * 0.9, f"HASH_THRESHOLD = {HASH_THRESHOLD}", fontsize=9)
-ax.set_xlabel("Hamming distance to the closest other photo (bits)")
-ax.set_ylabel("photos")
-ax.set_title("How close is each photo's nearest neighbour?")
+ax.set_xlabel("Hamming distance to the closest other image (bits)")
+ax.set_ylabel("images")
+ax.set_title("How close is each image's nearest neighbor?")
 ax.legend(frameon=False, fontsize=9)
 fig.tight_layout()
 display(fig)
@@ -321,8 +321,8 @@ unrelated = load_thumb((pool if len(pool) else images)["path"].iloc[-1])
 
 near = jpeg_copy(orig, scale=0.7, quality=55)
 
-grey = orig.convert("L").resize((32, 32), Image.Resampling.LANCZOS)
-dct = dctn(np.asarray(grey, dtype=float), type=2)
+gray = orig.convert("L").resize((32, 32), Image.Resampling.LANCZOS)
+dct = dctn(np.asarray(gray, dtype=float), type=2)
 
 bits = {
     k: phash(im).hash
@@ -357,9 +357,9 @@ fig, axes = plt.subplots(2, 4, figsize=(10, 5.2))
 
 # How the hash is constructed
 axes[0, 0].imshow(orig)
-axes[0, 0].set_title("1. Original photo", fontsize=9)
+axes[0, 0].set_title("1. Original image", fontsize=9)
 
-axes[0, 1].imshow(grey, cmap="gray")
+axes[0, 1].imshow(gray, cmap="gray")
 axes[0, 1].set_title("2. Resize to 32×32, grayscale", fontsize=9)
 
 axes[0, 2].imshow(np.log1p(np.abs(dct)), cmap="Greys")
@@ -390,7 +390,7 @@ draw_bits(
 )
 draw_bits(
     axes[1, 2], bits["other"], bits["orig"],
-    f"Unrelated photo:\n{d_other} bits differ"
+    f"Unrelated image:\n{d_other} bits differ"
 )
 
 axes[1, 3].axis("off")
@@ -439,7 +439,7 @@ callout("answer", "💡 Sample Answer", r"""
 # - Does standard pHash detect all transformed copies?
 # - What additional duplicates are identified when flipped and rotated versions are compared?
 #
-# **🔎 Go Deeper (optional):**
+# **Go Deeper (optional):**
 # - What are the computational costs and potential drawbacks of checking multiple transformations?
 
 # %%
@@ -792,10 +792,10 @@ callout("theory", "📘 Image Embeddings, Similarity, and UMAP", r"""
 # @title Helpers: Image Embeddings { display-mode: "form" }
 
 def cosine_similarity_matrix(vectors: np.ndarray) -> np.ndarray:
-    """Cosine similarity between every pair of rows (after centring the columns)."""
-    centred = vectors - vectors.mean(axis=0)
-    norm = np.linalg.norm(centred, axis=1, keepdims=True) + 1e-9
-    unit = centred / norm
+    """Cosine similarity between every pair of rows (after centering the columns)."""
+    centered = vectors - vectors.mean(axis=0)
+    norm = np.linalg.norm(centered, axis=1, keepdims=True) + 1e-9
+    unit = centered / norm
     return unit @ unit.T
 
 
