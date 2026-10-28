@@ -111,8 +111,6 @@ import numpy as np
 import pandas as pd
 from PIL import Image
 
-EXTREME_SIDE_PX = (64, 6000)
-
 
 def file_md5(path) -> str:
     """Compute an MD5 hash from file bytes."""
@@ -152,30 +150,6 @@ def is_readable(path) -> bool:
         return False
 
 
-def flag_odd_files(stats: pd.DataFrame) -> pd.DataFrame:
-    """Identify unreadable files, unusual color modes, and extreme dimensions."""
-    rows = []
-
-    for _, r in stats.iterrows():
-        flags = []
-
-        if not is_readable(r["path"]):
-            flags.append("unreadable")
-        if r["mode"] != "RGB":
-            flags.append(f"mode {r['mode']}")
-        if not EXTREME_SIDE_PX[0] <= r["long_side"] <= EXTREME_SIDE_PX[1]:
-            flags.append(f"extreme size {r['width']}×{r['height']}")
-
-        if flags:
-            rows.append({
-                "id": r["id"],
-                "class": r["class"],
-                "flags": ", ".join(flags)
-            })
-
-    return pd.DataFrame(rows, columns=["id", "class", "flags"])
-
-
 # %%
 # @title 🔎 Inspect Near-Duplicates Using pHash { display-mode: "form" }
 import ipywidgets as widgets
@@ -200,7 +174,7 @@ PAIRS.sort(key=lambda pair: pair[2])
 
 print(f"Found {len(PAIRS)} candidate pairs within 20 bits.")
 
-threshold = widgets.IntSlider(
+dup_threshold = widgets.IntSlider(
     value=8, min=0, max=20, step=1,
     description="Bit distance threshold:",
     continuous_update=False,
@@ -208,41 +182,41 @@ threshold = widgets.IntSlider(
     layout=widgets.Layout(width="450px")
 )
 
-previous = widgets.Button(description="← Previous")
-next_button = widgets.Button(description="Next →")
-summary = widgets.HTML()
-counter = widgets.HTML()
-output = widgets.Output()
+dup_previous = widgets.Button(description="← Previous")
+dup_next_button = widgets.Button(description="Next →")
+dup_summary = widgets.HTML()
+dup_counter = widgets.HTML()
+dup_output = widgets.Output()
 
-state = {"index": 0}
+dup_state = {"index": 0}
 
-def update_browser(*_):
+def dup_update_browser(*_):
     # Only show pairs within the selected threshold
-    flagged_pairs = [pair for pair in PAIRS if pair[2] <= threshold.value]
+    flagged_pairs = [pair for pair in PAIRS if pair[2] <= dup_threshold.value]
 
-    state["index"] = min(state["index"], max(0, len(flagged_pairs) - 1))
+    dup_state["index"] = min(dup_state["index"], max(0, len(flagged_pairs) - 1))
 
-    summary.value = (
+    dup_summary.value = (
         f"<b>{len(images)}</b> images checked &nbsp; | &nbsp; "
         f"<b>{len(flagged_pairs)}</b> potential near-duplicate pairs"
     )
 
 
-    previous.disabled = state["index"] == 0
-    next_button.disabled = state["index"] >= len(flagged_pairs) - 1
+    dup_previous.disabled = dup_state["index"] == 0
+    dup_next_button.disabled = dup_state["index"] >= len(flagged_pairs) - 1
 
-    with output:
+    with dup_output:
         clear_output(wait=True)
 
         if not flagged_pairs:
-            counter.value = ""
+            dup_counter.value = ""
             print("No image pairs found within this threshold. Try increasing it.")
             return
 
-        i, j, distance = flagged_pairs[state["index"]]
+        i, j, distance = flagged_pairs[dup_state["index"]]
 
-        counter.value = (
-            f"<b>Pair {state['index'] + 1} of {len(flagged_pairs)}</b>"
+        dup_counter.value = (
+            f"<b>Pair {dup_state['index'] + 1} of {len(flagged_pairs)}</b>"
         )
 
         fig, axes = plt.subplots(1, 2, figsize=(10, 4))
@@ -259,24 +233,24 @@ def update_browser(*_):
         plt.show()
         plt.close(fig)
 
-def navigate(step):
-    state["index"] += step
-    update_browser()
+def dup_navigate(step):
+    dup_state["index"] += step
+    dup_update_browser()
 
-def change_threshold(change):
-    state["index"] = 0
-    update_browser()
+def dup_change_threshold(change):
+    dup_state["index"] = 0
+    dup_update_browser()
 
-previous.on_click(lambda _: navigate(-1))
-next_button.on_click(lambda _: navigate(1))
-threshold.observe(change_threshold, names="value")
+dup_previous.on_click(lambda _: dup_navigate(-1))
+dup_next_button.on_click(lambda _: dup_navigate(1))
+dup_threshold.observe(dup_change_threshold, names="value")
 
-display(summary)
-display(threshold)
-display(widgets.HBox([previous, counter, next_button]))
-display(output)
+display(dup_summary)
+display(dup_threshold)
+display(widgets.HBox([dup_previous, dup_counter, dup_next_button]))
+display(dup_output)
 
-update_browser()
+dup_update_browser()
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }
@@ -1162,55 +1136,55 @@ outlier_indices = {
 }
 
 # Exploration controls
-mode = widgets.ToggleButtons(
+sim_mode = widgets.ToggleButtons(
     options=["Most similar pairs", "Unusual images"],
     description="Explore:"
 )
-class_picker = widgets.Dropdown(
+sim_class_picker = widgets.Dropdown(
     options=list(CLASSES),
     description="Class:"
 )
-n_pairs = widgets.BoundedIntText(
+sim_n_pairs = widgets.BoundedIntText(
     value=10, min=1, max=min(100, len(top_pairs)),
     description="Pairs:",
     layout=widgets.Layout(width="160px")
 )
-n_unusual = widgets.IntSlider(
+sim_n_unusual = widgets.IntSlider(
     value=4, min=2, max=10, step=1,
     description="Images:",
     continuous_update=False,
     style={"description_width": "initial"}
 )
-prev_btn = widgets.Button(description="← Previous")
-next_btn = widgets.Button(description="Next →")
-counter = widgets.HTML()
-preview = widgets.Output()
-position = 0
+sim_prev_btn = widgets.Button(description="← Previous")
+sim_next_btn = widgets.Button(description="Next →")
+sim_counter = widgets.HTML()
+sim_preview = widgets.Output()
+sim_position = 0
 
-def update_view(change=None):
-    global position
+def sim_update_view(change=None):
+    global sim_position
 
-    if mode.value == "Most similar pairs":
-        total = min(n_pairs.value, len(top_pairs))
-        position = max(0, min(position, total - 1))
+    if sim_mode.value == "Most similar pairs":
+        total = min(sim_n_pairs.value, len(top_pairs))
+        sim_position = max(0, min(sim_position, total - 1))
 
-        a, b = top_pairs[position]
+        a, b = top_pairs[sim_position]
         rows = image_stats.iloc[[a, b]]
 
         title = (
-            f"Pair {position + 1}/{total} · "
+            f"Pair {sim_position + 1}/{total} · "
             f"cosine similarity: {sim[a, b]:.2f}"
         )
         labels = lambda r: r["class"]
         cols = 2
 
-        prev_btn.disabled = position == 0
-        next_btn.disabled = position == total - 1
-        counter.value = f"{position + 1}/{total}"
+        sim_prev_btn.disabled = sim_position == 0
+        sim_next_btn.disabled = sim_position == total - 1
+        sim_counter.value = f"{sim_position + 1}/{total}"
 
     else:
-        c = class_picker.value
-        selected = outlier_indices[c][:n_unusual.value]
+        c = sim_class_picker.value
+        selected = outlier_indices[c][:sim_n_unusual.value]
         rows = image_stats.iloc[selected].copy()
         rows["class_similarity"] = class_similarity[selected]
 
@@ -1218,41 +1192,41 @@ def update_view(change=None):
         labels = lambda r: f"Avg. similarity: {r['class_similarity']:.2f}"
         cols = min(4, len(selected))
 
-    with preview:
+    with sim_preview:
         clear_output(wait=True)
         show_rows(rows, title, labels, cols=cols)
 
-    is_pairs = mode.value == "Most similar pairs"
-    class_picker.layout.display = "none" if is_pairs else ""
-    n_pairs.layout.display = "" if is_pairs else "none"
-    n_unusual.layout.display = "none" if is_pairs else ""
-    prev_btn.layout.display = "" if is_pairs else "none"
-    next_btn.layout.display = "" if is_pairs else "none"
-    counter.layout.display = "" if is_pairs else "none"
+    is_pairs = sim_mode.value == "Most similar pairs"
+    sim_class_picker.layout.display = "none" if is_pairs else ""
+    sim_n_pairs.layout.display = "" if is_pairs else "none"
+    sim_n_unusual.layout.display = "none" if is_pairs else ""
+    sim_prev_btn.layout.display = "" if is_pairs else "none"
+    sim_next_btn.layout.display = "" if is_pairs else "none"
+    sim_counter.layout.display = "" if is_pairs else "none"
 
-def navigate(step):
-    global position
-    position = max(0, min(n_pairs.value - 1, position + step))
-    update_view()
+def sim_navigate(step):
+    global sim_position
+    sim_position = max(0, min(sim_n_pairs.value - 1, sim_position + step))
+    sim_update_view()
 
-def reset_view(change=None):
-    global position
-    position = 0
-    update_view()
+def sim_reset_view(change=None):
+    global sim_position
+    sim_position = 0
+    sim_update_view()
 
-prev_btn.on_click(lambda _: navigate(-1))
-next_btn.on_click(lambda _: navigate(1))
+sim_prev_btn.on_click(lambda _: sim_navigate(-1))
+sim_next_btn.on_click(lambda _: sim_navigate(1))
 
-mode.observe(reset_view, names="value")
-class_picker.observe(reset_view, names="value")
-n_pairs.observe(reset_view, names="value")
-n_unusual.observe(reset_view, names="value")
+sim_mode.observe(sim_reset_view, names="value")
+sim_class_picker.observe(sim_reset_view, names="value")
+sim_n_pairs.observe(sim_reset_view, names="value")
+sim_n_unusual.observe(sim_reset_view, names="value")
 
-display(widgets.HBox([mode, class_picker, n_pairs, n_unusual]))
-display(widgets.HBox([prev_btn, next_btn, counter]))
-display(preview)
+display(widgets.HBox([sim_mode, sim_class_picker, sim_n_pairs, sim_n_unusual]))
+display(widgets.HBox([sim_prev_btn, sim_next_btn, sim_counter]))
+display(sim_preview)
 
-update_view()
+sim_update_view()
 
 # %%
 # @title 🔎 Compare Within-Class Image Similarity { display-mode: "form" }

@@ -432,9 +432,10 @@ print(f"photos that look grayscale (mode L, or RGB with colorfulness below 2): {
 N_GRAY = 6 if SMOKE else 12
 show_rows(image_stats[image_stats["looks_gray"]].head(N_GRAY), "photos that look grayscale")
 
-fig = plt.figure(figsize=(13, 4.6))
+_n_rows = math.ceil(len(CLASSES) / 3)
+fig = plt.figure(figsize=(13, 2.3 * _n_rows))
 _gs = fig.add_gridspec(
-    2, 4, width_ratios=[1.4, 1, 1, 1],
+    _n_rows, 4, width_ratios=[1.4, 1, 1, 1],
     hspace=0.65, wspace=0.3,
     left=0.05, right=0.99, top=0.86, bottom=0.12
 )

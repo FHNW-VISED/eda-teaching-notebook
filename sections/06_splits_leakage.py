@@ -532,56 +532,56 @@ print(f"{len(cct)} photos · {cct['seq_id'].nunique()} bursts · cameras {CCT_LO
 print("photos per class: " + " · ".join(f"{c} {int((cct['label'] == c).sum())}" for c in CCT_CLASSES))
 
 # Prepare bursts for browsing
-bursts = [b for _, b in cct.groupby("seq_id", sort=True) if len(b) > 1]
-bursts.sort(key=lambda b: not b["bbox"].notna().all())
+burst_list = [b for _, b in cct.groupby("seq_id", sort=True) if len(b) > 1]
+burst_list.sort(key=lambda b: not b["bbox"].notna().all())
 
 bursts_per_page = 2
-page = 0
+burst_page = 0
 
-show_bounding_boxes = widgets.Checkbox(value=True, description="Show bounding boxes")
-previous_button = widgets.Button(description="Previous", icon="chevron-left")
-next_button = widgets.Button(description="Next", icon="chevron-right")
-counter = widgets.HTML()
-output = widgets.Output()
+burst_box_toggle = widgets.Checkbox(value=True, description="Show bounding boxes")
+burst_prev_btn = widgets.Button(description="Previous", icon="chevron-left")
+burst_next_btn = widgets.Button(description="Next", icon="chevron-right")
+burst_counter = widgets.HTML()
+burst_output = widgets.Output()
 
 
-def update_browser(change=None):
-    start = page * bursts_per_page
-    selected = bursts[start:start + bursts_per_page]
+def burst_update_browser(change=None):
+    start = burst_page * bursts_per_page
+    selected = burst_list[start:start + bursts_per_page]
 
-    previous_button.disabled = page == 0
-    next_button.disabled = start + bursts_per_page >= len(bursts)
-    counter.value = f"Bursts {start + 1}–{start + len(selected)} of {len(bursts)}"
+    burst_prev_btn.disabled = burst_page == 0
+    burst_next_btn.disabled = start + bursts_per_page >= len(burst_list)
+    burst_counter.value = f"Bursts {start + 1}–{start + len(selected)} of {len(burst_list)}"
 
-    with output:
+    with burst_output:
         clear_output(wait=True)
         if selected:
             show_bursts(
                 pd.concat(selected),
                 n_bursts=len(selected),
-                show_boxes=show_bounding_boxes.value,
+                show_boxes=burst_box_toggle.value,
             )
 
 
-def previous_page(button):
-    global page
-    page = max(0, page - 1)
-    update_browser()
+def burst_previous_page(button):
+    global burst_page
+    burst_page = max(0, burst_page - 1)
+    burst_update_browser()
 
 
-def next_page(button):
-    global page
-    page = min((len(bursts) - 1) // bursts_per_page, page + 1)
-    update_browser()
+def burst_next_page(button):
+    global burst_page
+    burst_page = min((len(burst_list) - 1) // bursts_per_page, burst_page + 1)
+    burst_update_browser()
 
 
-previous_button.on_click(previous_page)
-next_button.on_click(next_page)
-show_bounding_boxes.observe(update_browser, names="value")
+burst_prev_btn.on_click(burst_previous_page)
+burst_next_btn.on_click(burst_next_page)
+burst_box_toggle.observe(burst_update_browser, names="value")
 
-controls = widgets.HBox([previous_button, next_button, counter])
-display(widgets.VBox([show_bounding_boxes, controls, output]))
-update_browser()
+burst_controls = widgets.HBox([burst_prev_btn, burst_next_btn, burst_counter])
+display(widgets.VBox([burst_box_toggle, burst_controls, burst_output]))
+burst_update_browser()
 
 # %% [markdown]
 # ### 🟢 Splitting Strategies: What Does Grouping Change?
@@ -610,31 +610,31 @@ update_browser()
 import ipywidgets as widgets
 from IPython.display import display, clear_output
 
-strategy = widgets.Dropdown(
+split_strategy = widgets.Dropdown(
     options=["Random", "Stratified", "Group by burst", "Group by camera"],
     description="Strategy:"
 )
-seed = widgets.IntSlider(value=SEED, min=0, max=100, description="Seed:")
-show_boxes = widgets.Checkbox(value=True, description="Bounding boxes")
-output = widgets.Output()
+split_seed = widgets.IntSlider(value=SEED, min=0, max=100, description="Seed:")
+split_box_toggle = widgets.Checkbox(value=True, description="Bounding boxes")
+split_output = widgets.Output()
 
 
-def update(change=None):
-    with output:
+def split_update(change=None):
+    with split_output:
         clear_output(wait=True)
 
-        method = strategy.value
+        method = split_strategy.value
         indices = np.arange(len(cct))
 
         if method in ["Random", "Stratified"]:
             train, test = train_test_split(
-                indices, test_size=0.2, random_state=seed.value,
+                indices, test_size=0.2, random_state=split_seed.value,
                 stratify=cct["label"] if method == "Stratified" else None
             )
         else:
             groups = cct["seq_id"] if method == "Group by burst" else cct["location"]
             train, test = next(
-                GroupShuffleSplit(test_size=0.2, random_state=seed.value)
+                GroupShuffleSplit(test_size=0.2, random_state=split_seed.value)
                 .split(indices, groups=groups)
             )
 
@@ -685,7 +685,7 @@ def update(change=None):
                     thumb = load_thumb(row["path"], (256, 256))
 
                     ax.imshow(thumb)
-                    if show_boxes.value:
+                    if split_box_toggle.value:
                         draw_cct_boxes(ax, row, thumb)
 
                     frame(ax, "#4C78A8" if part == "Train" else "#E76F51")
@@ -699,12 +699,12 @@ def update(change=None):
             plt.show()
 
 
-strategy.observe(update, names="value")
-seed.observe(update, names="value")
-show_boxes.observe(update, names="value")
+split_strategy.observe(split_update, names="value")
+split_seed.observe(split_update, names="value")
+split_box_toggle.observe(split_update, names="value")
 
-display(widgets.HBox([strategy, seed, show_boxes]), output)
-update()
+display(widgets.HBox([split_strategy, split_seed, split_box_toggle]), split_output)
+split_update()
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }

@@ -73,3 +73,4 @@ park DINOv2 vectors precomputed as `data/coco_animals_dinov2.npz`; the `%pip` li
 
 | Group | Commit | Notes |
 |---|---|---|
+| 1 · Breakage | Her copy, group 1 | C-24 (flag_odd_files + EXTREME_SIDE_PX deleted, `build_my_sample` samples `pool = images`), R-02 (`THUMB_FOR_HASH = (256, 256)` in Check 3), R-03 (two int sizes → tuples), N-01, N-13 (prefixes as in the audit; also `pages` → `size_pages`, `examples` → `fill_examples`, `bursts` → `burst_list`, 149's `output` → `overlap_output`), C-15 (`math` imported in setup). Smoke (project venv): runs to cell 94 and stops on `import torch`, which her copy needs and the venv does not have; that is fixed by group 6, not here. Checked instead with a jupyter_client run that continues past errors: the only errors are 94 and its cascade 95–98; on the audit venv (torch installed) 0 errors. |

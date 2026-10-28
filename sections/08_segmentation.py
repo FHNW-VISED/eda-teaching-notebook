@@ -215,68 +215,68 @@ from IPython.display import display
 mask_images = images[images["id"].isin(masks["image_id"].unique())].copy()
 mask_images = mask_images.sample(frac=1, random_state=SEED).reset_index(drop=True)
 
-page = 0
+maskview_page = 0
 page_size = 4
 
-prev_btn = widgets.Button(description="Previous", icon="chevron-left")
-next_btn = widgets.Button(description="Next", icon="chevron-right")
-shuffle_btn = widgets.Button(description="Shuffle", icon="shuffle")
+maskview_prev_btn = widgets.Button(description="Previous", icon="chevron-left")
+maskview_next_btn = widgets.Button(description="Next", icon="chevron-right")
+maskview_shuffle_btn = widgets.Button(description="Shuffle", icon="shuffle")
 
-mask_toggle = widgets.Checkbox(value=True, description="Show masks", indent=False)
-box_toggle = widgets.Checkbox(value=True, description="Show boxes", indent=False)
+maskview_mask_toggle = widgets.Checkbox(value=True, description="Show masks", indent=False)
+maskview_box_toggle = widgets.Checkbox(value=True, description="Show boxes", indent=False)
 
-page_label = widgets.HTML()
-output = widgets.Output()
+maskview_page_label = widgets.HTML()
+maskview_output = widgets.Output()
 
-def show_page():
+def maskview_show_page():
     total_pages = (len(mask_images) + page_size - 1) // page_size
-    start = page * page_size
+    start = maskview_page * page_size
     selected = mask_images.iloc[start:start + page_size]
 
-    page_label.value = f"Page {page + 1} of {total_pages}"
-    prev_btn.disabled = (page == 0)
-    next_btn.disabled = (page >= total_pages - 1)
+    maskview_page_label.value = f"Page {maskview_page + 1} of {total_pages}"
+    maskview_prev_btn.disabled = (maskview_page == 0)
+    maskview_next_btn.disabled = (maskview_page >= total_pages - 1)
 
-    with output:
-        output.clear_output(wait=True)
+    with maskview_output:
+        maskview_output.clear_output(wait=True)
         show_masks(
             selected,
             masks,
             "Segmentation masks",
             caption=lambda r: r["class"],
-            show_mask=mask_toggle.value,
-            show_box=box_toggle.value
+            show_mask=maskview_mask_toggle.value,
+            show_box=maskview_box_toggle.value
         )
 
-def navigate(change):
-    global page, mask_images
+def maskview_navigate(change):
+    global maskview_page, mask_images
 
     total_pages = (len(mask_images) + page_size - 1) // page_size
 
     if change == "previous":
-        page = max(0, page - 1)
+        maskview_page = max(0, maskview_page - 1)
     elif change == "next":
-        page = min(total_pages - 1, page + 1)
+        maskview_page = min(total_pages - 1, maskview_page + 1)
     elif change == "shuffle":
         mask_images = mask_images.sample(frac=1).reset_index(drop=True)
-        page = 0
+        maskview_page = 0
 
-    show_page()
+    maskview_show_page()
 
-prev_btn.on_click(lambda b: navigate("previous"))
-next_btn.on_click(lambda b: navigate("next"))
-shuffle_btn.on_click(lambda b: navigate("shuffle"))
+maskview_prev_btn.on_click(lambda b: maskview_navigate("previous"))
+maskview_next_btn.on_click(lambda b: maskview_navigate("next"))
+maskview_shuffle_btn.on_click(lambda b: maskview_navigate("shuffle"))
 
-mask_toggle.observe(lambda change: show_page(), names="value")
-box_toggle.observe(lambda change: show_page(), names="value")
+maskview_mask_toggle.observe(lambda change: maskview_show_page(), names="value")
+maskview_box_toggle.observe(lambda change: maskview_show_page(), names="value")
 
 display(
-    widgets.HBox([prev_btn, next_btn, shuffle_btn, page_label]),
-    widgets.HBox([mask_toggle, box_toggle]),
-    output
+    widgets.HBox([maskview_prev_btn, maskview_next_btn, maskview_shuffle_btn, maskview_page_label]),
+    widgets.HBox([maskview_mask_toggle, maskview_box_toggle]),
+    maskview_output
 )
 
-show_page()
+maskview_show_page()
 
 
 # %%
@@ -592,7 +592,7 @@ candidates = (
 
 n_examples = min(20, len(candidates) // 3)
 
-examples = {
+fill_examples = {
     "Low": candidates.head(n_examples).reset_index(drop=True),
     "Typical": candidates.iloc[
         (len(candidates) - n_examples) // 2:
@@ -601,70 +601,70 @@ examples = {
     "High": candidates.tail(n_examples).reset_index(drop=True)
 }
 
-category = widgets.ToggleButtons(
+fill_category = widgets.ToggleButtons(
     options=["Low", "Typical", "High"],
     description="Fill ratio:"
 )
-prev_btn = widgets.Button(description="Previous", icon="chevron-left")
-next_btn = widgets.Button(description="Next", icon="chevron-right")
-mask_toggle = widgets.Checkbox(value=True, description="Show masks", indent=False)
-box_toggle = widgets.Checkbox(value=True, description="Show boxes", indent=False)
-page_label = widgets.HTML()
-output = widgets.Output()
+fill_prev_btn = widgets.Button(description="Previous", icon="chevron-left")
+fill_next_btn = widgets.Button(description="Next", icon="chevron-right")
+fill_mask_toggle = widgets.Checkbox(value=True, description="Show masks", indent=False)
+fill_box_toggle = widgets.Checkbox(value=True, description="Show boxes", indent=False)
+fill_page_label = widgets.HTML()
+fill_output = widgets.Output()
 
-page = 0
+fill_page = 0
 page_size = 4
 image_lookup = images.set_index("id")
 
-def show_page():
-    selected = examples[category.value]
+def fill_show_page():
+    selected = fill_examples[fill_category.value]
     total_pages = max(1, (len(selected) + page_size - 1) // page_size)
-    start = page * page_size
+    start = fill_page * page_size
     current = selected.iloc[start:start + page_size]
 
-    page_label.value = f"Page {page + 1} of {total_pages}"
-    prev_btn.disabled = page == 0
-    next_btn.disabled = page >= total_pages - 1
+    fill_page_label.value = f"Page {fill_page + 1} of {total_pages}"
+    fill_prev_btn.disabled = fill_page == 0
+    fill_next_btn.disabled = fill_page >= total_pages - 1
 
     image_rows = image_lookup.loc[current["image_id"]].reset_index()
     fill_values = dict(zip(current["image_id"], current["fill"]))
 
-    with output:
-        output.clear_output(wait=True)
+    with fill_output:
+        fill_output.clear_output(wait=True)
         show_masks(
             image_rows,
             masks,
-            f"{category.value} fill ratios",
+            f"{fill_category.value} fill ratios",
             caption=lambda r: f"{r['class']} · fill {fill_values[r['id']]:.0%}",
-            show_mask=mask_toggle.value,
-            show_box=box_toggle.value,
+            show_mask=fill_mask_toggle.value,
+            show_box=fill_box_toggle.value,
             highlight=dict(zip(current["image_id"], current["id"]))
         )
 
-def navigate(direction):
-    global page
-    total_pages = max(1, (len(examples[category.value]) + page_size - 1) // page_size)
-    page = max(0, min(page + direction, total_pages - 1))
-    show_page()
+def fill_navigate(direction):
+    global fill_page
+    total_pages = max(1, (len(fill_examples[fill_category.value]) + page_size - 1) // page_size)
+    fill_page = max(0, min(fill_page + direction, total_pages - 1))
+    fill_show_page()
 
-def change_category(change):
-    global page
+def fill_change_category(change):
+    global fill_page
     if change["name"] == "value":
-        page = 0
-        show_page()
+        fill_page = 0
+        fill_show_page()
 
-prev_btn.on_click(lambda b: navigate(-1))
-next_btn.on_click(lambda b: navigate(1))
-category.observe(change_category, names="value")
-mask_toggle.observe(lambda change: show_page(), names="value")
-box_toggle.observe(lambda change: show_page(), names="value")
+fill_prev_btn.on_click(lambda b: fill_navigate(-1))
+fill_next_btn.on_click(lambda b: fill_navigate(1))
+fill_category.observe(fill_change_category, names="value")
+fill_mask_toggle.observe(lambda change: fill_show_page(), names="value")
+fill_box_toggle.observe(lambda change: fill_show_page(), names="value")
 
 display(
-    widgets.HBox([category, prev_btn, next_btn, page_label]),
-    widgets.HBox([mask_toggle, box_toggle]),
-    output
+    widgets.HBox([fill_category, fill_prev_btn, fill_next_btn, fill_page_label]),
+    widgets.HBox([fill_mask_toggle, fill_box_toggle]),
+    fill_output
 )
-show_page()
+fill_show_page()
 
 
 # %%

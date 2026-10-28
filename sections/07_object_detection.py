@@ -92,20 +92,20 @@ from IPython.display import display, clear_output
 ann = annotations[annotations["image_id"].isin(images["id"])]
 imgs = images[images["id"].isin(ann["image_id"])].reset_index(drop=True)
 
-page = 0
+boxview_page = 0
 page_size = 4
-output = widgets.Output()
+boxview_output = widgets.Output()
 
-previous = widgets.Button(description="← Previous")
-next_button = widgets.Button(description="Next →")
-counter = widgets.HTML()
+boxview_previous = widgets.Button(description="← Previous")
+boxview_next_button = widgets.Button(description="Next →")
+boxview_counter = widgets.HTML()
 
 
-def show_page():
-    with output:
+def boxview_show_page():
+    with boxview_output:
         clear_output(wait=True)
 
-        start = page * page_size
+        start = boxview_page * page_size
         selected = imgs.iloc[start:start + page_size]
 
         show_boxes(
@@ -116,22 +116,22 @@ def show_page():
         )
 
         total_pages = (len(imgs) + page_size - 1) // page_size
-        counter.value = f"Page {page + 1} of {total_pages}"
-        previous.disabled = page == 0
-        next_button.disabled = page >= total_pages - 1
+        boxview_counter.value = f"Page {boxview_page + 1} of {total_pages}"
+        boxview_previous.disabled = boxview_page == 0
+        boxview_next_button.disabled = boxview_page >= total_pages - 1
 
 
-def change_page(step):
-    global page
-    page += step
-    show_page()
+def boxview_change_page(step):
+    global boxview_page
+    boxview_page += step
+    boxview_show_page()
 
 
-previous.on_click(lambda b: change_page(-1))
-next_button.on_click(lambda b: change_page(1))
+boxview_previous.on_click(lambda b: boxview_change_page(-1))
+boxview_next_button.on_click(lambda b: boxview_change_page(1))
 
-display(widgets.HBox([previous, next_button, counter]), output)
-show_page()
+display(widgets.HBox([boxview_previous, boxview_next_button, boxview_counter]), boxview_output)
+boxview_show_page()
 
 # %% [markdown]
 # ### 🟢 Boxes per Class vs. Photos per Class
@@ -189,9 +189,8 @@ boxes_per_class = use(count_boxes_per_class, boxes, reference=_ref_count_boxes_p
 # @title 🔎 Compare Class Distributions: Photos vs. Boxes { display-mode: "form" }
 
 photos_per_class = {c: int((images["class"] == c).sum()) for c in CLASSES}
-results = {}
-results["boxes_per_class"] = boxes_per_class
-results["n_boxes"] = int(len(boxes))
+RESULTS["boxes_per_class"] = boxes_per_class
+RESULTS["n_boxes"] = int(len(boxes))
 
 by_photos = sorted(CLASSES, key=lambda c: -photos_per_class[c])
 by_boxes = sorted(CLASSES, key=lambda c: -boxes_per_class[c])
@@ -289,7 +288,7 @@ bucket_share = (
     .reindex(index=CLASSES, columns=["small", "medium", "large"], fill_value=0)
 )
 
-results["small_box_share"] = {
+RESULTS["small_box_share"] = {
     c: float(bucket_share.loc[c, "small"]) for c in CLASSES
 }
 
@@ -331,11 +330,11 @@ ax.set_yticks(
     ["4", "10", "32", "100", "300", "1000"]
 )
 
-for threshold, name in [(32, "small ↓"), (96, "large ↑")]:
-    ax.axhline(np.log10(threshold), color=INK, linestyle="--", linewidth=1)
+for side_px, name in [(32, "small ↓"), (96, "large ↑")]:
+    ax.axhline(np.log10(side_px), color=INK, linestyle="--", linewidth=1)
     ax.text(
-        0.5, np.log10(threshold),
-        f" {threshold} px · {name}",
+        0.5, np.log10(side_px),
+        f" {side_px} px · {name}",
         va="bottom", fontsize=8, color=INK
     )
 
@@ -378,23 +377,23 @@ for b in [*first_page, *examples]:
         selected_boxes.append(b)
         seen.add(b["id"])
 
-pages = [
+size_pages = [
     selected_boxes[i:i + 3]
     for i in range(0, len(selected_boxes), 3)
 ]
 
-page = 0
-previous = widgets.Button(description="← Previous")
-next_button = widgets.Button(description="Next →")
-counter = widgets.HTML()
-output = widgets.Output()
+size_page = 0
+size_previous = widgets.Button(description="← Previous")
+size_next_button = widgets.Button(description="Next →")
+size_counter = widgets.HTML()
+size_output = widgets.Output()
 
 
-def show_page():
-    with output:
+def size_show_page():
+    with size_output:
         clear_output(wait=True)
 
-        selected = pages[page]
+        selected = size_pages[size_page]
         fig, axes = plt.subplots(2, len(selected), figsize=(3.7 * len(selected), 7), squeeze=False)
 
         for col, b in enumerate(selected):
@@ -450,22 +449,22 @@ def show_page():
         fig.tight_layout()
         plt.show()
 
-        counter.value = f"Page {page + 1} of {len(pages)}"
-        previous.disabled = page == 0
-        next_button.disabled = page == len(pages) - 1
+        size_counter.value = f"Page {size_page + 1} of {len(size_pages)}"
+        size_previous.disabled = size_page == 0
+        size_next_button.disabled = size_page == len(size_pages) - 1
 
 
-def change_page(step):
-    global page
-    page += step
-    show_page()
+def size_change_page(step):
+    global size_page
+    size_page += step
+    size_show_page()
 
 
-previous.on_click(lambda b: change_page(-1))
-next_button.on_click(lambda b: change_page(1))
+size_previous.on_click(lambda b: size_change_page(-1))
+size_next_button.on_click(lambda b: size_change_page(1))
 
-display(widgets.HBox([previous, next_button, counter]), output)
-show_page()
+display(widgets.HBox([size_previous, size_next_button, size_counter]), size_output)
+size_show_page()
 
 # %%
 # @title 💡 Sample Answer: Object Sizes { display-mode: "form" }
@@ -593,7 +592,7 @@ crowding = images[["id", "class"]].merge(
 )
 crowding["n_objects"] = crowding["n_objects"].fillna(0).astype(int)
 
-results["max_objects_per_image"] = int(crowding["n_objects"].max())
+RESULTS["max_objects_per_image"] = int(crowding["n_objects"].max())
 
 fig, axes = plt.subplots(1, 2, figsize=(10, 3.5))
 
@@ -655,7 +654,7 @@ available_counts = sorted(
     int(n) for n in crowding["n_objects"].unique() if n < 10
 )
 
-count_selector = widgets.Dropdown(
+crowd_count_selector = widgets.Dropdown(
     options=(
         [("All", None)]
         + [(str(n), n) for n in available_counts]
@@ -666,36 +665,36 @@ count_selector = widgets.Dropdown(
     style={"description_width": "initial"}
 )
 
-page = 0
+crowd_page = 0
 page_size = 4
 
-first = widgets.Button(description="⇤ First")
-previous = widgets.Button(description="← Previous")
-next_button = widgets.Button(description="Next →")
-last = widgets.Button(description="Last ⇥")
-counter = widgets.HTML()
-output = widgets.Output()
+crowd_first = widgets.Button(description="⇤ First")
+crowd_previous = widgets.Button(description="← Previous")
+crowd_next_button = widgets.Button(description="Next →")
+crowd_last = widgets.Button(description="Last ⇥")
+crowd_counter = widgets.HTML()
+crowd_output = widgets.Output()
 
 
-def get_filtered_images():
-    if count_selector.value is None:
+def crowd_filtered_images():
+    if crowd_count_selector.value is None:
         return crowded_images
-    if count_selector.value == "10+":
+    if crowd_count_selector.value == "10+":
         return crowded_images[crowded_images["n_objects"] >= 10]
     return crowded_images[
-        crowded_images["n_objects"] == count_selector.value
+        crowded_images["n_objects"] == crowd_count_selector.value
     ]
 
 
-def show_crowded_page():
-    filtered = get_filtered_images()
+def crowd_show_page():
+    filtered = crowd_filtered_images()
     total_pages = max(1, (len(filtered) + page_size - 1) // page_size)
 
-    with output:
+    with crowd_output:
         clear_output(wait=True)
 
         selected = filtered.iloc[
-            page * page_size:(page + 1) * page_size
+            crowd_page * page_size:(crowd_page + 1) * page_size
         ]
 
         # Preserve the selected order
@@ -711,50 +710,50 @@ def show_crowded_page():
         )
 
     count_label = (
-        "All counts" if count_selector.value is None
-        else "10+ objects" if count_selector.value == "10+"
-        else f"{count_selector.value} objects"
+        "All counts" if crowd_count_selector.value is None
+        else "10+ objects" if crowd_count_selector.value == "10+"
+        else f"{crowd_count_selector.value} objects"
     )
 
-    counter.value = (
+    crowd_counter.value = (
         f"{count_label} · {len(filtered)} images · "
-        f"Page {page + 1} of {total_pages}"
+        f"Page {crowd_page + 1} of {total_pages}"
     )
 
-    first.disabled = previous.disabled = page == 0
-    next_button.disabled = last.disabled = page >= total_pages - 1
+    crowd_first.disabled = crowd_previous.disabled = crowd_page == 0
+    crowd_next_button.disabled = crowd_last.disabled = crowd_page >= total_pages - 1
 
 
-def go_to_page(new_page):
-    global page
+def crowd_go_to_page(new_page):
+    global crowd_page
     total_pages = max(
-        1, (len(get_filtered_images()) + page_size - 1) // page_size
+        1, (len(crowd_filtered_images()) + page_size - 1) // page_size
     )
-    page = max(0, min(new_page, total_pages - 1))
-    show_crowded_page()
+    crowd_page = max(0, min(new_page, total_pages - 1))
+    crowd_show_page()
 
 
-def change_count(change):
+def crowd_change_count(change):
     if change["name"] == "value":
-        go_to_page(0)
+        crowd_go_to_page(0)
 
 
-count_selector.observe(change_count, names="value")
+crowd_count_selector.observe(crowd_change_count, names="value")
 
-first.on_click(lambda b: go_to_page(0))
-previous.on_click(lambda b: go_to_page(page - 1))
-next_button.on_click(lambda b: go_to_page(page + 1))
-last.on_click(lambda b: go_to_page(10**9))
+crowd_first.on_click(lambda b: crowd_go_to_page(0))
+crowd_previous.on_click(lambda b: crowd_go_to_page(crowd_page - 1))
+crowd_next_button.on_click(lambda b: crowd_go_to_page(crowd_page + 1))
+crowd_last.on_click(lambda b: crowd_go_to_page(10**9))
 
 display(
     widgets.VBox([
-        count_selector,
-        widgets.HBox([first, previous, next_button, last, counter])
+        crowd_count_selector,
+        widgets.HBox([crowd_first, crowd_previous, crowd_next_button, crowd_last, crowd_counter])
     ]),
-    output
+    crowd_output
 )
 
-show_crowded_page()
+crowd_show_page()
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }
@@ -815,25 +814,25 @@ box_grey = "#B0B0B0"
 box_edge = "#666666"
 fhnw_yellow = "#FFDA00"
 
-a = (20, 20, 60, 40)
+REFERENCE_BOX = (20, 20, 60, 40)
 
 
 def show_overlap(x_shift, y_shift):
     b = (20 + x_shift, 20 + y_shift, 60, 40)
 
-    iou = box_iou_dice(a, b)[0]
+    iou = box_iou_dice(REFERENCE_BOX, b)[0]
 
-    ix0 = max(a[0], b[0])
-    iy0 = max(a[1], b[1])
-    iw = max(0, min(a[0] + a[2], b[0] + b[2]) - ix0)
-    ih = max(0, min(a[1] + a[3], b[1] + b[3]) - iy0)
+    ix0 = max(REFERENCE_BOX[0], b[0])
+    iy0 = max(REFERENCE_BOX[1], b[1])
+    iw = max(0, min(REFERENCE_BOX[0] + REFERENCE_BOX[2], b[0] + b[2]) - ix0)
+    ih = max(0, min(REFERENCE_BOX[1] + REFERENCE_BOX[3], b[1] + b[3]) - iy0)
 
     intersection = iw * ih
-    union = a[2] * a[3] + b[2] * b[3] - intersection
+    union = REFERENCE_BOX[2] * REFERENCE_BOX[3] + b[2] * b[3] - intersection
 
     fig, ax = plt.subplots(figsize=(7, 3.5))
 
-    for box in [a, b]:
+    for box in [REFERENCE_BOX, b]:
         ax.add_patch(mpl.patches.Rectangle(
             box[:2], *box[2:],
             facecolor=box_grey,
@@ -877,12 +876,12 @@ y_slider = widgets.IntSlider(
     continuous_update=False
 )
 
-output = widgets.interactive_output(
+overlap_output = widgets.interactive_output(
     show_overlap,
     {"x_shift": x_slider, "y_shift": y_slider}
 )
 
-display(widgets.VBox([x_slider, y_slider]), output)
+display(widgets.VBox([x_slider, y_slider]), overlap_output)
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }
@@ -929,17 +928,17 @@ rows = []
 for image_id, group in boxes.groupby("image_id"):
     bounding_boxes = group["bbox"].tolist()
     n_boxes = len(bounding_boxes)
-    n_pairs = n_boxes * (n_boxes - 1) // 2
+    n_box_pairs = n_boxes * (n_boxes - 1) // 2
 
     n_overlapping = sum(
-        box_iou_dice(a, b)[0] > overlap_iou
-        for a, b in combinations(bounding_boxes, 2)
+        box_iou_dice(box_a, box_b)[0] > overlap_iou
+        for box_a, box_b in combinations(bounding_boxes, 2)
     )
 
     rows.append({
         "image_id": image_id,
         "n_boxes": n_boxes,
-        "n_pairs": n_pairs,
+        "n_pairs": n_box_pairs,
         "n_overlapping": n_overlapping
     })
 
@@ -1043,7 +1042,7 @@ import ipywidgets as widgets
 from IPython.display import display, clear_output
 
 # Browse annotated images by class
-class_selector = widgets.Dropdown(
+quality_class_selector = widgets.Dropdown(
     options=CLASSES,
     value=CLASSES[0],
     description="Class:",
@@ -1053,18 +1052,18 @@ class_selector = widgets.Dropdown(
 page_size = 4
 quality_page = 0
 
-previous = widgets.Button(description="← Previous")
-next_button = widgets.Button(description="Next →")
-shuffle = widgets.Button(description="Shuffle")
-counter = widgets.HTML()
-output = widgets.Output()
+quality_previous = widgets.Button(description="← Previous")
+quality_next_button = widgets.Button(description="Next →")
+quality_shuffle = widgets.Button(description="Shuffle")
+quality_counter = widgets.HTML()
+quality_output = widgets.Output()
 
-rng = np.random.default_rng(SEED)
-quality_images = images[images["class"] == class_selector.value].copy()
+quality_rng = np.random.default_rng(SEED)
+quality_images = images[images["class"] == quality_class_selector.value].copy()
 
 
 def show_quality_page():
-    with output:
+    with quality_output:
         clear_output(wait=True)
 
         selected = quality_images.iloc[
@@ -1079,9 +1078,9 @@ def show_quality_page():
         )
 
     total_pages = max(1, (len(quality_images) + page_size - 1) // page_size)
-    counter.value = f"Page {quality_page + 1} of {total_pages}"
-    previous.disabled = quality_page == 0
-    next_button.disabled = quality_page >= total_pages - 1
+    quality_counter.value = f"Page {quality_page + 1} of {total_pages}"
+    quality_previous.disabled = quality_page == 0
+    quality_next_button.disabled = quality_page >= total_pages - 1
 
 
 def change_quality_page(step):
@@ -1095,7 +1094,7 @@ def update_quality_images(change=None):
     quality_page = 0
 
     quality_images = images[
-        images["class"] == class_selector.value
+        images["class"] == quality_class_selector.value
     ].sample(frac=1, random_state=SEED).reset_index(drop=True)
 
     show_quality_page()
@@ -1107,23 +1106,23 @@ def shuffle_quality_images(button):
 
     quality_images = quality_images.sample(
         frac=1,
-        random_state=int(rng.integers(0, 2**31 - 1))
+        random_state=int(quality_rng.integers(0, 2**31 - 1))
     ).reset_index(drop=True)
 
     show_quality_page()
 
 
-class_selector.observe(update_quality_images, names="value")
-previous.on_click(lambda b: change_quality_page(-1))
-next_button.on_click(lambda b: change_quality_page(1))
-shuffle.on_click(shuffle_quality_images)
+quality_class_selector.observe(update_quality_images, names="value")
+quality_previous.on_click(lambda b: change_quality_page(-1))
+quality_next_button.on_click(lambda b: change_quality_page(1))
+quality_shuffle.on_click(shuffle_quality_images)
 
 display(
     widgets.VBox([
-        class_selector,
-        widgets.HBox([previous, next_button, shuffle, counter])
+        quality_class_selector,
+        widgets.HBox([quality_previous, quality_next_button, quality_shuffle, quality_counter])
     ]),
-    output
+    quality_output
 )
 
 update_quality_images()
@@ -1249,7 +1248,7 @@ display(
 import ipywidgets as widgets
 from IPython.display import display
 
-image_selector = widgets.Dropdown(
+missing_image_selector = widgets.Dropdown(
     options=[
         (f"Image {image_id}", image_id)
         for image_id in suspicious_images["id"]
@@ -1258,15 +1257,15 @@ image_selector = widgets.Dropdown(
     style={"description_width": "initial"}
 )
 
-output = widgets.Output()
+missing_output = widgets.Output()
 
 
-def inspect_annotations(change=None):
-    with output:
-        output.clear_output(wait=True)
+def missing_inspect(change=None):
+    with missing_output:
+        missing_output.clear_output(wait=True)
 
         selected_images = images[
-            images["id"] == image_selector.value
+            images["id"] == missing_image_selector.value
         ]
 
         show_boxes(
@@ -1280,10 +1279,10 @@ def inspect_annotations(change=None):
         )
 
 
-image_selector.observe(inspect_annotations, names="value")
+missing_image_selector.observe(missing_inspect, names="value")
 
-display(image_selector, output)
-inspect_annotations()
+display(missing_image_selector, missing_output)
+missing_inspect()
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }

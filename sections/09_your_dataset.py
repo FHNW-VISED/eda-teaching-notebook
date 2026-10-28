@@ -380,7 +380,7 @@ def build_my_sample(dest: Path, per_class: int, seed: int) -> Path:
     """Folder-per-class copy of a few clean Play Dataset photos, plus an exact copy, a mirror, a grayscale."""
     shutil.rmtree(dest, ignore_errors=True)  # rebuilt from scratch: re-running gives the same sample (N-013)
     rng = random.Random(seed)
-    pool = clean_images[clean_images["flags"] == ""]
+    pool = images  # every downloaded photo is readable
     picked = {}
     for c in CLASSES:
         of_class = sorted(pool.loc[pool["class"] == c, "path"])
@@ -428,7 +428,7 @@ for r, c in enumerate(_shown):
         ax.axis("off")
         if k < len(_of_class):
             try:
-                ax.imshow(load_thumb(_of_class.iloc[k]["path"], 192))
+                ax.imshow(load_thumb(_of_class.iloc[k]["path"], (192, 192)))
             except Exception:  # an unreadable file: check 2 lists it
                 ax.text(0.5, 0.5, "cannot be opened", ha="center", va="center", transform=ax.transAxes)
             _name = Path(_of_class.iloc[k]["file"]).name
@@ -512,6 +512,7 @@ display(my_stats[my_stats["mode"] != "RGB"].head(10))
 
 # %%
 # @title Check 3: exact, recompressed, flipped and rotated copies { display-mode: "form" }
+THUMB_FOR_HASH = (256, 256)  # the same thumbnail size as the hashes in Common Dataset Errors & Cleaning
 # (all pairs, in blocks to keep memory small)
 _readable = my_stats.index[my_stats["readable"]].to_numpy()
 _my_paths = my_files.loc[_readable, "path"].tolist()
@@ -552,7 +553,7 @@ if len(_show):
     fig, axes = plt.subplots(len(_show), 2, figsize=(5, 2.4 * len(_show)), squeeze=False)
     for row, (_, pr) in zip(axes, _show.iterrows(), strict=True):
         for ax, idx in zip(row, [pr["ia"], pr["ib"]], strict=True):
-            ax.imshow(load_thumb(my_files.at[idx, "path"], 256))
+            ax.imshow(load_thumb(my_files.at[idx, "path"], (256, 256)))
             ax.set_title(f"{my_files.at[idx, 'file']}\n{pr['kind']}", fontsize=8)
             frame(ax, MY_COLORS[my_files.at[idx, "class"]])
     plt.tight_layout()

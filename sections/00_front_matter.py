@@ -106,6 +106,7 @@ HTML(r"""
 # @title Setup (run me first) { display-mode: "form" }
 import ast
 import inspect
+import math  # noqa: F401  (used by later sections)
 import os
 import random
 import sys

@@ -364,44 +364,44 @@ def decode_mask(segmentation, height, width):
 
 
 # Shuffle images reproducibly
-explore_images = images.sample(
+ann_images = images.sample(
     frac=1, random_state=SEED
 ).reset_index(drop=True)
 
 # Navigation widgets
-previous_btn = widgets.Button(description="← Previous")
-next_btn = widgets.Button(description="Next →")
-counter = widgets.HTML()
+ann_prev_btn = widgets.Button(description="← Previous")
+ann_next_btn = widgets.Button(description="Next →")
+ann_counter = widgets.HTML()
 
-image_number_input = widgets.BoundedIntText(
+ann_number_input = widgets.BoundedIntText(
     value=1,
     min=1,
-    max=len(explore_images),
+    max=len(ann_images),
     description="Image #:",
     layout=widgets.Layout(width="190px")
 )
-go_btn = widgets.Button(description="Go")
+ann_go_btn = widgets.Button(description="Go")
 
 # Annotation visibility controls
-show_boxes = widgets.Checkbox(
+ann_box_toggle = widgets.Checkbox(
     value=True,
     description="Show bounding boxes",
     indent=False,
     layout=widgets.Layout(width="190px")
 )
-show_masks = widgets.Checkbox(
+ann_mask_toggle = widgets.Checkbox(
     value=True,
     description="Show segmentation masks",
     indent=False,
     layout=widgets.Layout(width="210px")
 )
 
-output = widgets.Output()
-state = {"index": 0}
+ann_output = widgets.Output()
+ann_state = {"index": 0}
 
 
-def show_image(index):
-    row = explore_images.iloc[index]
+def ann_show_image(index):
+    row = ann_images.iloc[index]
     photo = np.array(Image.open(row["path"]).convert("RGB"))
     shown = photo.copy()
 
@@ -412,7 +412,7 @@ def show_image(index):
         color = CLASS_COLORS[ann["class"]]
 
         # Decode and overlay masks only when enabled
-        if show_masks.value:
+        if ann_mask_toggle.value:
             mask = decode_mask(
                 ann["segmentation"],
                 int(row["height"]),
@@ -429,14 +429,14 @@ def show_image(index):
 
         overlays.append((ann, color))
 
-    with output:
+    with ann_output:
         clear_output(wait=True)
 
         fig, ax = plt.subplots(figsize=(7, 5))
         ax.imshow(shown)
 
         # Draw bounding boxes only when enabled
-        if show_boxes.value:
+        if ann_box_toggle.value:
             for ann, color in overlays:
                 x, y, w, h = ann["bbox"]
                 ax.add_patch(
@@ -468,48 +468,48 @@ def show_image(index):
             )
 
     # Update navigation controls
-    counter.value = (
-        f"<b>Image {index + 1} / {len(explore_images)}</b>"
+    ann_counter.value = (
+        f"<b>Image {index + 1} / {len(ann_images)}</b>"
     )
-    image_number_input.value = index + 1
+    ann_number_input.value = index + 1
 
-    previous_btn.disabled = index == 0
-    next_btn.disabled = index == len(explore_images) - 1
-
-
-def navigate(change):
-    state["index"] += change
-    show_image(state["index"])
+    ann_prev_btn.disabled = index == 0
+    ann_next_btn.disabled = index == len(ann_images) - 1
 
 
-def go_to_image(_):
-    state["index"] = image_number_input.value - 1
-    show_image(state["index"])
+def ann_navigate(change):
+    ann_state["index"] += change
+    ann_show_image(ann_state["index"])
 
 
-previous_btn.on_click(lambda _: navigate(-1))
-next_btn.on_click(lambda _: navigate(1))
-go_btn.on_click(go_to_image)
+def ann_go_to_image(_):
+    ann_state["index"] = ann_number_input.value - 1
+    ann_show_image(ann_state["index"])
+
+
+ann_prev_btn.on_click(lambda _: ann_navigate(-1))
+ann_next_btn.on_click(lambda _: ann_navigate(1))
+ann_go_btn.on_click(ann_go_to_image)
 
 # Refresh the image immediately when a checkbox changes
-show_boxes.observe(
-    lambda change: show_image(state["index"]),
+ann_box_toggle.observe(
+    lambda change: ann_show_image(ann_state["index"]),
     names="value"
 )
-show_masks.observe(
-    lambda change: show_image(state["index"]),
+ann_mask_toggle.observe(
+    lambda change: ann_show_image(ann_state["index"]),
     names="value"
 )
 
 # Display interface
 display(
-    widgets.HBox([previous_btn, counter, next_btn]),
-    widgets.HBox([image_number_input, go_btn]),
-    widgets.HBox([show_boxes, show_masks]),
-    output
+    widgets.HBox([ann_prev_btn, ann_counter, ann_next_btn]),
+    widgets.HBox([ann_number_input, ann_go_btn]),
+    widgets.HBox([ann_box_toggle, ann_mask_toggle]),
+    ann_output
 )
 
-show_image(0)
+ann_show_image(0)
 
 
 # %%
