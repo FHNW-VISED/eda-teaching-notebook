@@ -10,9 +10,9 @@ lint:
     uv run ruff check --quiet sections scripts tests
     uv run pytest -q -p no:warnings tests/test_version.py tests/test_editions.py
 
-# Execute the whole notebook headless on tiny data (NB_SMOKE=1)
+# Execute both Editions headless on tiny data (NB_SMOKE=1): Teaching once, Own-Data once per label format + a broken file
 smoke: build
-    uv run pytest -q -x -p no:warnings tests/test_smoke.py
+    uv run pytest -q -x -p no:warnings tests/test_smoke.py tests/test_own_smoke.py
 
 # Lint + smoke: what the night run and CI require before a commit counts
 check: lint smoke
