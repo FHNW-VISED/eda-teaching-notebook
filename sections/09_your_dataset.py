@@ -162,9 +162,6 @@ MY_DATASET_DIR = None  # paste your path between quotes, e.g. "/content/my_datas
 
 # %%
 # @title Dataset reader: finds your class folders, or says exactly what to change { display-mode: "form" }
-import re
-import urllib.error
-import urllib.request
 import zipfile
 
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tif", ".tiff", ".webp"}
@@ -512,36 +509,15 @@ display(my_stats[my_stats["mode"] != "RGB"].head(10))
 
 # %%
 # @title Check 3: exact, recompressed, flipped and rotated copies { display-mode: "form" }
-THUMB_FOR_HASH = (256, 256)  # the same thumbnail size as the hashes in Common Dataset Errors & Cleaning
-# (all pairs, in blocks to keep memory small)
+# (find_copies from Compare Duplicate Detection Methods: all pairs, in blocks to keep memory small)
 _readable = my_stats.index[my_stats["readable"]].to_numpy()
-_my_paths = my_files.loc[_readable, "path"].tolist()
-_md5 = [file_md5(p) for p in _my_paths]
-_variant_bits = {v: [] for v in VARIANT_NAMES}
-for p in _my_paths:
-    for v, im in variants(load_thumb(p, THUMB_FOR_HASH)).items():
-        _variant_bits[v].append(phash(im))
-_variant_bits = {v: hash_bits(h) for v, h in _variant_bits.items()}
-_plain = _variant_bits["original"]
-_n = len(_my_paths)
-_best = np.full((_n, _n), 65, dtype=np.int16)  # smallest distance over the variants, and which variant
-_best_v = np.zeros((_n, _n), dtype=np.int8)
-for k, v in enumerate(VARIANT_NAMES):
-    for start in range(0, _n, 256):
-        d = hash_distances(_variant_bits[v][start:start + 256], _plain)
-        better = d < _best[start:start + 256]
-        _best[start:start + 256][better] = d[better]
-        _best_v[start:start + 256][better] = k
-
-_pairs = []
-for i, j in zip(*np.nonzero(np.triu(_best <= HASH_THRESHOLD, k=1)), strict=True):
-    a, b = _readable[i], _readable[j]
-    kind = "exact" if _md5[i] == _md5[j] else KIND_OF_VARIANT[VARIANT_NAMES[_best_v[i, j]]]
-    _pairs.append({"a": my_files.at[a, "file"], "b": my_files.at[b, "file"], "kind": kind,
-                   "distance": int(_best[i, j]),
-                   "same class": my_files.at[a, "class"] == my_files.at[b, "class"],
-                   "ia": a, "ib": b})
-my_copies = pd.DataFrame(_pairs, columns=["a", "b", "kind", "distance", "same class", "ia", "ib"])
+_row_of = {my_files.at[i, "file"]: i for i in _readable}
+my_copies = find_copies({f: my_files.at[i, "path"] for f, i in _row_of.items()}, HASH_THRESHOLD,
+                        use_variants=True)
+my_copies["ia"] = my_copies["a"].map(_row_of)
+my_copies["ib"] = my_copies["b"].map(_row_of)
+my_copies.insert(4, "same class", my_copies["ia"].map(my_files["class"]).to_numpy()
+                 == my_copies["ib"].map(my_files["class"]).to_numpy())
 print(f"{len(my_copies)} copy pairs at HASH_THRESHOLD = {HASH_THRESHOLD}:",
       " · ".join(f"{k} {n}" for k, n in my_copies["kind"].value_counts().items()) or "none")
 print(f"pairs whose two files sit in different class folders (one label is wrong): "
@@ -569,8 +545,6 @@ if len(_show):
 # %%
 # @title Check 4: a split suggestion, copies grouped, stratified by class { display-mode: "form" }
 # Copies form groups that stay on one side; the split is stratified by class.
-import warnings
-
 from sklearn.model_selection import StratifiedGroupKFold
 
 _parent = list(range(len(my_files)))  # union-find: every copy pair joins its two files' groups

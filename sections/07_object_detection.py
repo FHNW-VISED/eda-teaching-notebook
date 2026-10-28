@@ -83,14 +83,11 @@ def show_boxes(rows_df: pd.DataFrame, boxes_df: pd.DataFrame, title: str, captio
     plt.close(fig)
 
 
+boxes = annotations.copy()  # one row per box; a copy, because later cells add columns to it
+
+
 # %%
 # @title 🔎 Explore Bounding Boxes { display-mode: "form" }
-
-import ipywidgets as widgets
-from IPython.display import display, clear_output
-
-ann = annotations[annotations["image_id"].isin(images["id"])]
-imgs = images[images["id"].isin(ann["image_id"])].reset_index(drop=True)
 
 boxview_page = 0
 page_size = 4
@@ -106,16 +103,16 @@ def boxview_show_page():
         clear_output(wait=True)
 
         start = boxview_page * page_size
-        selected = imgs.iloc[start:start + page_size]
+        selected = images.iloc[start:start + page_size]
 
         show_boxes(
             selected,
-            ann,
+            boxes,
             "Bounding boxes: one annotation per animal",
             caption=lambda r: r["class"]
         )
 
-        total_pages = (len(imgs) + page_size - 1) // page_size
+        total_pages = (len(images) + page_size - 1) // page_size
         boxview_counter.value = f"Page {boxview_page + 1} of {total_pages}"
         boxview_previous.disabled = boxview_page == 0
         boxview_next_button.disabled = boxview_page >= total_pages - 1
@@ -182,7 +179,6 @@ def count_boxes_per_class(annotations):
     ...
 
 
-boxes = annotations[annotations["image_id"].isin(images["id"])].reset_index(drop=True)
 boxes_per_class = use(count_boxes_per_class, boxes, reference=_ref_count_boxes_per_class)
 
 # %%
@@ -348,11 +344,7 @@ plt.close(fig)
 # %%
 # @title 🔎 Explore Bounding Box Sizes in Images { display-mode: "form" }
 
-import ipywidgets as widgets
-from IPython.display import display, clear_output
-
 by_area = boxes.sort_values(["box_area", "id"]).reset_index(drop=True)
-photo_of = images.set_index("id")
 
 # Start with the smallest, median, and largest boxes
 first_page = [
@@ -397,7 +389,7 @@ def size_show_page():
         fig, axes = plt.subplots(2, len(selected), figsize=(3.7 * len(selected), 7), squeeze=False)
 
         for col, b in enumerate(selected):
-            photo = photo_of.loc[b["image_id"]]
+            photo = images_by_id.loc[b["image_id"]]
             thumb = load_thumb(photo["path"], (384, 384))
 
             scale_x = thumb.width / photo["width"]
@@ -508,9 +500,8 @@ Small objects are particularly challenging because they contain fewer pixels and
 # %%
 # @title 🔎 Explore Object Positions Across Classes { display-mode: "form" }
 # Box centres on the unit square, one heatmap per class in its own colour (white = no boxes there).
-_size = images.set_index("id")[["width", "height"]]
-_img_w = boxes["image_id"].map(_size["width"])
-_img_h = boxes["image_id"].map(_size["height"])
+_img_w = boxes["image_id"].map(images_by_id["width"])
+_img_h = boxes["image_id"].map(images_by_id["height"])
 boxes["cx"] = (boxes["bbox"].map(lambda b: b[0] + b[2] / 2) / _img_w).clip(0, 1)
 boxes["cy"] = (boxes["bbox"].map(lambda b: b[1] + b[3] / 2) / _img_h).clip(0, 1)
 HEAT_BINS = 6 if SMOKE else 12  # coarser cells with few boxes (N-014)
@@ -578,19 +569,8 @@ However, the heatmaps alone do not establish how well the detector performs.
 # %%
 # @title 🔎 Explore Object Counts Across Classes { display-mode: "form" }
 
-# Count annotated objects per image
-object_counts = (
-    boxes.groupby("image_id")
-    .size()
-    .rename("n_objects")
-    .reset_index()
-)
-
-# Include images without annotations
-crowding = images[["id", "class"]].merge(
-    object_counts, left_on="id", right_on="image_id", how="left"
-)
-crowding["n_objects"] = crowding["n_objects"].fillna(0).astype(int)
+# Annotated objects per image (the images table already counts them)
+crowding = images[["id", "class", "n_animals"]].rename(columns={"n_animals": "n_objects"})
 
 RESULTS["max_objects_per_image"] = int(crowding["n_objects"].max())
 
@@ -602,7 +582,7 @@ count_distribution = crowding["n_objects"].value_counts().sort_index()
 axes[0].bar(
     count_distribution.index,
     count_distribution.values,
-    color="#B0B0B0"
+    color=LIGHT_GRAY
 )
 axes[0].set_xlabel("Number of objects per image")
 axes[0].set_ylabel("Number of images")
@@ -640,9 +620,6 @@ plt.show()
 
 # %%
 # @title 🔎 Explore Crowded Images { display-mode: "form" }
-
-import ipywidgets as widgets
-from IPython.display import display, clear_output
 
 # Sort images from most to fewest annotated objects
 crowded_images = crowding.sort_values(
@@ -805,14 +782,7 @@ def box_iou_dice(a: tuple, b: tuple) -> tuple[float, float]:
 # %%
 # @title 🔎 Explore Bounding Box Overlap (IOU) { display-mode: "form" }
 
-import ipywidgets as widgets
-from IPython.display import display
-
 overlap_iou = 0.1
-
-box_grey = "#B0B0B0"
-box_edge = "#666666"
-fhnw_yellow = "#FFDA00"
 
 REFERENCE_BOX = (20, 20, 60, 40)
 
@@ -835,8 +805,8 @@ def show_overlap(x_shift, y_shift):
     for box in [REFERENCE_BOX, b]:
         ax.add_patch(mpl.patches.Rectangle(
             box[:2], *box[2:],
-            facecolor=box_grey,
-            edgecolor=box_edge,
+            facecolor=LIGHT_GRAY,
+            edgecolor=EDGE_GRAY,
             alpha=0.45,
             linewidth=1.5
         ))
@@ -844,7 +814,7 @@ def show_overlap(x_shift, y_shift):
     if intersection > 0:
         ax.add_patch(mpl.patches.Rectangle(
             (ix0, iy0), iw, ih,
-            facecolor=fhnw_yellow,
+            facecolor=HIGHLIGHT,
             edgecolor=INK,
             linewidth=1.5
         ))
@@ -917,8 +887,6 @@ display(HTML("""
 
 # %%
 # @title 🔎 Explore Bounding Box Overlap Across Classes { display-mode: "form" }
-
-from itertools import combinations
 
 overlap_iou = 0.1
 
@@ -1038,9 +1006,6 @@ display(HTML("""
 # %%
 # @title 🔎 Inspect Bounding Box Quality { display-mode: "form" }
 
-import ipywidgets as widgets
-from IPython.display import display, clear_output
-
 # Browse annotated images by class
 quality_class_selector = widgets.Dropdown(
     options=CLASSES,
@@ -1059,7 +1024,6 @@ quality_counter = widgets.HTML()
 quality_output = widgets.Output()
 
 quality_rng = np.random.default_rng(SEED)
-quality_images = images[images["class"] == quality_class_selector.value].copy()
 
 
 def show_quality_page():
@@ -1166,8 +1130,6 @@ display(HTML("""
 # %%
 # @title 🔎 Simulate and Detect a Missing Annotation { display-mode: "form" }
 
-import random
-
 # Simulate an annotation error by removing exactly one bounding box
 # from a copy of the original annotations.
 # The original boxes dataframe remains unchanged.
@@ -1245,9 +1207,6 @@ display(
 # %%
 # @title 🔎 Inspect Missing Annotations { display-mode: "form" }
 
-import ipywidgets as widgets
-from IPython.display import display
-
 missing_image_selector = widgets.Dropdown(
     options=[
         (f"Image {image_id}", image_id)
@@ -1309,16 +1268,13 @@ display(HTML("""
 # %%
 # @title 🔎 Visualize a Missing Bounding Box { display-mode: "form" }
 
-box_grey = "#B0B0B0"
-fhnw_yellow = "#FFDA00"
-
 fig, ax = plt.subplots(figsize=(7, 2.5))
 
 for k, x in enumerate([2, 5, 8]):
     # Draw an animal
     ax.add_patch(mpl.patches.Ellipse(
         (x, 1), 2.0, 1.2,
-        facecolor=box_grey, alpha=0.45,
+        facecolor=LIGHT_GRAY, alpha=0.45,
         edgecolor="none"
     ))
 
@@ -1330,7 +1286,7 @@ for k, x in enumerate([2, 5, 8]):
         fill=False,
         linewidth=2,
         linestyle="--" if missing else "-",
-        edgecolor=fhnw_yellow if missing else box_grey
+        edgecolor=HIGHLIGHT if missing else LIGHT_GRAY
     ))
 
     if missing:

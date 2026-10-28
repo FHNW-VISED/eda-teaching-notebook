@@ -61,31 +61,9 @@ We can combine these masks to obtain pixel-level class labels for semantic segme
 
 # %%
 # @title Mask helpers and data preparation { display-mode: "form" }
-import cv2
-from pycocotools import mask as mask_utils
-
 MIN_JUDGED_AREA = 32**2  # masks under COCO's "small" limit (32×32 px) are too few pixels to judge their shape
 THIN_PX = 7  # parts narrower than this many photo pixels count as thin (about 2 px at 224×224)
 BLOB_SHARE = 0.005  # pieces and holes under 0.5 % of the mask (or 16 px) are rasterisation noise, not shape
-
-
-def to_rle(segmentation, height: int, width: int) -> dict:
-    """A COCO segmentation (polygon list, uncompressed or compressed RLE) as one compressed RLE."""
-    if isinstance(segmentation, list):
-        return mask_utils.merge(mask_utils.frPyObjects(segmentation, height, width))
-    if isinstance(segmentation["counts"], list):
-        return mask_utils.frPyObjects(segmentation, height, width)
-    return segmentation
-
-
-def decode(rle: dict) -> np.ndarray:
-    """RLE → 0/1 uint8 array of the photo's size (C-ordered, so OpenCV accepts it)."""
-    return np.ascontiguousarray(mask_utils.decode(rle))
-
-
-def encode(mask: np.ndarray) -> dict:
-    """0/1 array → compressed RLE, the way COCO stores masks."""
-    return mask_utils.encode(np.asfortranarray(mask.astype(np.uint8)))
 
 
 def thin_part(mask: np.ndarray) -> np.ndarray:
@@ -192,14 +170,12 @@ def show_masks(rows_df: pd.DataFrame, masks_df: pd.DataFrame, title: str, captio
 
 
 # Prepare masks for subsequent inspection activities.
-image_sizes = images.set_index("id")[["width", "height"]]
-
 masks = boxes[
     ["id", "image_id", "class", "bbox", "iscrowd", "segmentation"]
 ].copy()
 
 masks["rle"] = [
-    to_rle(seg, int(image_sizes.at[i, "height"]), int(image_sizes.at[i, "width"]))
+    to_rle(seg, int(images_by_id.at[i, "height"]), int(images_by_id.at[i, "width"]))
     for seg, i in zip(masks["segmentation"], masks["image_id"], strict=True)
 ]
 
@@ -209,9 +185,6 @@ masks = masks.drop(columns="segmentation")
 # %%
 
 # @title 🔎 Explore Segmentation Masks { display-mode: "form" }
-import ipywidgets as widgets
-from IPython.display import display
-
 mask_images = images[images["id"].isin(masks["image_id"].unique())].copy()
 mask_images = mask_images.sample(frac=1, random_state=SEED).reset_index(drop=True)
 
@@ -541,7 +514,7 @@ animals = masks[masks["iscrowd"] == 0].reset_index(drop=True)
 _shape = pd.DataFrame([mask_shape(decode(r), b)
                        for r, b in zip(animals["rle"], animals["bbox"], strict=True)])
 animals = pd.concat([animals, _shape], axis=1)
-_photo_px = animals["image_id"].map(_size["width"] * _size["height"])
+_photo_px = animals["image_id"].map(images_by_id["width"] * images_by_id["height"])
 animals["photo_share"] = animals["mask_area"] / _photo_px
 _fill = animals.groupby("class")["fill"].median().reindex(CLASSES)
 RESULTS["median_fill"] = {c: float(_fill[c]) for c in CLASSES}
@@ -579,9 +552,6 @@ plt.close(fig)
 # %%
 
 # @title 🔎 Inspect Mask Fill Ratios { display-mode: "form" }
-import ipywidgets as widgets
-from IPython.display import display
-
 # Select examples, excluding very small masks
 candidates = (
     animals[animals["mask_area"] >= MIN_JUDGED_AREA]
@@ -614,7 +584,6 @@ fill_output = widgets.Output()
 
 fill_page = 0
 page_size = 4
-image_lookup = images.set_index("id")
 
 def fill_show_page():
     selected = fill_examples[fill_category.value]
@@ -626,7 +595,7 @@ def fill_show_page():
     fill_prev_btn.disabled = fill_page == 0
     fill_next_btn.disabled = fill_page >= total_pages - 1
 
-    image_rows = image_lookup.loc[current["image_id"]].reset_index()
+    image_rows = images_by_id.loc[current["image_id"]].reset_index()
     fill_values = dict(zip(current["image_id"], current["fill"]))
 
     with fill_output:
@@ -700,7 +669,7 @@ N_THIN_SHOW = 2 if SMOKE else 4  # photos with the most thin pixels to show (N-0
 animals["thin_px"] = animals["thin"] * animals["mask_area"]
 _most_thin = animals.sort_values(["thin_px", "id"], ascending=[False, True]).drop_duplicates("image_id").head(
     N_THIN_SHOW)
-show_masks(images.set_index("id").loc[list(_most_thin["image_id"])].reset_index(), masks,
+show_masks(images_by_id.loc[list(_most_thin["image_id"])].reset_index(), masks,
            f"the photos with the most thin pixels (dark = narrower than {THIN_PX} px)", mark_thin=True,
            cols=N_THIN_SHOW)
 
@@ -772,7 +741,7 @@ helps distinguish small-object effects from genuinely thin structures.</p>
 
 # Mean mask per class on a common square: the share of the class's photos in which each spot is animal.
 HEAT_RES = 24 if SMOKE else 48  # coarser grid with few photos (N-014)
-_class_of = images.set_index("id")["class"]
+_class_of = images_by_id["class"]
 heat = {c: np.zeros((HEAT_RES, HEAT_RES)) for c in CLASSES}
 for image_id, rle in photo_rle.items():
     small = cv2.resize(decode(rle).astype(np.float32), (HEAT_RES, HEAT_RES), interpolation=cv2.INTER_AREA)
@@ -852,6 +821,11 @@ always appear. Averaging also hides variation between images.</p>
 
 HUNT9_KINDS = ["another animal", "chunk missing", "shifted", "swollen", "crude polygon"]
 SHIFT_PX = 15
+BOX_IOU_MIN = 0.9  # check 1: suspect when the mask's own box overlaps the annotated box less than this
+FILL_RANGE = (0.15, 0.95)  # suspect when mask area / box area is outside this range
+MAX_PIECES = 3  # suspect with more separate pieces than this
+MAX_HOLES = 0  # suspect with more holes than this
+SOLIDITY_MAX = 0.97  # suspect when the mask fills more than this share of its rubber band (no dents at all)
 
 
 def _paste(mask: np.ndarray, height: int, width: int) -> np.ndarray:
@@ -990,9 +964,6 @@ kinds = {
     "Crude polygon\n(a few quick clicks)": cv2.fillPoly(np.zeros_like(horse), [poly], 1),
 }
 
-GREY = "#9CA3AF"
-YELLOW = "#FFDA00"
-
 outline, _ = cv2.findContours(horse, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
 fig, axes = plt.subplots(1, 5, figsize=(13, 2.7))
@@ -1000,25 +971,25 @@ fig, axes = plt.subplots(1, 5, figsize=(13, 2.7))
 for ax, (kind, spoiled) in zip(axes, kinds.items(), strict=True):
     # Original mask in grey
     base = np.zeros((*horse.shape, 4))
-    base[horse > 0] = (*mpl.colors.to_rgb(GREY), 0.35)
+    base[horse > 0] = (*mpl.colors.to_rgb(GRAY), 0.35)
     ax.imshow(base)
 
     # Simulated annotation in yellow
     overlay = np.zeros((*horse.shape, 4))
-    overlay[spoiled > 0] = (*mpl.colors.to_rgb(YELLOW), 0.75)
+    overlay[spoiled > 0] = (*mpl.colors.to_rgb(HIGHLIGHT), 0.75)
     ax.imshow(overlay)
 
     # Original outline
     for contour in outline:
         ax.plot(
             contour[:, 0, 0], contour[:, 0, 1],
-            color=GREY, lw=1.5
+            color=GRAY, lw=1.5
         )
 
     # Original bounding box
     ax.add_patch(mpl.patches.Rectangle(
         (kx - 0.5, ky - 0.5), kw, kh,
-        fill=False, lw=1.5, ls="--", edgecolor=GREY
+        fill=False, lw=1.5, ls="--", edgecolor=GRAY
     ))
 
     ax.set_xlim(-0.5, horse.shape[1] - 0.5)
@@ -1073,26 +1044,22 @@ rows = {
 }
 
 CHECK_RULES = [
-    ("1 · Mask–box agreement", "suspect below 0.9", "box_iou",
-     lambda v: v < 0.9, "IoU {:.2f}".format),
-    ("2 · Fill", "suspect outside 0.15–0.95", "fill",
-     lambda v: not 0.15 <= v <= 0.95, "fill {:.2f}".format),
-    ("3 · Pieces", "suspect above 3", "pieces",
-     lambda v: v > 3, lambda v: f"{v} piece" + "s" * (v != 1)),
+    ("1 · Mask–box agreement", f"suspect below {BOX_IOU_MIN}", "box_iou",
+     lambda v: v < BOX_IOU_MIN, "IoU {:.2f}".format),
+    ("2 · Fill", f"suspect outside {FILL_RANGE[0]}–{FILL_RANGE[1]}", "fill",
+     lambda v: not FILL_RANGE[0] <= v <= FILL_RANGE[1], "fill {:.2f}".format),
+    ("3 · Pieces", f"suspect above {MAX_PIECES}", "pieces",
+     lambda v: v > MAX_PIECES, lambda v: f"{v} piece" + "s" * (v != 1)),
     ("4 · Holes", "suspect with any hole", "holes",
-     lambda v: v > 0, lambda v: f"{v} hole" + "s" * (v != 1)),
-    ("5 · Solidity", "suspect above 0.97", "solidity",
-     lambda v: v > 0.97, "solidity {:.2f}".format),
+     lambda v: v > MAX_HOLES, lambda v: f"{v} hole" + "s" * (v != 1)),
+    ("5 · Solidity", f"suspect above {SOLIDITY_MAX}", "solidity",
+     lambda v: v > SOLIDITY_MAX, "solidity {:.2f}".format),
 ]
 
 UNDER = {
     0: "solid: tightest box around mask\ndashed: annotated box",
     4: "dashed: convex hull"
 }
-
-GREY = "#9CA3AF"
-DARK_GREY = "#4B5563"
-YELLOW = "#FFDA00"
 
 def mask_layer(mask, color, alpha):
     layer = np.zeros((H, W, 4))
@@ -1116,33 +1083,33 @@ for r, (row_name, (mask, box)) in enumerate(rows.items()):
         ax = axes[r, k]
 
         # Original reference in grey, evaluated mask in yellow
-        ax.imshow(mask_layer(original, GREY, 0.35))
-        ax.imshow(mask_layer(mask, YELLOW, 0.8))
+        ax.imshow(mask_layer(original, GRAY, 0.35))
+        ax.imshow(mask_layer(mask, HIGHLIGHT, 0.8))
 
         if k == 0:
             ax.add_patch(mpl.patches.Rectangle(
                 (own[0] - 0.5, own[1] - 0.5), own[2], own[3],
-                fill=False, lw=2, edgecolor=DARK_GREY
+                fill=False, lw=2, edgecolor=DARK_GRAY
             ))
 
         if k in (0, 1):
             ax.add_patch(mpl.patches.Rectangle(
                 (box[0] - 0.5, box[1] - 0.5), box[2], box[3],
-                fill=False, lw=2, ls="--", edgecolor=GREY
+                fill=False, lw=2, ls="--", edgecolor=GRAY
             ))
 
         if k == 2:
             ax.imshow(mask_layer(
-                (parts > 0) & (parts != main), DARK_GREY, 1.0
+                (parts > 0) & (parts != main), DARK_GRAY, 1.0
             ))
 
         if k == 3 and row_name == "Modified":
-            ax.imshow(mask_layer(hole, DARK_GREY, 1.0))
+            ax.imshow(mask_layer(hole, DARK_GRAY, 1.0))
 
         if k == 4:
             ax.add_patch(mpl.patches.Polygon(
                 hull, closed=True, fill=False, lw=2,
-                ls="--", edgecolor=DARK_GREY
+                ls="--", edgecolor=DARK_GRAY
             ))
 
         value = shape[key]
@@ -1154,14 +1121,14 @@ for r, (row_name, (mask, box)) in enumerate(rows.items()):
             transform=ax.transAxes,
             ha="left", va="top",
             fontsize=13, fontweight="bold",
-            color=DARK_GREY
+            color=DARK_GRAY
         )
 
         ax.text(
             0.98, 0.97, fmt(value),
             transform=ax.transAxes,
             ha="right", va="top",
-            fontsize=9, color=DARK_GREY
+            fontsize=9, color=DARK_GRAY
         )
 
         if r == 0:
@@ -1200,12 +1167,6 @@ plt.close(fig)
 
 # %%
 # @title 🔎 Detect Suspicious Segmentation Masks { display-mode: "form" }
-
-BOX_IOU_MIN = 0.9  # check 1: suspect when the mask's own box overlaps the annotated box less than this
-FILL_RANGE = (0.15, 0.95)  # suspect when mask area / box area is outside this range
-MAX_PIECES = 3  # suspect with more separate pieces than this
-MAX_HOLES = 0  # suspect with more holes than this
-SOLIDITY_MAX = 0.97  # suspect when the mask fills more than this share of its rubber band (no dents at all)
 
 _judge = park_masks[park_masks["mask_area"] >= MIN_JUDGED_AREA].reset_index(drop=True)
 park_shape = pd.concat([_judge, pd.DataFrame([mask_shape(decode(r), b)
@@ -1251,7 +1212,7 @@ def _suspect_caption(r) -> str:
             f"box IoU {s['box_iou']:.2f} · fill {s['fill']:.2f}")
 
 
-show_masks(images.set_index("id").loc[list(_show.index)].reset_index(), park_masks,
+show_masks(images_by_id.loc[list(_show.index)].reset_index(), park_masks,
            f"the {len(_show)} strongest suspects: bright mask + solid box = suspect, faint = other animals",
            caption=_suspect_caption, highlight=dict(zip(_show.index, _show["id"], strict=True)))
 
@@ -1259,10 +1220,7 @@ show_masks(images.set_index("id").loc[list(_show.index)].reset_index(), park_mas
 
 # @title 💡 Sample Answer { display-mode: "form" }
 
-from IPython.display import HTML, display
 from html import escape
-import io
-import base64
 
 # Identify which planted errors were detected.
 _checks_by_id = park_shape.set_index("id")["checks"]
@@ -1294,10 +1252,6 @@ lines.append(
 )
 
 # Compare original and modified annotations.
-GREY = "#9CA3AF"
-YELLOW = "#FFDA00"
-
-_by_image = images.set_index("id")
 
 fig, axes = plt.subplots(
     2,
@@ -1307,7 +1261,7 @@ fig, axes = plt.subplots(
 )
 
 for col, (_, k) in enumerate(HUNT9_KEY.iterrows()):
-    photo = _by_image.loc[k["image_id"]]
+    photo = images_by_id.loc[k["image_id"]]
     thumb = load_thumb(photo["path"], (320, 320))
 
     sx = thumb.width / photo["width"]
@@ -1315,7 +1269,7 @@ for col, (_, k) in enumerate(HUNT9_KEY.iterrows()):
 
     for row, source in enumerate([masks, park_masks]):
         ax = axes[row, col]
-        color = GREY if row == 0 else YELLOW
+        color = GRAY if row == 0 else HIGHLIGHT
 
         annotation = source.loc[
             source["id"] == k["ann_id"]
@@ -1365,7 +1319,7 @@ fig.suptitle(
 fig.tight_layout()
 
 # Convert the figure to an image without displaying it separately.
-buf = io.BytesIO()
+buf = BytesIO()
 fig.savefig(buf, format="png", dpi=130, bbox_inches="tight")
 plt.close(fig)
 

@@ -71,28 +71,10 @@ These measurements do not require class labels and can be applied to any image d
 
 # %%
 # @title Measurement helpers { display-mode: "form" }
-from matplotlib.patches import Rectangle
-from PIL import ImageDraw
-
 HIST_BINS = 32
 CHANNEL_COLORS = {"R": "#C0392B", "G": "#27AE60", "B": "#2980B9"}
 COLOUR_MODES = ["RGB", "L", "RGBA", "CMYK"]  # the modes we always report, even when the count is 0
 
-
-def load_thumb(path, size=(256, 256)):
-    with Image.open(path) as im:
-        im = im.convert("RGB")
-        im.thumbnail(size)
-        return im.copy()
-
-
-def frame(ax, color):
-    ax.set_xticks([])
-    ax.set_yticks([])
-    for spine in ax.spines.values():
-        spine.set_visible(True)
-        spine.set_color(color)
-        spine.set_linewidth(3)
 
 def measure_image(path, thumb: int) -> tuple[dict, np.ndarray]:
     """Open one photo and return (stats, channel_hist).
@@ -167,10 +149,10 @@ def _fmt(value) -> str:
     return f"{value:.4g}"
 
 
-def _closest_to_median(stat: str):
-    """The row of `image_stats` whose value of `stat` is closest to the median (the 'typical' photo)."""
-    col = image_stats[stat]
-    return image_stats.iloc[int((col - col.median()).abs().to_numpy().argmin())]
+def _closest_to_median(stats_df: pd.DataFrame, stat: str):
+    """The row of `stats_df` whose value of `stat` is closest to the median (the 'typical' photo)."""
+    col = stats_df[stat]
+    return stats_df.iloc[int((col - col.median()).abs().to_numpy().argmin())]
 
 
 def _photo(ax, row, caption: str) -> None:
@@ -181,16 +163,16 @@ def _photo(ax, row, caption: str) -> None:
     ax.set_title(caption, fontsize=8)
 
 
-def show_extremes(stat: str, n: int = 4) -> None:
+def show_extremes(stats_df: pd.DataFrame, stat: str, n: int = 4) -> None:
     """The `n` photos with the lowest value of `stat`, the median ('average') photo, and the `n` highest.
 
-    `stat` is a numeric column of `image_stats` (e.g. "brightness", "aspect", "megapixels", "colourfulness").
+    `stat` is a numeric column of `stats_df`, e.g. `image_stats` (e.g. "brightness", "aspect", "megapixels", "colourfulness").
     Three rows: lowest (the minimum first), the typical photo in the middle, highest (the maximum first).
     """
-    numeric = [c for c in image_stats.columns if pd.api.types.is_numeric_dtype(image_stats[c]) and c != "id"]
+    numeric = [c for c in stats_df.columns if pd.api.types.is_numeric_dtype(stats_df[c]) and c != "id"]
     if stat not in numeric:
         raise SystemExit(f"stat must be one of {numeric}, not {stat!r}")
-    ordered = image_stats.sort_values(stat)
+    ordered = stats_df.sort_values(stat)
     n = max(1, min(n, len(ordered) // 2))
 
     def caption(tag, row):
@@ -202,7 +184,7 @@ def show_extremes(stat: str, n: int = 4) -> None:
         ax.axis("off")
     for ax, (_, row) in zip(axes[0], ordered.head(n).iterrows(), strict=False):
         _photo(ax, row, caption("lowest", row))
-    _photo(axes[1, n // 2], _closest_to_median(stat), caption("median", _closest_to_median(stat)))
+    _photo(axes[1, n // 2], _closest_to_median(stats_df, stat), caption("median", _closest_to_median(stats_df, stat)))
     for ax, (_, row) in zip(axes[2], ordered.tail(n)[::-1].iterrows(), strict=False):
         _photo(ax, row, caption("highest", row))
     fig.suptitle(f"{stat}: the {n} lowest, the typical (median) photo, the {n} highest", color=INK)
@@ -211,15 +193,15 @@ def show_extremes(stat: str, n: int = 4) -> None:
     plt.close(fig)
 
 
-def show_min_median_max(stats: list[str]) -> None:
+def show_min_median_max(stats_df: pd.DataFrame, stats: list[str]) -> None:
     """Show min, median, and max images for each property, with headings above."""
 
     spec = []
     for stat in stats:
         items = [
-            ("Min", image_stats.loc[image_stats[stat].idxmin()]),
-            ("Median", _closest_to_median(stat)),
-            ("Max", image_stats.loc[image_stats[stat].idxmax()]),
+            ("Min", stats_df.loc[stats_df[stat].idxmin()]),
+            ("Median", _closest_to_median(stats_df, stat)),
+            ("Max", stats_df.loc[stats_df[stat].idxmax()]),
         ]
         spec.append((stat, items))
 
@@ -281,7 +263,7 @@ image_stats[STAT_COLUMNS].agg(["min", "median", "mean", "max"]).T.round(2)
 
 # %%
 # @title 🔎 Inspect Images with Minimum, Median, and Maximum Property Values { display-mode: "form" }
-show_min_median_max(STAT_COLUMNS)
+show_min_median_max(image_stats, STAT_COLUMNS)
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }
@@ -553,7 +535,7 @@ HTML(r"""
 STAT_TO_SHOW = "brightness" # @param ["brightness", "contrast", "colourfulness", "aspect", "megapixels", "long_side"]
 N_IMAGES = 5 # @param {type:"slider", min:1, max:5, step:1}
 
-show_extremes(STAT_TO_SHOW, N_IMAGES)
+show_extremes(image_stats, STAT_TO_SHOW, N_IMAGES)
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }

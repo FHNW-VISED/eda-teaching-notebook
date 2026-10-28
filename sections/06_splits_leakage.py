@@ -59,34 +59,24 @@ cameras, or locations, these groups should be kept separate across splits.</p>
 # %%
 # @title 🔎 Compare Random and Stratified Splits { display-mode: "form" }
 
-from sklearn.model_selection import (
-    GroupKFold,
-    GroupShuffleSplit,
-    KFold,
-    LeaveOneGroupOut,
-    LeaveOneOut,
-    StratifiedKFold,
-    train_test_split,
-)
-
 TEST_SIZE = 0.2
 _ids = images["id"].to_numpy()
 _y = images["class"].to_numpy()
-_tr_rand, _te_rand = train_test_split(_ids, test_size=TEST_SIZE, random_state=SEED)
-_tr_strat, _te_strat = train_test_split(_ids, test_size=TEST_SIZE, random_state=SEED, stratify=_y)
+_, _te_rand = train_test_split(_ids, test_size=TEST_SIZE, random_state=SEED)
+_, _te_strat = train_test_split(_ids, test_size=TEST_SIZE, random_state=SEED, stratify=_y)
 
 
-def class_shares(ids) -> pd.Series:
-    """Class proportions for the given image IDs, in CLASSES order."""
-    counts = images.set_index("id").loc[list(ids), "class"].value_counts()
+def class_shares(table: pd.DataFrame, ids) -> pd.Series:
+    """Class proportions for the given image IDs, in CLASSES order; `table` is indexed by image id."""
+    counts = table.loc[list(ids), "class"].value_counts()
     return counts.reindex(CLASSES).fillna(0) / max(len(ids), 1)
 
 
 shares = pd.DataFrame(
     {
-        "whole table": class_shares(_ids),
-        "random · test": class_shares(_te_rand),
-        "stratified · test": class_shares(_te_strat),
+        "whole table": class_shares(images_by_id, _ids),
+        "random · test": class_shares(images_by_id, _te_rand),
+        "stratified · test": class_shares(images_by_id, _te_strat),
     }
 )
 fig, axes = plt.subplots(1, 2, figsize=(11, 3.6), sharey=True)
@@ -194,7 +184,7 @@ training and validation sets.</p>
 # %%
 # @title 🔎 Visualize Cross-Validation Strategies { display-mode: "form" }
 
-split_colors = {"train": "#B0B0B0", "test": "#FFDA00"}
+split_colors = {"train": LIGHT_GRAY, "test": HIGHLIGHT}
 dogs = {2, 3, 6}  # Rare class in a toy dataset of 12 photos
 
 cv_folds = {
@@ -397,8 +387,6 @@ The <strong>sibling rate</strong> measures the percentage of test images that ha
 
 # %%
 # @title Prepare Trail-Camera Helpers { display-mode: "form" }
-import re
-
 CCT_DIR = DATA_DIR / "cache" / "cct20"
 CCT_SIDE = 512
 CCT_CLASSES = ["opossum", "raccoon", "coyote", "bobcat", "rabbit"]
@@ -477,24 +465,9 @@ def draw_cct_boxes(ax, row, thumb) -> None:
                                            edgecolor=CCT_COLORS[row["label"]]))
 
 
-def show_bursts(table: pd.DataFrame, n_bursts: int, size: int = 256,
-                show_boxes: bool = True) -> None:
-    """One row per burst: its frames side by side, framed in the class colour, titled with the location.
-
-    Picks bursts of different animals at different cameras, with a box on every frame, where the table
-    allows it.
-    """
-    candidates = [b for _, b in table.groupby("seq_id", sort=True) if len(b) > 1]
-    candidates.sort(key=lambda b: not b["bbox"].notna().all())  # fully boxed bursts first (stable sort)
-    bursts, seen_labels, seen_locations = [], set(), set()
-    for b in candidates:
-        label, location = b["label"].iloc[0], b["location"].iloc[0]
-        if label not in seen_labels and location not in seen_locations:
-            bursts.append(b)
-            seen_labels.add(label)
-            seen_locations.add(location)
-    bursts += [b for b in candidates if not any(b is k for k in bursts)][: n_bursts - len(bursts)]
-    bursts = bursts[:n_bursts]
+def show_bursts(bursts: list[pd.DataFrame], size: int = 256, show_boxes: bool = True) -> None:
+    """One row per burst in `bursts` (one DataFrame each): its frames side by side, framed in the class colour,
+    titled with the location."""
     cols = max(len(b) for b in bursts)
     fig, axes = plt.subplots(len(bursts), cols, figsize=(2.6 * cols, 2.1 * len(bursts)), squeeze=False)
     for r, burst in enumerate(bursts):
@@ -518,14 +491,12 @@ def show_bursts(table: pd.DataFrame, n_bursts: int, size: int = 256,
 # %%
 # @title 🔎 Explore Trail-Camera Image Bursts { display-mode: "form" }
 
-import ipywidgets as widgets
-from IPython.display import display, clear_output
-
 cct_all = pd.read_csv(fetch_manifest("cct20_slice.csv"))
-cct = download_cct(select_cct_rows(cct_all))
+cct_rows = select_cct_rows(cct_all)
+cct = download_cct(cct_rows)
 
-if len(cct) < len(select_cct_rows(cct_all)):
-    print(f"  ⚠️ {len(select_cct_rows(cct_all)) - len(cct)} photos could not be downloaded; run again.")
+if len(cct) < len(cct_rows):
+    print(f"  ⚠️ {len(cct_rows) - len(cct)} photos could not be downloaded; run again.")
 
 CCT_LOCATIONS = sorted(cct["location"].unique().tolist())
 print(f"{len(cct)} photos · {cct['seq_id'].nunique()} bursts · cameras {CCT_LOCATIONS}")
@@ -556,11 +527,7 @@ def burst_update_browser(change=None):
     with burst_output:
         clear_output(wait=True)
         if selected:
-            show_bursts(
-                pd.concat(selected),
-                n_bursts=len(selected),
-                show_boxes=burst_box_toggle.value,
-            )
+            show_bursts(selected, show_boxes=burst_box_toggle.value)
 
 
 def burst_previous_page(button):
@@ -606,9 +573,6 @@ burst_update_browser()
 
 # %%
 # @title 🔎 Explore Leakage Across Splitting Strategies { display-mode: "form" }
-
-import ipywidgets as widgets
-from IPython.display import display, clear_output
 
 split_strategy = widgets.Dropdown(
     options=["Random", "Stratified", "Group by burst", "Group by camera"],
@@ -734,9 +698,6 @@ Group-based splitting may produce a test share different from 20% because entire
 
 # %%
 # @title 🔴 Splitting for Object Detection and Segmentation { display-mode: "form" }
-
-import ipywidgets as widgets
-from IPython.display import display
 
 question = widgets.HTML(
     "<b>Which statements about splitting datasets for object detection "

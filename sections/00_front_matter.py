@@ -104,18 +104,37 @@ HTML(r"""
 
 # %%
 # @title Setup (run me first) { display-mode: "form" }
+# Every import the later sections need is made here, once (later cells use these names; noqa: F401).
 import ast
+import base64  # noqa: F401
+import hashlib  # noqa: F401
 import inspect
-import math  # noqa: F401  (used by later sections)
+import math  # noqa: F401
 import os
 import random
+import re  # noqa: F401
+import shutil  # noqa: F401
 import sys
 import textwrap
+import warnings  # noqa: F401
+from io import BytesIO  # noqa: F401
+from itertools import combinations  # noqa: F401
 
+import cv2  # noqa: F401
+import ipywidgets as widgets  # noqa: F401
 import matplotlib as mpl
 import matplotlib.pyplot as plt  # noqa: F401  (every later section plots with plt)
 import numpy as np
-from PIL import Image as _Image
+from IPython.display import HTML, clear_output, display  # noqa: F401
+from PIL import Image, ImageOps  # noqa: F401
+from pycocotools import mask as mask_utils  # noqa: F401
+from sklearn.model_selection import (  # noqa: F401
+    GroupShuffleSplit,
+    KFold,
+    LeaveOneOut,
+    StratifiedKFold,
+    train_test_split,
+)
 
 IN_COLAB = "google.colab" in sys.modules
 SMOKE = os.environ.get("NB_SMOKE") == "1"  # automated tests: tiny data, CPU, seconds. Never set this by hand.
@@ -138,6 +157,8 @@ CLASS_COLORS = {
     "zebra": "#2A9D8F",
 }
 INK = "#21434A"
+GRAY, LIGHT_GRAY, DARK_GRAY, EDGE_GRAY = "#9CA3AF", "#B0B0B0", "#4B5563", "#666666"  # neutral figure colors
+HIGHLIGHT = "#FFDA00"  # what a figure points at (a held-out fold, a changed bit, a modified mask)
 mpl.rcParams.update(
     {
         "figure.facecolor": "white",
@@ -242,38 +263,6 @@ def use(fn, *args, reference, **kwargs):
     else:
         print(f"❌ {name} differs from the reference: {_diff(mine, expected)} · using the reference.")
     return expected
-
-
-# --- answer_box(): a worked answer computed at runtime, closed until opened (N-024, SPEC L-005) ---
-ANSWER_BG, ANSWER_INK = "#F6EFE4", "#5C4027"  # the build's `answer` callout colours
-
-
-def answer_box(title, lines=(), fig=None, table=None):
-    """Draw a collapsed 💡 toggle holding printed lines, a DataFrame and/or matplotlib figure(s)."""
-    import base64
-    import html
-    import io
-
-    from IPython.display import HTML, display
-
-    parts = []
-    if lines:
-        text = html.escape("\n".join(lines))
-        parts.append(f'<pre style="white-space:pre-wrap;margin:6px 0 0 0;font-size:0.92em;">{text}</pre>')
-    if table is not None:
-        parts.append(table.to_html(border=0))
-    for f in fig if isinstance(fig, (list, tuple)) else [fig]:
-        if f is None:
-            continue
-        buf = io.BytesIO()
-        f.savefig(buf, format="png", bbox_inches="tight")
-        plt.close(f)
-        png = base64.b64encode(buf.getvalue()).decode()
-        parts.append(f'<img src="data:image/png;base64,{png}" style="max-width:100%;margin-top:6px;">')
-    box = (f"background:{ANSWER_BG};color:{ANSWER_INK};border-left:6px solid {ANSWER_INK};border-radius:6px;"
-           "padding:12px 14px;line-height:1.5;font-size:14px;width:100%;box-sizing:border-box;margin:2px 0;")
-    display(HTML(f'<div style="{box}"><details style="margin:0;"><summary style="cursor:pointer;'
-                 f'font-weight:bold;">💡 {html.escape(title)}</summary>{"".join(parts)}</details></div>'))
 
 
 print(f"Colab: {IN_COLAB} · smoke mode: {SMOKE} · seed: {SEED} · imagehash: ", end="")
@@ -423,12 +412,50 @@ if len(_paths) < len(_rows):
     print(f"  ⚠️ {len(_rows) - len(_paths)} images could not be downloaded and are left out; run again.")
 
 images, annotations = build_tables(COCO_RAW, _paths)
+images_by_id = images.set_index("id")  # the same table, looked up by image id
 RESULTS["n_images"] = int(len(images))
 
 _counts = Counter(images["class"])
 print(f"images: {len(images)} · animals (annotations): {len(annotations)}")
 print("per class: " + " · ".join(f"{c} {_counts[c]}" for c in CLASSES))
 images.drop(columns="license").head()  # the licence column stays in the table, not on screen (N-045)
+
+
+# %%
+# @title Helpers: Images and Masks { display-mode: "form" }
+def load_thumb(path, size=(256, 256)):
+    with Image.open(path) as im:
+        im = im.convert("RGB")
+        im.thumbnail(size)
+        return im.copy()
+
+
+def frame(ax, color):
+    ax.set_xticks([])
+    ax.set_yticks([])
+    for spine in ax.spines.values():
+        spine.set_visible(True)
+        spine.set_color(color)
+        spine.set_linewidth(3)
+
+
+def to_rle(segmentation, height: int, width: int) -> dict:
+    """A COCO segmentation (polygon list, uncompressed or compressed RLE) as one compressed RLE."""
+    if isinstance(segmentation, list):
+        return mask_utils.merge(mask_utils.frPyObjects(segmentation, height, width))
+    if isinstance(segmentation["counts"], list):
+        return mask_utils.frPyObjects(segmentation, height, width)
+    return segmentation
+
+
+def decode(rle: dict) -> np.ndarray:
+    """RLE → 0/1 uint8 array of the photo's size (C-ordered, so OpenCV accepts it)."""
+    return np.ascontiguousarray(mask_utils.decode(rle))
+
+
+def encode(mask: np.ndarray) -> dict:
+    """0/1 array → compressed RLE, the way COCO stores masks."""
+    return mask_utils.encode(np.asfortranarray(mask.astype(np.uint8)))
 
 
 # %% [markdown]

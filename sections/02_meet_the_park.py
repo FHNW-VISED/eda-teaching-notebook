@@ -111,7 +111,7 @@ for j, c in enumerate(CLASSES):
             spine.set_color(CLASS_COLORS[c])
             spine.set_linewidth(4)
         if i < len(_picked):
-            _thumb = _Image.open(_picked.iloc[i]["path"]).convert("RGB")
+            _thumb = Image.open(_picked.iloc[i]["path"]).convert("RGB")
             _thumb.thumbnail((256, 256))
             ax.imshow(_thumb)
         if i == 0:
@@ -130,12 +130,6 @@ plt.show()
 # %%
 
 # @title 🔎 Browse Images Within a Class { display-mode: "form" }
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-import ipywidgets as widgets
-from IPython.display import display
-from PIL import Image as _Image
-
 # Shuffle images once, reproducibly
 _gallery = {
     c: images[images["class"] == c]
@@ -151,7 +145,7 @@ def show_gallery(animal_class, page, show_boxes):
     fig, axes = plt.subplots(2, 3, figsize=(9, 4.5))
 
     for ax, (_, row) in zip(axes.flat, picked.iterrows()):
-        photo = _Image.open(row["path"]).convert("RGB")
+        photo = Image.open(row["path"]).convert("RGB")
         ax.imshow(photo)
 
         if show_boxes:
@@ -159,7 +153,7 @@ def show_gallery(animal_class, page, show_boxes):
             for _, ann in anns.iterrows():
                 x, y, w, h = ann["bbox"]
                 ax.add_patch(
-                    patches.Rectangle(
+                    mpl.patches.Rectangle(
                         (x, y), w, h,
                         fill=False,
                         edgecolor=CLASS_COLORS[ann["class"]],
@@ -340,29 +334,6 @@ making their images somewhat closer to the park's camera views.
 # %%
 
 # @title 🔎 Explore Images and Annotations { display-mode: "form" }
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-import ipywidgets as widgets
-from IPython.display import display, clear_output
-from PIL import Image
-from pycocotools import mask as mask_utils
-
-
-def decode_mask(segmentation, height, width):
-    """Decode a COCO polygon or RLE segmentation into a binary mask."""
-    if isinstance(segmentation, list):
-        rle = mask_utils.merge(
-            mask_utils.frPyObjects(segmentation, height, width)
-        )
-    elif isinstance(segmentation["counts"], list):
-        rle = mask_utils.frPyObjects(segmentation, height, width)
-    else:
-        rle = segmentation
-
-    return mask_utils.decode(rle).astype(bool)
-
-
 # Shuffle images reproducibly
 ann_images = images.sample(
     frac=1, random_state=SEED
@@ -413,11 +384,11 @@ def ann_show_image(index):
 
         # Decode and overlay masks only when enabled
         if ann_mask_toggle.value:
-            mask = decode_mask(
+            mask = decode(to_rle(
                 ann["segmentation"],
                 int(row["height"]),
                 int(row["width"])
-            )
+            )).astype(bool)
 
             rgb = np.array([
                 int(color[i:i+2], 16) for i in (1, 3, 5)
@@ -440,7 +411,7 @@ def ann_show_image(index):
             for ann, color in overlays:
                 x, y, w, h = ann["bbox"]
                 ax.add_patch(
-                    patches.Rectangle(
+                    mpl.patches.Rectangle(
                         (x, y), w, h,
                         fill=False,
                         edgecolor=color,

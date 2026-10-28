@@ -103,13 +103,7 @@ HTML(r"""
 
 # %%
 # @title 🔎 Helpers: Duplicate Detection and Image Quality { display-mode: "form" }
-import hashlib
-from pathlib import Path
-
-import imagehash
-import numpy as np
-import pandas as pd
-from PIL import Image
+MAX_PAIR_BITS = 20  # pairs up to this many differing bits are kept as candidates for the pair browser
 
 
 def file_md5(path) -> str:
@@ -150,29 +144,35 @@ def is_readable(path) -> bool:
         return False
 
 
+def jpeg_bytes(im: Image.Image, scale: float = 1.0, quality: int = 55) -> bytes:
+    """The JPEG file of `im` resized by `scale` (each side at least 8 px) and saved at `quality`."""
+    if scale != 1.0:
+        im = im.resize((max(8, int(im.width * scale)), max(8, int(im.height * scale))))
+    buf = BytesIO()
+    im.convert("RGB").save(buf, "JPEG", quality=quality)
+    return buf.getvalue()
+
+
+def jpeg_copy(im: Image.Image, scale: float = 1.0, quality: int = 55) -> Image.Image:
+    """`im` after a trip through a JPEG file: resized by `scale`, saved at `quality`, opened again as RGB."""
+    return Image.open(BytesIO(jpeg_bytes(im, scale, quality))).convert("RGB")
+
+
 # %%
 # @title 🔎 Inspect Near-Duplicates Using pHash { display-mode: "form" }
-import ipywidgets as widgets
-from IPython.display import display, clear_output
+exact_groups = exact_duplicate_groups(images["path"].tolist())
+print(f"{len(images)} files · {len(exact_groups)} groups of byte-identical files")
+for _group in exact_groups[:5]:
+    print("  ", " = ".join(Path(p).name for p in _group))
 
-import imagehash
-from PIL import Image
+# One pHash per image (on its 256 px thumbnail), reused by the bit-distance histogram below
+phash_bits = hash_bits([phash(load_thumb(path)) for path in images["path"]])
+pair_dist = hash_distances(phash_bits, phash_bits)
+_i, _j = np.where(np.triu(pair_dist <= MAX_PAIR_BITS, k=1))
+candidate_pairs = sorted(zip(_i.tolist(), _j.tolist(), pair_dist[_i, _j].tolist(), strict=True),
+                         key=lambda pair: pair[2])
 
-hashes = []
-for path in images["path"]:
-    with Image.open(path) as img:
-        hashes.append(imagehash.phash(img.convert("RGB")))
-
-PAIRS = [
-    (i, j, hashes[i] - hashes[j])
-    for i in range(len(hashes))
-    for j in range(i + 1, len(hashes))
-    if hashes[i] - hashes[j] <= 20
-]
-
-PAIRS.sort(key=lambda pair: pair[2])
-
-print(f"Found {len(PAIRS)} candidate pairs within 20 bits.")
+print(f"Found {len(candidate_pairs)} candidate pairs within {MAX_PAIR_BITS} bits.")
 
 dup_threshold = widgets.IntSlider(
     value=8, min=0, max=20, step=1,
@@ -192,7 +192,7 @@ dup_state = {"index": 0}
 
 def dup_update_browser(*_):
     # Only show pairs within the selected threshold
-    flagged_pairs = [pair for pair in PAIRS if pair[2] <= dup_threshold.value]
+    flagged_pairs = [pair for pair in candidate_pairs if pair[2] <= dup_threshold.value]
 
     dup_state["index"] = min(dup_state["index"], max(0, len(flagged_pairs) - 1))
 
@@ -293,17 +293,7 @@ HTML(r"""
 
 HASH_THRESHOLD = 5 # @param {type:"slider", min:0, max:20, step:1}
 
-exact_groups = exact_duplicate_groups(images["path"].tolist())
-print(f"{len(images)} files · {len(exact_groups)} groups of byte-identical files")
-for _group in exact_groups[:5]:
-    print("  ", " = ".join(Path(p).name for p in _group))
-
-HASHES = np.stack([
-    np.asarray(phash(load_thumb(path)).hash, dtype=np.uint8).ravel()
-    for path in images["path"]
-])
-
-_dist = hash_distances(HASHES, HASHES)
+_dist = pair_dist.copy()  # the bit distances of every pair, from the pHash cell above
 np.fill_diagonal(_dist, 99)
 nearest_distance = _dist.min(axis=1)  # each photo's distance to its closest other photo
 _i, _j = np.where(np.triu(_dist <= HASH_THRESHOLD, k=1))
@@ -358,11 +348,8 @@ HTML(r"""
 # @title 🔎 Explore Perceptual Hashing (pHash) { display-mode: "form" }
 
 from matplotlib.colors import ListedColormap
-from matplotlib.patches import Rectangle
 from scipy.fft import dctn
-from io import BytesIO
 
-highlight = "#FFDA00"
 bit_colors = ListedColormap(["#F0F0F0", "#888888"])
 
 c0 = images["class"].iloc[0]
@@ -371,13 +358,7 @@ pool = images[images["class"] != c0]
 orig = load_thumb(images["path"].iloc[0])
 unrelated = load_thumb((pool if len(pool) else images)["path"].iloc[-1])
 
-buf = BytesIO()
-orig.resize(
-    (int(orig.width * 0.7), int(orig.height * 0.7))
-).save(buf, "JPEG", quality=55)
-
-buf.seek(0)
-near = Image.open(buf).convert("RGB")
+near = jpeg_copy(orig, scale=0.7, quality=55)
 
 grey = orig.convert("L").resize((32, 32), Image.Resampling.LANCZOS)
 dct = dctn(np.asarray(grey, dtype=float), type=2)
@@ -403,9 +384,9 @@ def draw_bits(ax, values, other=None, title=""):
         )
 
         if other is not None and bit != other[r, c]:
-            ax.add_patch(Rectangle(
+            ax.add_patch(mpl.patches.Rectangle(
                 (c - 0.5, r - 0.5), 1, 1,
-                fill=False, edgecolor=highlight, linewidth=2.5
+                fill=False, edgecolor=HIGHLIGHT, linewidth=2.5
             ))
 
     ax.set_title(title, fontsize=9)
@@ -421,9 +402,9 @@ axes[0, 1].imshow(grey, cmap="gray")
 axes[0, 1].set_title("2. Resize to 32×32, grayscale", fontsize=9)
 
 axes[0, 2].imshow(np.log1p(np.abs(dct)), cmap="Greys")
-axes[0, 2].add_patch(Rectangle(
+axes[0, 2].add_patch(mpl.patches.Rectangle(
     (-0.5, -0.5), 8, 8,
-    fill=False, edgecolor=highlight, linewidth=2.5
+    fill=False, edgecolor=HIGHLIGHT, linewidth=2.5
 ))
 axes[0, 2].set_title("3. DCT: select top-left 8×8\n(coarse image structure)", fontsize=9)
 
@@ -513,10 +494,6 @@ HTML(r"""
 
 # %%
 # @title 🔎 Generate a Dataset with Known Duplicates { display-mode: "form" }
-
-from PIL import ImageOps
-import shutil
-
 HUNT_DIR = DATA_DIR / "cache" / "hunt5"
 N_CARD_ORIGINALS = 12 if SMOKE else 40  # distinct photos on the card (N-014: fewer in smoke mode)
 PLANT_KINDS = ["exact", "exact", "flipped", "rotated", "recompressed"]  # ≥ 4 planted copies, always present
@@ -551,9 +528,7 @@ def plant_hunt5(dest: Path, n_originals: int, seed: int) -> tuple[dict[str, Path
             rgb.transpose(Image.Transpose.ROTATE_90).save(buf, "JPEG", quality=92)
             data = buf.getvalue()
         else:  # recompressed: smaller and at a lower JPEG quality
-            small = rgb.resize((max(8, int(rgb.width * 0.7)), max(8, int(rgb.height * 0.7))))
-            small.save(buf, "JPEG", quality=55)
-            data = buf.getvalue()
+            data = jpeg_bytes(rgb, scale=0.7, quality=55)
         entries.append((data, kind, i))
         planted.append((kind, i))
     order = list(range(len(entries)))
@@ -570,54 +545,11 @@ def plant_hunt5(dest: Path, n_originals: int, seed: int) -> tuple[dict[str, Path
 
 
 hunt_files, HUNT5_KEY = plant_hunt5(HUNT_DIR, N_CARD_ORIGINALS, SEED)
-hunt_images = {name: load_thumb(path) for name, path in hunt_files.items()}
 
 print(f"Generated {len(hunt_files)} images, including {len(HUNT5_KEY)} intentionally added duplicates.")
 
 # %%
 # @title Helpers: Compare Duplicate Detection Methods { display-mode: "form" }
-
-KIND_OF_VARIANT = {"original": "recompressed", "flip_lr": "flipped", "flip_tb": "flipped",
-                   "rot90": "rotated", "rot180": "rotated", "rot270": "rotated"}
-
-
-def find_copies(files: dict[str, Path], threshold: int, use_variants: bool) -> pd.DataFrame:
-    """Pairs of files on a card that are copies of each other: columns a, b, kind, distance.
-
-    kind is "exact" (same bytes), "recompressed" (hashes within `threshold`), or, with use_variants=True,
-    "flipped" / "rotated" (a flipped or rotated variant of a hashes within `threshold` of b).
-    """
-    names = list(files)
-    md5s = {n: file_md5(p) for n, p in files.items()}
-    thumbs = {n: load_thumb(p) for n, p in files.items()}
-    plain = hash_bits([phash(thumbs[n]) for n in names])
-    variant_names = VARIANT_NAMES if use_variants else ["original"]
-    # distances[v][i, j]: hash of variant v of file i vs the plain hash of file j
-    distances = {v: hash_distances(hash_bits([phash(variants(thumbs[n])[v]) for n in names]), plain)
-                 for v in variant_names}
-    rows = []
-    for i, a in enumerate(names):
-        for j in range(i + 1, len(names)):
-            b = names[j]
-            if md5s[a] == md5s[b]:
-                rows.append({"a": a, "b": b, "kind": "exact", "distance": 0})
-                continue
-            best_v = min(variant_names, key=lambda v: distances[v][i, j])
-            best_d = int(distances[best_v][i, j])
-            if best_d <= threshold:
-                rows.append({"a": a, "b": b, "kind": KIND_OF_VARIANT[best_v], "distance": best_d})
-    return pd.DataFrame(rows, columns=["a", "b", "kind", "distance"])
-
-
-def score_hunt(found: pd.DataFrame, key: list[dict]) -> int:
-    """How many planted copies in `key` appear as a pair (either order) in `found`."""
-    pairs = {frozenset((r["a"], r["b"])) for _, r in found.iterrows()}
-    return sum(frozenset((k["copy"], k["source"])) in pairs for k in key)
-
-
-# %%
-# @title 🔎 Compare Duplicate Detection Methods { display-mode: "form" }
-from PIL import ImageOps
 
 def variants(img):
     """Generate image transformations for duplicate detection."""
@@ -629,15 +561,64 @@ def variants(img):
         "rotate270": img.rotate(270, expand=True),
     }
 
-VARIANT_NAMES = list(variants(Image.new("RGB", (4, 4))))
+VARIANT_NAMES = ("original", "flip", "rotate90", "rotate180", "rotate270")
 
 KIND_OF_VARIANT = {
-    "original": "original",
+    "original": "recompressed",
     "flip": "flipped",
     "rotate90": "rotated",
     "rotate180": "rotated",
     "rotate270": "rotated",
 }
+
+
+def find_copies(files: dict[str, Path], threshold: int, use_variants: bool) -> pd.DataFrame:
+    """Pairs of files that are copies of each other: columns a, b, kind, distance.
+
+    kind is "exact" (same bytes), "recompressed" (hashes within `threshold`), or, with use_variants=True,
+    "flipped" / "rotated" (a flipped or rotated variant of a hashes within `threshold` of b).
+    All pairs at once, in blocks of 256 rows so that a few thousand files fit in memory.
+    """
+    names = list(files)
+    variant_names = VARIANT_NAMES if use_variants else ("original",)
+    md5s, hashes = [], {v: [] for v in variant_names}
+    for n in names:
+        md5s.append(file_md5(files[n]))
+        for v, im in variants(load_thumb(files[n])).items():
+            if v in hashes:
+                hashes[v].append(phash(im))
+    bits = {v: hash_bits(h) for v, h in hashes.items()}
+    plain = bits["original"]
+    # best[i, j]: smallest distance between a variant of file i and the plain hash of file j; best_v: which variant
+    best = np.full((len(names), len(names)), 65, dtype=np.int16)
+    best_v = np.zeros((len(names), len(names)), dtype=np.int8)
+    for k, v in enumerate(variant_names):
+        for start in range(0, len(names), 256):
+            d = hash_distances(bits[v][start:start + 256], plain)
+            block, block_v = best[start:start + 256], best_v[start:start + 256]
+            better = d < block
+            block[better] = d[better]
+            block_v[better] = k
+    md5_code = pd.factorize(pd.Series(md5s, dtype=object))[0]
+    same_bytes = md5_code[:, None] == md5_code[None, :]
+    rows = []
+    for i, j in zip(*np.nonzero(np.triu(same_bytes | (best <= threshold), k=1)), strict=True):
+        if same_bytes[i, j]:
+            rows.append({"a": names[i], "b": names[j], "kind": "exact", "distance": 0})
+        else:
+            rows.append({"a": names[i], "b": names[j], "kind": KIND_OF_VARIANT[variant_names[best_v[i, j]]],
+                         "distance": int(best[i, j])})
+    return pd.DataFrame(rows, columns=["a", "b", "kind", "distance"])
+
+
+def score_hunt(found: pd.DataFrame, key: list[dict]) -> int:
+    """How many planted copies in `key` appear as a pair (either order) in `found`."""
+    pairs = {frozenset((r["a"], r["b"])) for _, r in found.iterrows()}
+    return sum(frozenset((k["copy"], k["source"])) in pairs for k in key)
+
+
+# %%
+# @title 🔎 Compare Duplicate Detection Methods { display-mode: "form" }
 plain = find_copies(hunt_files, threshold=8, use_variants=False)
 variant = find_copies(hunt_files, threshold=8, use_variants=True)
 
@@ -670,18 +651,12 @@ HTML("""
 # @title 🔎 How Do Image Transformations Affect pHash? { display-mode: "form" }
 _src = load_thumb(images["path"].iloc[0])
 
-def _reencode(im, quality):
-    buf = BytesIO()
-    im.convert("RGB").save(buf, "JPEG", quality=quality)
-    buf.seek(0)
-    return Image.open(buf).convert("RGB")
-
 _copies = {
     "original": _src,
     "exact copy": _src,
     "resized": _src.resize((int(_src.width * 0.6), int(_src.height * 0.6))),
     "flipped": ImageOps.mirror(_src),
-    "recompressed": _reencode(_src, 25),
+    "recompressed": jpeg_copy(_src, scale=1.0, quality=25),
     "rotated": _src.transpose(Image.Transpose.ROTATE_90),
 }
 
@@ -772,9 +747,6 @@ HTML("""
 
 # %%
 # @title 🔎 Find Unusual Images Using Color Histograms { display-mode: "form" }
-import ipywidgets as widgets
-from IPython.display import display, clear_output
-
 N_ATYPICAL = 1 if SMOKE else 2  # Images shown per class
 _features = CHANNEL_HISTS.reshape(len(image_stats), -1)
 _class_mean = {c: _features[(image_stats["class"] == c).to_numpy()].mean(axis=0) for c in CLASSES}
@@ -867,8 +839,6 @@ HTML("""
 
 # %%
 # @title 📘 Image Embeddings, Similarity, and UMAP { display-mode: "form" }
-from IPython.display import HTML, display
-
 display(HTML("""
 <div style="background:#E3F2FD; border-left:4px solid #0D47A1;
             padding:14px 18px; border-radius:6px; color:#0D47A1;">
@@ -892,29 +862,6 @@ display(HTML("""
 # %%
 # @title Helpers: Image Embeddings { display-mode: "form" }
 
-EMBEDDINGS_NAME = "coco_animals_embeddings.npz"  # npz keys: ids (n,), embeddings (n, d); matched by image id
-
-
-def load_embeddings() -> tuple[np.ndarray, str]:
-    """(vectors aligned with `images`, source). Source is "precomputed" or "colour histograms (stand-in)".
-
-    Reads data/coco_animals_embeddings.npz, fetching it from DATA_BASE_URL outside smoke mode. Never runs a
-    model. Falls back to the colour histograms when the file is missing or does not cover every image.
-    """
-    path = DATA_DIR / EMBEDDINGS_NAME
-    if not path.exists() and not SMOKE:
-        download_file(DATA_BASE_URL + EMBEDDINGS_NAME, path, headers=_github_headers())
-    if path.exists():
-        try:
-            z = np.load(path)
-            by_id = dict(zip(z["ids"].tolist(), z["embeddings"], strict=True))
-            if all(i in by_id for i in images["id"]):
-                return np.stack([by_id[i] for i in images["id"]]).astype(np.float32), "precomputed"
-        except Exception:
-            pass
-    return CHANNEL_HISTS.reshape(len(images), -1).astype(np.float32), "colour histograms (stand-in)"
-
-
 def cosine_similarity_matrix(vectors: np.ndarray) -> np.ndarray:
     """Cosine similarity between every pair of rows (after centring the columns)."""
     centred = vectors - vectors.mean(axis=0)
@@ -928,8 +875,6 @@ def cosine_similarity_matrix(vectors: np.ndarray) -> np.ndarray:
 # %pip -q install transformers umap-learn bokeh
 
 import torch
-import numpy as np
-from PIL import Image
 from transformers import AutoImageProcessor, AutoModel
 from tqdm.auto import tqdm
 
@@ -962,9 +907,6 @@ def dinov2_embeddings(paths, batch_size=16):
 
 # %%
 # @title Precompute Image Representations and UMAP { display-mode: "form" }
-import hashlib
-import warnings
-import numpy as np
 import umap
 
 CACHE_DIR = DATA_DIR / "cache" / "embeddings"
@@ -1035,10 +977,6 @@ print("Ready:", ", ".join(representations))
 
 # %%
 # @title 🔎 Explore Image Representations with UMAP { display-mode: "form" }
-import base64
-from io import BytesIO
-import ipywidgets as widgets
-from IPython.display import display
 from bokeh.plotting import figure, show
 from bokeh.io import output_notebook
 from bokeh.models import ColumnDataSource, HoverTool
@@ -1104,10 +1042,6 @@ show(p)
 
 # %%
 # @title 🔎 Explore Similar and Unusual Images { display-mode: "form" }
-import numpy as np
-import ipywidgets as widgets
-from IPython.display import display, clear_output
-
 SIMILARITY_FEATURES = "Pretrained visual embeddings" # @param ["Color histograms", "Pretrained visual embeddings"]
 
 features = representations[SIMILARITY_FEATURES]
