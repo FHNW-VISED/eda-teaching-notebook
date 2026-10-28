@@ -1,10 +1,102 @@
 # %% [markdown]
 # ## 10. Your project dataset
 
-# %% [markdown]
-# <!-- callout: objective | Objective -->
-# Run the checklist of sections 3 to 6 on your own folder-per-class dataset, and answer the guiding questions
-# for it the way we answered them for the park.
+# %%
+# @title Checklist Dataset Mini-Project
+from IPython.display import HTML; HTML(r"""<div class="callout callout-theory" style="background:#E3F2FD;color:#0D47A1;border-left:6px solid #0D47A1;border-radius:6px;padding:12px 14px;line-height:1.5;font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;margin:2px 0;">
+<div style="font-weight:bold;">📘 Theory · What makes a good dataset</div>
+<ul style="margin:6px 0 0 0;padding-left:22px;">
+<li style="margin:2px 0;"><strong>Does it fit the question?</strong> The images, the classes and the setting must match the job you want the
+  model to do.<br><em>Park example:</em> the alert needs a dog seen from a fixed camera in the sheep paddock, not a
+  dog in a holiday snapshot taken from two metres away.</li>
+<li style="margin:2px 0;"><strong>Enough samples</strong>, <strong>2–10 classes</strong> and <strong>about 500×500 px</strong>: the numbers to check, explained below.</li>
+<li style="margin:2px 0;"><strong>Classes, distributions, imbalance, bias.</strong> Know them, and take them into account in training (for
+  example with a weighted loss).<br>
+  <em>Park example:</em> if 70 % of the photos are sheep and 3 % are dogs, the model sees few dogs to learn from,
+  and the dog is the animal the alert exists for (section 4).</li>
+<li style="margin:2px 0;"><strong>Variability matches the target population</strong>, and <strong>labels are present and validated</strong>: every image has
+  a label, and someone checked a sample of them.<br>
+  <em>Park example:</em> a photo of a zebra labelled "horse" teaches the model the wrong thing, and nobody notices
+  until the zebra headcount is off.</li>
+<li style="margin:2px 0;"><strong>Objects are identifiable and separable by eye.</strong></li>
+<li style="margin:2px 0;"><strong>What do experts and the literature say</strong> about this data and this task?</li>
+<li style="margin:2px 0;"><strong>Get a qualitative and a quantitative sense of the data</strong> (Karpathy, 2019): look at many images, then
+  measure.</li>
+</ul>
+<details style="margin:6px 0 0 0;">
+<summary style="cursor:pointer;font-weight:bold;">The reasons and park examples behind each point</summary>
+<ul style="margin:6px 0 0 0;padding-left:22px;">
+<li style="margin:2px 0;"><strong>Enough samples:</strong> a few hundred to a few thousand images, depending on how many classes you have.
+  <em>Park example:</em> 100 photos per animal (600 in all) is a fair start; 12 zebra photos is not.</li>
+<li style="margin:2px 0;"><strong>2–10 classes:</strong> more classes need more photos each, and similar classes get confused.
+  <em>Park example:</em> six animals is fine; splitting sheep and horses into 40 breeds would not be.</li>
+<li style="margin:2px 0;"><strong>About 500×500 px:</strong> check the input size of the models you plan to use.
+  <em>Park example:</em> a bird across the pond may cover only 20×20 px of a 640×480 photo; shrink the photo to
+  224×224 and it is a handful of pixels.</li>
+<li style="margin:2px 0;"><strong>Variability:</strong> lighting, viewpoints, backgrounds and seasons should look like the ones
+  the model will meet.
+  <em>Park example:</em> take pictures of the park in winter and in summer, in sun and at dusk. A model that only
+  saw sunny July afternoons will meet snow and low light in January.</li>
+<li style="margin:2px 0;"><strong>Separable by eye:</strong> if you cannot tell them apart, the model will struggle too.
+  <em>Park example:</em> a bird that is a dark speck over the pond, or sheep standing so close that their outlines
+  merge into one woolly shape.</li>
+<li style="margin:2px 0;"><strong>Experts and literature:</strong> before trusting COCO's masks, read the audit that found some of them poor; it
+  tells you what to look for.</li>
+<li style="margin:2px 0;"><strong>Qualitative and quantitative:</strong> look at many images and see how big the animals are and how much of the
+  photo they cover. Is it the same for each class? Can you already see imbalances just by looking?</li>
+</ul>
+</details>
+</div>""")
+
+# %%
+# @title 🔗 Resources: Image Datasets and Annotation Tools { display-mode: "form" }
+
+from IPython.display import HTML, display
+
+display(HTML(r"""
+<div style="background:#F3F4F6;color:#4B5563;
+            border-left:6px solid #4B5563;border-radius:6px;
+            padding:12px 14px;line-height:1.5;
+            font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;
+            font-size:14px;width:100%;box-sizing:border-box;
+            white-space:normal;overflow-wrap:break-word;margin:2px 0;">
+
+<div style="font-weight:bold;">🔗 Resources: Image Datasets and Annotation Tools</div>
+
+<p style="margin:6px 0 0 0;">
+Where to find existing image datasets and tools for annotating your own images.
+</p>
+
+<p style="margin:10px 0 0 0;"><strong>Find a dataset</strong></p>
+<ul style="margin:6px 0 0 0;padding-left:22px;">
+<li style="margin:2px 0;"><a href="https://www.kaggle.com/datasets" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">Kaggle datasets</a>: a huge community collection, good for a first look.</li>
+<li style="margin:2px 0;"><a href="https://datasetsearch.research.google.com" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">Google Dataset Search</a>: one search box over many repositories.</li>
+<li style="margin:2px 0;"><a href="https://www.v7labs.com/open-datasets" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">V7 open datasets</a>: a curated list of open computer-vision data
+  (plus <a href="https://www.v7labs.com/blog" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">their blog</a> with overviews of well-known datasets).</li>
+<li style="margin:2px 0;"><a href="https://universe.roboflow.com" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">Roboflow Universe</a>: community datasets, many already labeled with boxes or masks.</li>
+<li style="margin:2px 0;"><a href="https://lila.science" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">LILA</a>: wildlife and camera-trap images, the closest match to the park's cameras.</li>
+<li style="margin:2px 0;"><a href="https://pytorch.org/vision/stable/datasets.html" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">torchvision datasets</a>: classic datasets available directly through PyTorch.</li>
+<li style="margin:2px 0;"><a href="https://cocodataset.org" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">COCO</a>: a general-purpose dataset; our play dataset is a subset of it.</li>
+</ul>
+
+<p style="margin:10px 0 0 0;"><strong>Label your own images</strong></p>
+<ul style="margin:6px 0 0 0;padding-left:22px;">
+<li style="margin:2px 0;"><a href="https://supervisely.com" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">Supervisely</a>: a labeling platform for boxes, polygons, and masks.</li>
+<li style="margin:2px 0;"><a href="https://www.v7labs.com" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">V7</a>: browser-based image annotation tools.</li>
+<li style="margin:2px 0;"><a href="https://roboflow.com/annotate" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">Roboflow Annotate</a>: browser-based labeling with export to common formats.</li>
+<li style="margin:2px 0;"><a href="https://labelstud.io" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">Label Studio</a>: open-source annotation software that can run locally.</li>
+</ul>
+
+</div>
+"""))
+
+# %%
+# @title
+from IPython.display import HTML; HTML(r"""<div class="callout callout-objective" style="background:#B9E3EA;color:#08505C;border-left:6px solid #08505C;border-radius:6px;padding:12px 14px;line-height:1.5;font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;margin:2px 0;">
+<div style="font-weight:bold;">🎯 Objective</div>
+<p style="margin:6px 0 0 0;">Run the checklist of sections 3 to 6 on your own folder-per-class dataset, and answer the guiding questions
+for it the way we answered them for the park.</p>
+</div>""")
 
 # %% [markdown]
 # Your project has its own dataset, and it deserves the same twenty minutes of looking before anybody trains
@@ -18,51 +110,51 @@
 # └── tulip/      …
 # ```
 
-# %% [markdown]
-# <!-- callout: your-turn | Your turn · Point the notebook at your dataset (you change one line) -->
-# Colab cannot see your laptop's folders, so the dataset first goes where Colab can read it. Pick **one** of
-# the three options, then do the last step.
-#
-# **Option A · Upload it to this Colab session** (fastest; gone when the session ends)
-#
-# 1. **Zip the dataset folder** on your laptop: Mac, right-click the folder → *Compress*; Windows,
-#    right-click → *Send to* → *Compressed (zipped) folder*. Colab uploads files, not folders.
-# 2. Click the 📁 **Files** icon in Colab's left bar and **drag the zip into it** (or use the upload icon at
-#    the top of the pane). Wait until the progress circle at the bottom left disappears.
-# 3. **Right-click the zip → Copy path.** It looks like `/content/my_dataset.zip`; the notebook unzips it.
-#
-# ⚠️ Colab deletes uploaded files when the session ends (closing the tab for a while, or *Disconnect and
-# delete runtime*): next time, upload the zip again.
-#
-# **Option B · Use Google Drive** (stays between sessions; slower the first time)
-#
-# 1. **Put the dataset on your Drive** at [drive.google.com](https://drive.google.com): *New → Folder upload*
-#    for the folder, or *File upload* for a zip.
-# 2. **Connect Drive to Colab:** in the 📁 Files pane, click the **Mount Drive** icon (a folder with the
-#    Drive logo) and allow access in the window that opens. A `drive/` folder appears in the pane.
-# 3. Open `drive/MyDrive/`, find the folder whose sub-folders are your classes (or the zip), **right-click →
-#    Copy path.** It looks like `/content/drive/MyDrive/project/my_dataset`.
-#
-# **Option C · Paste a Google Drive link to a zip** (no mounting, no browsing)
-#
-# 1. In Drive, right-click the **zip** → *Share* → *Copy link*. It looks like
-#    `https://drive.google.com/file/d/1I9D…/view?usp=drive_link`.
-# 2. Paste the whole link as the path. If the zip is shared as *Anyone with the link*, it downloads straight
-#    away; if it is private, Colab asks you to sign in with the Google account that can open it.
-#
-# Links to a Drive *folder* do not work: zip the folder first, or use option B.
-#
-# **Last step, all options:** paste the path between the quotes in the next cell, click into that cell, and
-# run everything from there: **Runtime → Run cell and below**. If the path is not right, the cell after it
-# stops with a plain message that says what to change.
-#
-# - ✅ `/content/my_dataset.zip` (A), `/content/drive/MyDrive/project/my_dataset` (B) or
-#   `https://drive.google.com/file/d/…/view` (C): the folder that holds `daisy/`, `rose/`, `tulip/`, or a zip
-#   of it.
-# - ❌ `…/my_dataset/daisy`: one class folder, one level too deep.
-# - ❌ a folder that holds `train/` and `val/`: point at `…/train` instead (then at `…/val`, if you like).
-#
-# Leave it at `None` to see the whole section on a small park sample first.
+# %%
+# @title
+from IPython.display import HTML; HTML(r"""<div class="callout callout-your-turn" style="background:#FFF4D6;color:#7A4A00;border-left:6px solid #7A4A00;border-radius:6px;padding:12px 14px;line-height:1.5;font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;margin:2px 0;">
+<div style="font-weight:bold;">✏️ Your turn · Point the notebook at your dataset (you change one line)</div>
+<p style="margin:6px 0 0 0;">Colab cannot see your laptop's folders, so the dataset first goes where Colab can read it. Pick <strong>one</strong> of
+the three options, then do the last step.</p>
+<p style="margin:6px 0 0 0;"><strong>Option A · Upload it to this Colab session</strong> (fastest; gone when the session ends)</p>
+<ol style="margin:6px 0 0 0;padding-left:22px;">
+<li style="margin:2px 0;"><strong>Zip the dataset folder</strong> on your laptop: Mac, right-click the folder → <em>Compress</em>; Windows,
+   right-click → <em>Send to</em> → <em>Compressed (zipped) folder</em>. Colab uploads files, not folders.</li>
+<li style="margin:2px 0;">Click the 📁 <strong>Files</strong> icon in Colab's left bar and <strong>drag the zip into it</strong> (or use the upload icon at
+   the top of the pane). Wait until the progress circle at the bottom left disappears.</li>
+<li style="margin:2px 0;"><strong>Right-click the zip → Copy path.</strong> It looks like <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">/content/my_dataset.zip</code>; the notebook unzips it.</li>
+</ol>
+<p style="margin:6px 0 0 0;">⚠️ Colab deletes uploaded files when the session ends (closing the tab for a while, or <em>Disconnect and
+delete runtime</em>): next time, upload the zip again.</p>
+<p style="margin:6px 0 0 0;"><strong>Option B · Use Google Drive</strong> (stays between sessions; slower the first time)</p>
+<ol style="margin:6px 0 0 0;padding-left:22px;">
+<li style="margin:2px 0;"><strong>Put the dataset on your Drive</strong> at <a href="https://drive.google.com" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">drive.google.com</a>: <em>New → Folder upload</em>
+   for the folder, or <em>File upload</em> for a zip.</li>
+<li style="margin:2px 0;"><strong>Connect Drive to Colab:</strong> in the 📁 Files pane, click the <strong>Mount Drive</strong> icon (a folder with the
+   Drive logo) and allow access in the window that opens. A <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">drive/</code> folder appears in the pane.</li>
+<li style="margin:2px 0;">Open <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">drive/MyDrive/</code>, find the folder whose sub-folders are your classes (or the zip), <strong>right-click →
+   Copy path.</strong> It looks like <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">/content/drive/MyDrive/project/my_dataset</code>.</li>
+</ol>
+<p style="margin:6px 0 0 0;"><strong>Option C · Paste a Google Drive link to a zip</strong> (no mounting, no browsing)</p>
+<ol style="margin:6px 0 0 0;padding-left:22px;">
+<li style="margin:2px 0;">In Drive, right-click the <strong>zip</strong> → <em>Share</em> → <em>Copy link</em>. It looks like
+   <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">https://drive.google.com/file/d/1I9D…/view?usp=drive_link</code>.</li>
+<li style="margin:2px 0;">Paste the whole link as the path. If the zip is shared as <em>Anyone with the link</em>, it downloads straight
+   away; if it is private, Colab asks you to sign in with the Google account that can open it.</li>
+</ol>
+<p style="margin:6px 0 0 0;">Links to a Drive <em>folder</em> do not work: zip the folder first, or use option B.</p>
+<p style="margin:6px 0 0 0;"><strong>Last step, all options:</strong> paste the path between the quotes in the next cell, click into that cell, and
+run everything from there: <strong>Runtime → Run cell and below</strong>. If the path is not right, the cell after it
+stops with a plain message that says what to change.</p>
+<ul style="margin:6px 0 0 0;padding-left:22px;">
+<li style="margin:2px 0;">✅ <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">/content/my_dataset.zip</code> (A), <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">/content/drive/MyDrive/project/my_dataset</code> (B) or
+  <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">https://drive.google.com/file/d/…/view</code> (C): the folder that holds <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">daisy/</code>, <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">rose/</code>, <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">tulip/</code>, or a zip
+  of it.</li>
+<li style="margin:2px 0;">❌ <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">…/my_dataset/daisy</code>: one class folder, one level too deep.</li>
+<li style="margin:2px 0;">❌ a folder that holds <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">train/</code> and <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">val/</code>: point at <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">…/train</code> instead (then at <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">…/val</code>, if you like).</li>
+</ul>
+<p style="margin:6px 0 0 0;">Leave it at <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">None</code> to see the whole section on a small park sample first.</p>
+</div>""")
 
 # %%
 # ✏️ YOUR TURN
@@ -271,6 +363,7 @@ def folder_notes(root: Path, files: pd.DataFrame) -> list[str]:
                      "project).")
     return notes
 
+
 # %% [markdown]
 # The next cell reads your folder (or, with `None`, builds the park sample: 20 cleaned photos per class plus
 # **three planted problems**, an exact copy of a cat, a mirrored dog and a grayscale bird). It prints what it
@@ -344,12 +437,15 @@ fig.suptitle("A first look: are these your images and your classes?", color=INK)
 fig.tight_layout()
 plt.show()
 
-# %% [markdown]
-# <!-- callout: go-deeper | Go deeper · Detection or segmentation project, and big datasets -->
-# Put all images in one folder inside `MY_DATASET_DIR` (e.g. `…/project/all/`). The class counts then say
-# nothing, but sizes, modes, copies and the split still do (the box and mask checks are sections 7 and 8).
-# Images deeper inside a class folder count, other files are listed and skipped. Datasets above
-# `MY_MAX_IMAGES` photos are sampled down, keeping the class shares, so the checks stay at a minute or two.
+# %%
+# @title
+from IPython.display import HTML; HTML(r"""<div class="callout callout-go-deeper" style="background:#F3F4F6;color:#4B5563;border-left:6px solid #4B5563;border-radius:6px;padding:12px 14px;line-height:1.5;font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;margin:2px 0;">
+<div style="font-weight:bold;">🔍 Go deeper · Detection or segmentation project, and big datasets</div>
+<p style="margin:6px 0 0 0;">Put all images in one folder inside <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">MY_DATASET_DIR</code> (e.g. <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">…/project/all/</code>). The class counts then say
+nothing, but sizes, modes, copies and the split still do (the box and mask checks are sections 7 and 8).
+Images deeper inside a class folder count, other files are listed and skipped. Datasets above
+<code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">MY_MAX_IMAGES</code> photos are sampled down, keeping the class shares, so the checks stay at a minute or two.</p>
+</div>""")
 
 # %% [markdown]
 # Four checks run next and end in one report card. Check 1 counts the images per folder, as section 4 did for
@@ -552,15 +648,22 @@ RESULTS["swap_in"] = {"source": my_source, "n_images": int(len(my_files)), "n_cl
 # three planted problems (an exact copy of a cat, a mirrored dog, a grayscale bird). Which check caught each
 # one? Then run the checks on your own dataset and compare.
 
-# %% [markdown]
-# <!-- callout: answer | Worked answer (Q25, on the sample) -->
-# - **Check 1:** every folder holds the same number of photos, plus the planted copies in cat and dog, so
-#   the ratio is close to 1 : 1. That is a property of the sample, not of the park.
-# - **Check 2:** all sizes fall in the Play Dataset's few clusters (long side 640 or 500 px). The grayscale
-#   bird shows up as one `L` file.
-# - **Check 3:** the exact copy of the cat and the mirrored dog show up as an `exact` and a `flipped` pair,
-#   both inside one folder. The split keeps each pair on one side.
-# - If a check missed one of them, look at the `HASH_THRESHOLD` you set in section 5.
+# %%
+# @title
+from IPython.display import HTML; HTML(r"""<div class="callout callout-answer" style="background:#F6EFE4;color:#5C4027;border-left:6px solid #5C4027;border-radius:6px;padding:12px 14px;line-height:1.5;font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;margin:2px 0;">
+
+<details style="margin:0;"><summary style="cursor:pointer;font-weight:bold;">💡 Worked answer (Q25, on the sample)</summary>
+<ul style="margin:6px 0 0 0;padding-left:22px;">
+<li style="margin:2px 0;"><strong>Check 1:</strong> every folder holds the same number of photos, plus the planted copies in cat and dog, so
+  the ratio is close to 1 : 1. That is a property of the sample, not of the park.</li>
+<li style="margin:2px 0;"><strong>Check 2:</strong> all sizes fall in the Play Dataset's few clusters (long side 640 or 500 px). The grayscale
+  bird shows up as one <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">L</code> file.</li>
+<li style="margin:2px 0;"><strong>Check 3:</strong> the exact copy of the cat and the mirrored dog show up as an <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">exact</code> and a <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">flipped</code> pair,
+  both inside one folder. The split keeps each pair on one side.</li>
+<li style="margin:2px 0;">If a check missed one of them, look at the <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">HASH_THRESHOLD</code> you set in section 5.</li>
+</ul>
+</details>
+</div>""")
 
 # %% [markdown]
 # 💡 How to read the ratio:
@@ -585,12 +688,14 @@ RESULTS["swap_in"] = {"source": my_source, "n_images": int(len(my_files)), "n_cl
 # - **Many pairs on near-identical shots** (a fixed camera, a microscope) are genuinely different photos:
 #   lower `HASH_THRESHOLD` in section 5 and rerun.
 
-# %% [markdown]
-# <!-- callout: go-deeper | Go deeper · The split is only a suggestion -->
-# The split comes from what the folders show. Only you know what else ties photos together, such as one
-# camera, one day, one patient; section 6 showed that a split which ignores such groups reports a better score
-# than the model will earn.
-
+# %%
+# @title
+from IPython.display import HTML; HTML(r"""<div class="callout callout-go-deeper" style="background:#F3F4F6;color:#4B5563;border-left:6px solid #4B5563;border-radius:6px;padding:12px 14px;line-height:1.5;font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;margin:2px 0;">
+<div style="font-weight:bold;">🔍 Go deeper · The split is only a suggestion</div>
+<p style="margin:6px 0 0 0;">The split comes from what the folders show. Only you know what else ties photos together, such as one
+camera, one day, one patient; section 6 showed that a split which ignores such groups reports a better score
+than the model will earn.</p>
+</div>""")
 
 # %% [markdown]
 # #### The guiding questions
@@ -630,12 +735,17 @@ RESULTS["swap_in"] = {"source": my_source, "n_images": int(len(my_files)), "n_cl
 #      photos, and resize without distorting the aspect ratio (section 3's 🔀 Callout).
 #    - *Your dataset:*
 
-# %% [markdown]
-# <!-- callout: takeaway | Takeaway -->
-# - **When you get a new folder-per-class dataset** → **do** run the four checks (classes, sizes and modes,
-#   copies, split) before anything else; they take a few minutes.
-# - **When a check lists files** (not RGB, copy pairs, pairs across class folders) → **do** decide per file:
-#   convert, keep one, or fix the label.
-# - **When you leave** → **do** download `data/cache/my_split.csv` (Colab deletes it) and bring it, with your
-#   answers to the guiding questions,
-#   to next week's training.
+# %%
+# @title
+from IPython.display import HTML; HTML(r"""<div class="callout callout-takeaway" style="background:#E2F0C4;color:#3A5A0B;border-left:6px solid #3A5A0B;border-radius:6px;padding:12px 14px;line-height:1.5;font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;margin:2px 0;">
+<div style="font-weight:bold;">✅ Takeaway</div>
+<ul style="margin:6px 0 0 0;padding-left:22px;">
+<li style="margin:2px 0;"><strong>When you get a new folder-per-class dataset</strong> → <strong>do</strong> run the four checks (classes, sizes and modes,
+  copies, split) before anything else; they take a few minutes.</li>
+<li style="margin:2px 0;"><strong>When a check lists files</strong> (not RGB, copy pairs, pairs across class folders) → <strong>do</strong> decide per file:
+  convert, keep one, or fix the label.</li>
+<li style="margin:2px 0;"><strong>When you leave</strong> → <strong>do</strong> download <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">data/cache/my_split.csv</code> (Colab deletes it) and bring it, with your
+  answers to the guiding questions,
+  to next week's training.</li>
+</ul>
+</div>""")

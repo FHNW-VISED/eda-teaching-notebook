@@ -61,3 +61,13 @@ def test_check_passes_only_when_latest_equals_current(tmp_path):
     r = run(root, "check")
     assert r.returncode == 1
     assert "just version" in r.stdout + r.stderr
+
+
+def test_new_version_copies_every_edition(tmp_path):
+    root = make_repo(tmp_path)
+    (root / "own.ipynb").write_text('{"cells": [2]}\n')
+    assert run(root, "new", "two editions", "--date", "2026-10-28").returncode == 0
+    v = next((root / "versions").glob("v01-*"))
+    assert (v / "demo.ipynb").exists() and (v / "own.ipynb").read_text() == '{"cells": [2]}\n'
+    (root / "own.ipynb").write_text('{"cells": [3]}\n')
+    assert run(root, "check").returncode == 1  # a change in either Edition needs a new version

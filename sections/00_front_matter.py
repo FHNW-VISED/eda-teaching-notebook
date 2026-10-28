@@ -1,33 +1,106 @@
 # %% [markdown]
-# # Know Your Data: Exploring and Preparing Image Datasets at the Wildwood Farm Park
-# ## 0. Setup & the park
+# # Know Your Images
+# ## Exploring and Preparing the Wildwood Farm Park Image Dataset
+#
+# Simone Bonato & Susanne Suter, FHNW
+#
+# Before training a deep learning model, you need to understand the data it will learn from. As Andrej Karpathy puts it, "become one with the data."
+#
+# In computer vision, this means looking at your images - not just their labels or statistics. Explore the dataset, inspect representative examples, and look for unusual patterns, class imbalances, labeling errors, and differences in image quality.
+#
+# Understanding your images helps you make informed decisions about preprocessing, data augmentation, model selection, and evaluation. It also helps you identify potential problems before they affect model performance.
+#
+# **Your goal:** Get to know your dataset well enough to explain what makes the classification task easy or difficult - and what your model will need to learn.
+#
+# *Inspired by Andrej Karpathy's [A Recipe for Training Neural Networks](https://karpathy.github.io/2019/04/25/recipe/), Step 1: Become one with the data.*
+#
 
 # %% [markdown]
-# <!-- callout: objective | Objective -->
-# Run the setup once, meet the park, and see what you will be able to do at the end.
+# **A note about this notebook**
+#
+# This notebook was developed with AI assistance and subsequently reviewed, edited, and extended by the authors. While we have made every effort to ensure its accuracy, not every detail could be thoroughly verified.
+#
+# If you encounter errors, unexpected behavior, or anything that seems incorrect or confusing, please let us know. Your feedback is especially valuable as this notebook is being used for the first time.
+
+# %%
+
+# @title Learning Objectives
+
+from IPython.display import HTML
+
+HTML(r"""
+<div class="callout callout-banner"
+     style="background:#E5E7EB;color:#374151;border-left:6px solid #6B7280;
+            border-radius:6px;padding:12px 14px;line-height:1.5;
+            font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;
+            font-size:14px;width:100%;box-sizing:border-box;
+            white-space:normal;overflow-wrap:break-word;margin:2px 0;">
+
+<div style="font-size:22px;font-weight:bold;line-height:1.3;">
+Learning Objectives: Know Your Images
+</div>
+
+<p style="margin:6px 0 0 0;">
+<strong>By the end of this notebook, you will be able to:</strong>
+</p>
+
+<ol style="margin:6px 0 0 0;padding-left:22px;">
+<li style="margin:2px 0;">
+Explore and analyze image datasets qualitatively and quantitatively,
+and assess their suitability for a given task.
+</li>
+<li style="margin:2px 0;">
+Identify and assess common dataset issues, including duplicates,
+incorrect labels, and invalid annotations.
+</li>
+<li style="margin:2px 0;">
+Select and justify appropriate data splits and evaluation metrics,
+considering class imbalance, object size, and data leakage across
+computer vision tasks.
+</li>
+</ol>
+
+<p style="margin:8px 0 0 0;">
+Activities are marked 🟢 core · 🔴 optional
+</p>
+
+</div>
+""")
+
 
 # %% [markdown]
-# <!-- callout: banner | Know Your Data: Exploring and Preparing Image Datasets at the Wildwood Farm Park -->
-# **At the end of this notebook you will be able to:**
+# **What Do You Need to Know for the Exam and Your Project?**
 #
-# 1. Inspect an image dataset qualitatively and quantitatively, and say whether it fits a task.
-# 2. Find and fix common dataset errors (duplicates, flipped/rotated copies, bad labels or masks) before
-#    they leak into training.
-# 3. Choose a split and a metric that match the use case, and explain how imbalance, object size and leakage
-#    look different for classification, detection and segmentation.
+# Focus on understanding the key concepts and applying them to new datasets. You should be able to explore and analyze your own image dataset, identify relevant characteristics and potential problems, interpret observations, and justify decisions about data preparation and evaluation.
 #
-# Questions are marked 🟢 beginner · 🟡 intermediate · 🔴 advanced (optional).
+# You do **not** need to memorize specific dataset statistics, thresholds, code implementations, or individual examples. The activities help you develop the competencies needed for both the exam and your own project.
+
+# %%
+
+# @title How to Use This Notebook
+from IPython.display import HTML
+
+HTML(r"""
+<div class="callout" style="background:#F5F5F5;color:#374151;border-left:6px solid #9CA3AF;border-radius:6px;padding:12px 14px;line-height:1.5;font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;margin:2px 0;">
+<div style="font-weight:bold;">How to Use This Notebook</div>
+<ul style="margin:6px 0 0 0;padding-left:22px;">
+<li style="margin:2px 0;">This notebook is built around interactive activities. Explore the images, experiment with visualizations, and reflect on your observations.</li>
+<li style="margin:2px 0;">The notebook runs in Google Colab. A CPU is sufficient for most activities, although computing image embeddings can take longer without a GPU.</li>
+<li style="margin:2px 0;">A separate notebook guides you through exploring your own project dataset.</li>
+</ul>
+</div>
+""")
+
 
 # %% [markdown]
-# **Run the next three cells now, in order, and read on while they work.** The last downloads the
-# Play Dataset (about 115 MB): **a minute or two the first time**, instant after that.
+# ### Setup
+
+# %% [markdown]
 #
-# <details><summary>What the three cells do</summary>
+# > ▶️ **Run the next three cells, in order.**
+# >
+# > Continue reading while they execute. The last cell downloads the Play Dataset (~115 MB), which may take 1–2 minutes on the first run. Subsequent runs use the cache.
 #
-# The first installs the one package Colab lacks, fixes the random seed, sets the colours and defines `use()`,
-# the helper that lets you write small functions without ever blocking "Run all".
-#
-# </details>
 
 # %%
 # @title Setup (run me first) { display-mode: "form" }
@@ -41,6 +114,7 @@ import textwrap
 import matplotlib as mpl
 import matplotlib.pyplot as plt  # noqa: F401  (every later section plots with plt)
 import numpy as np
+from PIL import Image as _Image
 
 IN_COLAB = "google.colab" in sys.modules
 SMOKE = os.environ.get("NB_SMOKE") == "1"  # automated tests: tiny data, CPU, seconds. Never set this by hand.
@@ -355,66 +429,17 @@ print(f"images: {len(images)} · animals (annotations): {len(annotations)}")
 print("per class: " + " · ".join(f"{c} {_counts[c]}" for c in CLASSES))
 images.drop(columns="license").head()  # the licence column stays in the table, not on screen (N-045)
 
-# %% [markdown]
-# <!-- callout: theory | Before you start -->
-# - A Google account and Python basics. No model is trained here; that is next week.
-# - When a question says *predict* or *guess*, say or think your answer **before** you run the cell. You do
-#   not need to type it.
-#
-# <details><summary>Your project dataset, and the Karpathy reference</summary>
-#
-# - The notebook runs in Colab, where a CPU runtime is enough, and assumes the lecture on image datasets.
-# - Bring your project dataset as one folder per class (section 10): mount Google Drive or upload a zip
-#   there.
-# - The notebook follows the first part of Karpathy's
-#   [*A Recipe for Training Neural Networks*](https://karpathy.github.io/2019/04/25/recipe/): know your data
-#   before you touch a model.
-#
-# </details>
 
 # %% [markdown]
-# <!-- callout: theory | The Wildwood Farm Park and what it wants from its cameras -->
-# Cameras watch the 🐑🐴 farm paddock (sheep, horses), the 🐦 aviary pond (birds), the 🦓 savanna (zebras)
-# and the 🐱🐶 visitor yard (cats and dogs wander through). Three jobs:
+# ### Optional Coding Exercises
 #
-# 1. **Recognise** (classification): who is in front of this camera? **A dog in the sheep paddock** triggers
-#    an alert; missing that dog is worse than a false alarm.
-# 2. **Count** (detection): a daily headcount of sheep, zebras and birds.
-# 3. **Outline** (segmentation): how much of each enclosure each animal uses.
+# Some parts of this notebook let you choose how to work:
 #
-# <details><summary>How big the birds are</summary>
+# - **Explore:** Run the provided code, experiment with it, and interpret the results.
+# - **Code it yourself:** Implement the function in the ✍️ cell and compare your result with the reference solution.
 #
-# Far-away birds are tiny. Birds cover few pixels.
+# Both approaches let you continue through the notebook. If you choose to implement a function, run the reference cell first, then complete the ✍️ cell. An incomplete or incorrect implementation will not prevent you from continuing.
 #
-# </details>
-
-# %% [markdown]
-# The park has no training data yet, so we practise on a **Play Dataset**: COCO 2017 photos of the same six
-# animals, each photo showing one animal class.
-#
-# <details><summary>The two tables, and several animals per photo</summary>
-#
-# The cell above gave you two tables: `images` (one row per photo: size, class, number of animals) and
-# `annotations` (one row per animal: its box and mask).
-#
-# Several photos hold more than one animal (`n_animals`), which hints at a question in section 4. Everything
-# you learn here is a checklist you will reuse on your own dataset in section 10.
-#
-# </details>
-
-# %% [markdown]
-# ### How the ✍️ cells work
-#
-# About four times you write a small function. **Run the reference cell first**, then the stub as is; then
-# fill in the body and run it again to see the message change. A wrong or unfinished function never stops
-# the notebook.
-#
-# <details><summary>What each ✍️ cell comes with</summary>
-#
-# Each comes with its signature and a `use(my_function, …, reference=…)` line that compares your result with
-# the reference solution and then continues with the reference.
-#
-# </details>
 
 # %%
 # @title Reference solution — run this cell; open it only if you are stuck { display-mode: "form" }
@@ -434,9 +459,3 @@ def double(x):
 
 result = use(double, 21, reference=_ref_double)
 print("the notebook continues with:", result)
-
-# %% [markdown]
-# <!-- callout: takeaway | Takeaway -->
-# - **When you see** a ✍️ cell → **do** run it as it is first; an unfinished function falls back to the
-#   reference.
-# - **When you see** `images` and `annotations` → **do** think "one row per photo, one row per animal".

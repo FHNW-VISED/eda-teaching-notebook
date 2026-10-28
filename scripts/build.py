@@ -1,7 +1,10 @@
 """Assemble sections/*.py (Jupytext percent format) into the single student notebook.
 
-Agents and humans edit only the small section files; the .ipynb is a build artifact.
-Usage: uv run python scripts/build.py            -> writes eda-teaching-notebook.ipynb (outputs stripped)
+Agents and humans edit only the small section files; the .ipynb files are build artifacts.
+Usage: uv run python scripts/build.py            -> writes both Editions (outputs stripped)
+
+Editions (PRD 2026-10-28, Q4): one ordered list of cells, two notebooks. A cell without `edition` metadata is in
+both; `# %% edition="teaching"` or `# %% edition="own"` keeps it in one. Never edit an Edition on its own.
 
 Callouts (SPEC L-001, RULES N-034): a markdown cell whose first line is
 `<!-- callout: KIND | TITLE -->` becomes a collapsed code cell that redraws a coloured HTML box, with the
@@ -22,6 +25,11 @@ ROOT = Path(__file__).resolve().parent.parent
 SECTIONS = ROOT / "sections"
 NAME = "eda-teaching-notebook"
 OUT = ROOT / f"{NAME}.ipynb"
+# Edition id -> notebook file at the repo root. The Teaching Edition keeps the repo's original file name.
+EDITIONS: dict[str, str] = {
+    "teaching": f"{NAME}.ipynb",
+    "own": "eda-own-dataset-notebook.ipynb",
+}
 
 # ---- callouts (SPEC L-001) ---------------------------------------------------------------------
 # kind id -> (emoji, default title, background, text and left-bar colour)
@@ -160,19 +168,26 @@ def convert_callout(cell: nbformat.NotebookNode, where: str) -> nbformat.Noteboo
 # ---- assembly ----------------------------------------------------------------------------------
 
 
-def section_files() -> list[Path]:
-    files = sorted(p for p in SECTIONS.glob("[0-9][0-9]_*.py"))
+def section_files(sections: Path = SECTIONS) -> list[Path]:
+    files = sorted(p for p in sections.glob("[0-9][0-9]_*.py"))
     if not files:
         sys.exit("no sections/NN_*.py files found")
     return files
 
 
-def build() -> Path:
+def read_cells(sections: Path = SECTIONS) -> list[nbformat.NotebookNode]:
+    """Every cell of every section, in order, with its section stamped and its callout converted."""
     cells = []
-    for path in section_files():
+    for path in section_files(sections):
         nb = jupytext.read(path, fmt="py:percent")
         for k, cell in enumerate(nb.cells):
-            cell = convert_callout(cell, f"sections/{path.name} cell {k}")
+            where = f"sections/{path.name} cell {k}"
+            edition = cell.metadata.get("edition")
+            if edition is not None and edition not in EDITIONS:
+                sys.exit(f"{where}: unknown edition '{edition}' (known: {', '.join(EDITIONS)}; none = both)")
+            cell = convert_callout(cell, where)
+            if edition is not None:
+                cell.metadata["edition"] = edition
             cell.id = f"{path.stem[:50]}-{k}"  # deterministic ids: same sections -> byte-identical .ipynb
             cell.metadata.pop("lines_to_next_cell", None)
             cell.metadata["section"] = path.stem
@@ -180,15 +195,30 @@ def build() -> Path:
             if cell.cell_type == "code" and cell.source.lstrip().startswith("# @title"):
                 cell.metadata["cellView"] = "form"
             cells.append(cell)
-    nb = nbformat.v4.new_notebook(cells=cells)
+    return cells
+
+
+def write_edition(cells: list[nbformat.NotebookNode], edition: str, out: Path) -> Path:
+    keep = [c for c in cells if c.metadata.get("edition", edition) == edition]
+    nb = nbformat.v4.new_notebook(cells=keep)
     nb.metadata["kernelspec"] = {"name": "python3", "display_name": "Python 3", "language": "python"}
     nb.metadata["language_info"] = {"name": "python"}
     nb.metadata["colab"] = {"provenance": [], "toc_visible": True}
     nbformat.validate(nb)
-    nbformat.write(nb, OUT)
-    return OUT
+    nbformat.write(nb, out)
+    return out
+
+
+def build_all(sections: Path = SECTIONS, out_dir: Path = ROOT) -> dict[str, Path]:
+    cells = read_cells(sections)
+    return {ed: write_edition(cells, ed, out_dir / name) for ed, name in EDITIONS.items()}
+
+
+def build() -> Path:
+    """Both Editions; returns the Teaching Edition's path (what older callers expect)."""
+    return build_all()["teaching"]
 
 
 if __name__ == "__main__":
-    out = build()
-    print(f"built {out.name}: {len(section_files())} sections")
+    outs = build_all()
+    print(f"built {', '.join(p.name for p in outs.values())}: {len(section_files())} sections")
