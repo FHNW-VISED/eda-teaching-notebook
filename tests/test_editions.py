@@ -1,6 +1,7 @@
 """Two Editions from one ordered list of sections (PRD 2026-10-28, Q4).
 
-A cell without `edition` metadata belongs to both notebooks; `edition="teaching"` or `edition="own"` keeps it in
+A cell without `edition` metadata belongs to both notebooks; `edition="teaching"` or `edition="own"` keeps it
+in
 one. `just build` writes both, in the same order as the sections.
 """
 
@@ -61,7 +62,9 @@ def test_repo_build_has_both_notebooks():
 def test_own_wording_swaps_apply_once_and_only_to_own(tmp_path):
     sections = tmp_path / "sections"
     sections.mkdir()
-    (sections / "00_a.py").write_text('# %% [markdown]\n# Count every animal.\n\n# %% edition="teaching"\nx = 1\n')
+    (sections / "00_a.py").write_text(
+        '# %% [markdown]\n# Count every animal.\n\n# %% edition="teaching"\nx = 1\n'
+    )
     (sections / "own_wording.tsv").write_text("section\told\tnew\n00_a.py\tevery animal\tevery object\n")
     outs = build.build_all(sections=sections, out_dir=tmp_path)
     assert _sources(outs["teaching"])[0] == "Count every animal."

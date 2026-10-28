@@ -204,7 +204,7 @@ def dup_update_browser(*_):
 
         fig, axes = plt.subplots(1, 2, figsize=(10, 4))
 
-        for ax, idx in zip(axes, (i, j)):
+        for ax, idx in zip(axes, (i, j), strict=False):
             row = images.iloc[idx]
             ax.imshow(load_thumb(row["path"]))
             ax.set_title(f"Class: {row['class']}", fontsize=11)
@@ -984,9 +984,9 @@ print("Ready:", ", ".join(representations))
 
 # %%
 # @title 🔎 Explore Image Representations with UMAP { display-mode: "form" }
-from bokeh.plotting import figure, show
 from bokeh.io import output_notebook
 from bokeh.models import ColumnDataSource, HoverTool
+from bokeh.plotting import figure, show
 from bokeh.transform import factor_cmap
 
 # Choose representation before running the plot
@@ -1118,7 +1118,9 @@ def sim_update_view(change=None):
             f"Pair {sim_position + 1}/{total} · "
             f"cosine similarity: {sim[a, b]:.2f}"
         )
-        labels = lambda r: r["class"]
+        def labels(r):
+            return r["class"]
+
         cols = 2
 
         sim_prev_btn.disabled = sim_position == 0
@@ -1132,7 +1134,9 @@ def sim_update_view(change=None):
         rows["class_similarity"] = class_similarity[selected]
 
         title = f"{c.capitalize()} · lowest average similarity within class"
-        labels = lambda r: f"Avg. similarity: {r['class_similarity']:.2f}"
+        def labels(r):
+            return f"Avg. similarity: {r['class_similarity']:.2f}"
+
         cols = min(4, len(selected))
 
     with sim_preview:

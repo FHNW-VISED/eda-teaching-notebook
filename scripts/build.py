@@ -3,7 +3,8 @@
 Agents and humans edit only the small section files; the .ipynb files are build artifacts.
 Usage: uv run python scripts/build.py            -> writes both Editions (outputs stripped)
 
-Editions (PRD 2026-10-28, Q4): one ordered list of cells, two notebooks. A cell without `edition` metadata is in
+Editions (PRD 2026-10-28, Q4): one ordered list of cells, two notebooks. A cell without `edition` metadata is
+in
 both; `# %% edition="teaching"` or `# %% edition="own"` keeps it in one. Never edit an Edition on its own.
 
 Callouts (SPEC L-001, RULES N-034): a markdown cell whose first line is
@@ -260,7 +261,8 @@ def read_cells(sections: Path = SECTIONS) -> list[nbformat.NotebookNode]:
 
 def own_wording(sections: Path) -> list[tuple[str, str, str]]:
     """(section file, old, new) rows of sections/own_wording.tsv: words of shared cells that the Own-Data
-    Edition says differently ("animal" → "object"). Kept as swaps, not copied cells, so her text stays one source."""
+    Edition says differently ("animal" → "object"). Kept as swaps, not copied cells, so her text stays one
+    source."""
     path = sections / "own_wording.tsv"
     if not path.exists():
         return []
@@ -271,17 +273,24 @@ def own_wording(sections: Path) -> list[tuple[str, str, str]]:
 
 
 def apply_own_wording(cells: list[nbformat.NotebookNode], sections: Path) -> list[nbformat.NotebookNode]:
-    """Copies of the Own-Data cells with the swaps applied; every swap must match exactly once in its section."""
+    """Copies of the Own-Data cells with the swaps applied; a swap must match once in its section."""
     swaps = own_wording(sections)
     out = [c if c.metadata.get("edition") == "teaching" else nbformat.from_dict(c) for c in cells]
     for section, old, new in swaps:
         stem = section.removesuffix(".py")
-        hits = [c for c in out if c.metadata.get("section") == stem and c.metadata.get("edition") != "teaching"
-                and old in c.source]
+        hits = [
+            c
+            for c in out
+            if c.metadata.get("section") == stem
+            and c.metadata.get("edition") != "teaching"
+            and old in c.source
+        ]
         count = sum(c.source.count(old) for c in hits)
         if count != 1:
-            sys.exit(f"sections/own_wording.tsv: '{old}' occurs {count} times in the Own-Data cells of {section} "
-                     "(must be once). Her text changed? Update or delete the row.")
+            sys.exit(
+                f"sections/own_wording.tsv: '{old}' occurs {count} times in the Own-Data cells of {section} "
+                "(must be once). Her text changed? Update or delete the row."
+            )
         hits[0].source = hits[0].source.replace(old, new)
     return out
 

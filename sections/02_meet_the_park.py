@@ -186,7 +186,7 @@ def show_gallery(animal_class, page, show_boxes):
 
     fig, axes = plt.subplots(2, 3, figsize=(9, 4.5))
 
-    for ax, (_, row) in zip(axes.flat, picked.iterrows()):
+    for ax, (_, row) in zip(axes.flat, picked.iterrows(), strict=False):
         photo = Image.open(row["path"]).convert("RGB")
         ax.imshow(photo)
 

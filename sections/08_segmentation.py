@@ -418,7 +418,7 @@ for k, (unit, alpha) in enumerate([
         edgecolor="white"
     )
 
-    for bar, value in zip(bars, values):
+    for bar, value in zip(bars, values, strict=False):
         ax.text(
             bar.get_x() + bar.get_width() / 2,
             value + 0.004,
@@ -659,7 +659,7 @@ def fill_show_page():
     fill_next_btn.disabled = fill_page >= total_pages - 1
 
     image_rows = images_by_id.loc[current["image_id"]].reset_index()
-    fill_values = dict(zip(current["image_id"], current["fill"]))
+    fill_values = dict(zip(current["image_id"], current["fill"], strict=False))
 
     with fill_output:
         fill_output.clear_output(wait=True)
@@ -670,7 +670,7 @@ def fill_show_page():
             caption=lambda r: f"{r['class']} · fill {fill_values[r['id']]:.0%}",
             show_mask=fill_mask_toggle.value,
             show_box=fill_box_toggle.value,
-            highlight=dict(zip(current["image_id"], current["id"]))
+            highlight=dict(zip(current["image_id"], current["id"], strict=False))
         )
 
 def fill_navigate(direction):

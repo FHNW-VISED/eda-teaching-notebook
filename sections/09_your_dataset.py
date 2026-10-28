@@ -199,12 +199,11 @@ RESULTS["swap_in"] = {"source": dataset_source, "n_images": int(len(images)), "n
 
 # %% edition="own"
 # @title 🔍 Go Deeper: The Split Is Only a Suggestion { display-mode: "form" }
-from IPython.display import HTML; HTML(r"""<div class="callout callout-go-deeper" style="background:#F3F4F6;color:#4B5563;border-left:6px solid #4B5563;border-radius:6px;padding:12px 14px;line-height:1.5;font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;margin:2px 0;">
-<div style="font-weight:bold;">🔍 Go deeper · The split is only a suggestion</div>
-<p style="margin:6px 0 0 0;">The split comes from what the folders show. Only you know what else ties photos together, such as one
+callout("deeper", "🔍 Go Deeper · The Split Is Only a Suggestion", r"""
+<p style="margin:6px 0 0 0;">The split comes from what the labels show. Only you know what else ties images together, such as one
 camera, one day, one patient; Dataset Splitting &amp; Data Leakage showed that a split which ignores such groups reports a better score
 than the model will earn.</p>
-</div>""")
+""")
 
 # %% [markdown] edition="own"
 # #### The guiding questions

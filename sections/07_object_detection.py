@@ -1014,7 +1014,7 @@ axes[1].set_ylabel("Overlapping pairs (%)")
 
 for ax in axes:
     ax.tick_params(axis="x", rotation=30)
-    for label, c in zip(ax.get_xticklabels(), CLASSES):
+    for label, c in zip(ax.get_xticklabels(), CLASSES, strict=False):
         label.set_color(CLASS_COLORS[c])
 
 fig.tight_layout()
