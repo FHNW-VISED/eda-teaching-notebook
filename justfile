@@ -1,6 +1,6 @@
 # One entry point for humans, agents and CI. `just check` is the acceptance gate.
 
-# Assemble sections/*.py into eda-teaching-notebook.ipynb
+# Assemble sections/*.py into both Editions: eda-teaching-notebook.ipynb and eda-own-dataset-notebook.ipynb
 build:
     uv run python scripts/build.py
 
@@ -8,11 +8,11 @@ build:
 lint:
     uv run python scripts/lint_notebook.py
     uv run ruff check --quiet sections scripts tests
-    uv run pytest -q -p no:warnings tests/test_version.py tests/test_port.py
+    uv run pytest -q -p no:warnings tests/test_version.py tests/test_editions.py
 
 # Execute the whole notebook headless on tiny data (NB_SMOKE=1)
 smoke: build
-    uv run pytest -q -x -p no:warnings tests/test_smoke.py tests/test_content.py tests/test_cuts.py tests/test_my_dataset.py
+    uv run pytest -q -x -p no:warnings tests/test_smoke.py
 
 # Lint + smoke: what the night run and CI require before a commit counts
 check: lint smoke
@@ -29,14 +29,9 @@ open: build
 sync:
     uv run python scripts/split.py
 
-# Bring a hand-edited copy (e.g. a Colab download) back into sections/: aligns by content, restores callouts,
-# writes reviews/port-<date>.md. Run it on a branch from the commit the copy was made from.
-port notebook:
-    uv run python scripts/port.py "{{notebook}}"
-
 # Committed notebook must equal a fresh build (catches hand edits that skipped `just sync`)
 drift: build
-    git diff --exit-code -- eda-teaching-notebook.ipynb
+    git diff --exit-code -- eda-teaching-notebook.ipynb eda-own-dataset-notebook.ipynb
 
 # Compare runtime deps with what Google Colab preinstalls (gpu runtime by default)
 colab-pins runtime="gpu":
