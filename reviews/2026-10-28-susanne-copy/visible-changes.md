@@ -272,3 +272,25 @@ the summary line and the cell titles.
   cell…" · T-27
 - 🔎 Explore Leakage Across Splitting Strategies [122] · frames of train / test images blue `#4C78A8` / orange
   `#E76F51` → light gray `#B0B0B0` / yellow `#FFDA00`, the pair of the cross-validation diagram · T-28 (P15)
+
+## Group 6 · Embeddings gate
+
+- Helpers: Pretrained Visual Embeddings [94] · ran `%pip -q install transformers umap-learn bokeh` (pip output, and
+  possibly Colab's "restart session" prompt), imported torch and downloaded DINOv2 on every runtime → no install
+  (all three are preinstalled in Colab), nothing is downloaded; the cell's form shows a new checkbox
+  `COMPUTE_EMBEDDINGS` (unticked) · C-22 / R-08
+- Precompute Image Representations and UMAP [95] · "Extracting visual features: 100% …" progress bar, then
+  "Computed and cached global_dinov2." (or "Loaded global_dinov2 from cache.") → one line "Pretrained visual
+  embeddings: loaded from coco_animals_dinov2.npz (633 images, 384 numbers each), computed beforehand with
+  facebook/dinov2-small." (same vectors: the within-class medians in [98] are hers, cat 0.144 … zebra 0.549) · R-08
+- Precompute Image Representations and UMAP [95], only when the file cannot be read or does not hold every image and
+  there is no GPU · new lines "Pretrained visual embeddings: no precomputed file to read (…)." (or "…holds X of
+  these N images, not all of them.") and "Pretrained visual embeddings skipped: on this CPU they would take roughly 2
+  minutes. To compute them anyway, tick COMPUTE_EMBEDDINGS in the cell above and run both cells again; until then the
+  next cells use the color histograms." · R-08 (SN-019)
+- 🔎 Explore Image Representations with UMAP [96] and 🔎 Explore Similar and Unusual Images [97], same case · the
+  cells stopped with `KeyError: 'Pretrained visual embeddings'` → they draw the color histograms (the UMAP title says
+  "— Color histograms") · R-08
+- With `COMPUTE_EMBEDDINGS` ticked, or on a GPU runtime without usable precomputed vectors · as before: progress bar
+  and "Computed and cached global_dinov2." (on a GPU runtime it first prints "A GPU is available: computing the
+  pretrained visual embeddings now.") · C-22

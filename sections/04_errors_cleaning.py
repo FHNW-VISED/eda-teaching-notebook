@@ -790,6 +790,30 @@ callout("theory", "📘 Image Embeddings, Similarity, and UMAP", r"""
 
 # %%
 # @title Helpers: Image Embeddings { display-mode: "form" }
+EMBEDDINGS_NAME = "coco_animals_dinov2.npz"  # npz keys: ids (n,), embeddings (n, 384); matched by image id
+
+
+def load_embeddings(ids) -> np.ndarray | None:
+    """The precomputed DINOv2 vectors of the images `ids`, in that order, or None; prints what happened.
+
+    Reads data/coco_animals_dinov2.npz; in Colab it is fetched from DATA_BASE_URL like the other data files.
+    None when the file cannot be read or does not hold every id (another dataset, for example).
+    """
+    try:
+        z = np.load(fetch_manifest(EMBEDDINGS_NAME))
+        by_id = dict(zip(z["ids"].tolist(), z["embeddings"], strict=True))
+    except (RuntimeError, OSError, ValueError, KeyError) as err:
+        print(f"Pretrained visual embeddings: no precomputed file to read ({err}).")
+        return None
+    missing = [i for i in ids if i not in by_id]
+    if missing:
+        print(f"Pretrained visual embeddings: the precomputed file holds {len(ids) - len(missing)} of these "
+              f"{len(ids)} images, not all of them.")
+        return None
+    print(f"Pretrained visual embeddings: loaded from {EMBEDDINGS_NAME} ({len(ids)} images, "
+          f"{z['embeddings'].shape[1]} numbers each), computed beforehand with {z['model']}.")
+    return np.stack([by_id[i] for i in ids]).astype(np.float32)
+
 
 def cosine_similarity_matrix(vectors: np.ndarray) -> np.ndarray:
     """Cosine similarity between every pair of rows (after centering the columns)."""
@@ -801,19 +825,26 @@ def cosine_similarity_matrix(vectors: np.ndarray) -> np.ndarray:
 
 # %%
 # @title Helpers: Pretrained Visual Embeddings { display-mode: "form" }
-# %pip -q install transformers umap-learn bokeh
-
-import torch
-from transformers import AutoImageProcessor, AutoModel
-from tqdm.auto import tqdm
-
+# The park's DINOv2 vectors come precomputed (data/coco_animals_dinov2.npz). The model itself runs only when
+# COMPUTE_EMBEDDINGS is ticked, or on a GPU runtime when no precomputed vectors fit the images.
+COMPUTE_EMBEDDINGS = False  # @param {type:"boolean"}
 MODEL_NAME = "facebook/dinov2-small"
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+CPU_IMAGES_PER_SECOND = 5  # a rough guess for Colab's free CPU runtime, used only for the time estimate
 
-dino_processor = AutoImageProcessor.from_pretrained(MODEL_NAME)
-dino_model = AutoModel.from_pretrained(MODEL_NAME).to(DEVICE).eval()
+
+def has_gpu() -> bool:
+    """True on a runtime with an NVIDIA GPU (checked without importing torch)."""
+    return shutil.which("nvidia-smi") is not None
+
 
 def dinov2_embeddings(paths, batch_size=16):
+    import torch  # only here: the CPU path never pays for importing torch and transformers
+    from tqdm.auto import tqdm
+    from transformers import AutoImageProcessor, AutoModel
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    dino_processor = AutoImageProcessor.from_pretrained(MODEL_NAME)
+    dino_model = AutoModel.from_pretrained(MODEL_NAME).to(device).eval()
     vectors = []
 
     for start in tqdm(range(0, len(paths), batch_size), desc="Extracting visual features"):
@@ -823,7 +854,7 @@ def dinov2_embeddings(paths, batch_size=16):
             with Image.open(path) as im:
                 batch.append(im.convert("RGB"))
 
-        inputs = dino_processor(images=batch, return_tensors="pt").to(DEVICE)
+        inputs = dino_processor(images=batch, return_tensors="pt").to(device)
 
         with torch.inference_mode():
             features = dino_model(**inputs).last_hidden_state[:, 0]
@@ -842,6 +873,7 @@ CACHE_DIR = DATA_DIR / "cache" / "embeddings"
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 embedding_paths = image_stats["path"].tolist()
+embedding_ids = image_stats["id"].tolist()
 
 def cached_features(name, compute):
     key = hashlib.sha256(
@@ -862,12 +894,22 @@ representations = {
     "Color histograms": channel_hists.reshape(
         len(image_stats), -1
     ).astype("float32"),
-
-    "Pretrained visual embeddings": cached_features(
-        "global_dinov2",
-        lambda: dinov2_embeddings(embedding_paths)
-    ),
 }
+
+if COMPUTE_EMBEDDINGS:
+    _vectors = cached_features("global_dinov2", lambda: dinov2_embeddings(embedding_paths))
+else:
+    _vectors = load_embeddings(embedding_ids)
+    if _vectors is None and has_gpu():
+        print("A GPU is available: computing the pretrained visual embeddings now.")
+        _vectors = cached_features("global_dinov2", lambda: dinov2_embeddings(embedding_paths))
+if _vectors is not None:
+    representations["Pretrained visual embeddings"] = _vectors
+else:
+    _minutes = max(1, round(len(embedding_paths) / CPU_IMAGES_PER_SECOND / 60))
+    print(f"Pretrained visual embeddings skipped: on this CPU they would take roughly {_minutes} minute{'s' * (_minutes != 1)}. To "
+          "compute them anyway, tick COMPUTE_EMBEDDINGS in the cell above and run both cells again; until then "
+          "the next cells use the color histograms.")
 
 # Compute or load one UMAP projection per representation
 projections = {}
@@ -912,6 +954,7 @@ from bokeh.transform import factor_cmap
 
 # Choose representation before running the plot
 UMAP_FEATURES = "Pretrained visual embeddings" # @param ["Color histograms", "Pretrained visual embeddings"]
+umap_features = UMAP_FEATURES if UMAP_FEATURES in representations else "Color histograms"  # if skipped above
 
 def thumbnail_uri(path):
     im = load_thumb(path)
@@ -920,7 +963,7 @@ def thumbnail_uri(path):
     im.convert("RGB").save(buf, "JPEG", quality=75)
     return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
 
-projection = projections[UMAP_FEATURES]
+projection = projections[umap_features]
 
 umap_source = ColumnDataSource(dict(
     x=projection[:, 0],
@@ -932,7 +975,7 @@ umap_source = ColumnDataSource(dict(
 output_notebook()
 
 umap_fig = figure(
-    title=f"UMAP of Image Representations — {UMAP_FEATURES}",
+    title=f"UMAP of Image Representations — {umap_features}",
     width=850,
     height=500,
     tools="pan,wheel_zoom,box_zoom,reset,save",
@@ -971,8 +1014,9 @@ show(umap_fig)
 # %%
 # @title 🔎 Explore Similar and Unusual Images { display-mode: "form" }
 SIMILARITY_FEATURES = "Pretrained visual embeddings" # @param ["Color histograms", "Pretrained visual embeddings"]
+similarity_features = SIMILARITY_FEATURES if SIMILARITY_FEATURES in representations else "Color histograms"
 
-features = representations[SIMILARITY_FEATURES]
+features = representations[similarity_features]
 image_classes = image_stats["class"].to_numpy()
 indices = np.arange(len(image_stats))
 
