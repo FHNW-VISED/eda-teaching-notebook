@@ -291,7 +291,7 @@ display(HTML("""
 K_FOLDS = 5
 LOO_N = 12 if SMOKE else 40
 
-def summarise_folds(name: str, splitter, X, y, groups=None) -> dict:
+def summarize_folds(name: str, splitter, X, y, groups=None) -> dict:
     """Summarize the number and size of validation folds."""
     sizes = [
         len(test_idx)
@@ -307,17 +307,17 @@ def summarise_folds(name: str, splitter, X, y, groups=None) -> dict:
 _loo_ids = _ids[:LOO_N]
 
 cv_rows = [
-    summarise_folds(
+    summarize_folds(
         "K-fold",
         KFold(K_FOLDS, shuffle=True, random_state=SEED),
         _ids, _y
     ),
-    summarise_folds(
+    summarize_folds(
         "Stratified k-fold",
         StratifiedKFold(K_FOLDS, shuffle=True, random_state=SEED),
         _ids, _y
     ),
-    summarise_folds(
+    summarize_folds(
         "Leave-one-out",
         LeaveOneOut(),
         _loo_ids, _y[:LOO_N]
@@ -498,15 +498,15 @@ cct = download_cct(cct_rows)
 if len(cct) < len(cct_rows):
     print(f"  ⚠️ {len(cct_rows) - len(cct)} photos could not be downloaded; run again.")
 
-CCT_LOCATIONS = sorted(cct["location"].unique().tolist())
-print(f"{len(cct)} photos · {cct['seq_id'].nunique()} bursts · cameras {CCT_LOCATIONS}")
+cct_locations = sorted(cct["location"].unique().tolist())
+print(f"{len(cct)} photos · {cct['seq_id'].nunique()} bursts · cameras {cct_locations}")
 print("photos per class: " + " · ".join(f"{c} {int((cct['label'] == c).sum())}" for c in CCT_CLASSES))
 
 # Prepare bursts for browsing
 burst_list = [b for _, b in cct.groupby("seq_id", sort=True) if len(b) > 1]
 burst_list.sort(key=lambda b: not b["bbox"].notna().all())
 
-bursts_per_page = 2
+BURSTS_PER_PAGE = 2
 burst_page = 0
 
 burst_box_toggle = widgets.Checkbox(value=True, description="Show bounding boxes")
@@ -517,11 +517,11 @@ burst_output = widgets.Output()
 
 
 def burst_update_browser(change=None):
-    start = burst_page * bursts_per_page
-    selected = burst_list[start:start + bursts_per_page]
+    start = burst_page * BURSTS_PER_PAGE
+    selected = burst_list[start:start + BURSTS_PER_PAGE]
 
     burst_prev_btn.disabled = burst_page == 0
-    burst_next_btn.disabled = start + bursts_per_page >= len(burst_list)
+    burst_next_btn.disabled = start + BURSTS_PER_PAGE >= len(burst_list)
     burst_counter.value = f"Bursts {start + 1}–{start + len(selected)} of {len(burst_list)}"
 
     with burst_output:
@@ -538,7 +538,7 @@ def burst_previous_page(button):
 
 def burst_next_page(button):
     global burst_page
-    burst_page = min((len(burst_list) - 1) // bursts_per_page, burst_page + 1)
+    burst_page = min((len(burst_list) - 1) // BURSTS_PER_PAGE, burst_page + 1)
     burst_update_browser()
 
 
@@ -592,13 +592,13 @@ def split_update(change=None):
 
         if method in ["Random", "Stratified"]:
             train, test = train_test_split(
-                indices, test_size=0.2, random_state=split_seed.value,
+                indices, test_size=TEST_SIZE, random_state=split_seed.value,
                 stratify=cct["label"] if method == "Stratified" else None
             )
         else:
             groups = cct["seq_id"] if method == "Group by burst" else cct["location"]
             train, test = next(
-                GroupShuffleSplit(test_size=0.2, random_state=split_seed.value)
+                GroupShuffleSplit(test_size=TEST_SIZE, random_state=split_seed.value)
                 .split(indices, groups=groups)
             )
 
@@ -699,49 +699,49 @@ Group-based splitting may produce a test share different from 20% because entire
 # %%
 # @title 🔴 Splitting for Object Detection and Segmentation { display-mode: "form" }
 
-question = widgets.HTML(
+mcq_question = widgets.HTML(
     "<b>Which statements about splitting datasets for object detection "
     "and semantic segmentation are correct? Select all that apply.</b>"
 )
 
-options = [
+mcq_options = [
     "A. Bounding boxes from the same image can be assigned to different splits.",
     "B. Stratification is more challenging in object detection because images may contain multiple classes.",
     "C. Individual pixels can be randomly assigned to training and test sets in semantic segmentation.",
     "D. Related images should be kept together in both tasks to avoid data leakage."
 ]
 
-answers = [
+mcq_answers = [
     widgets.Checkbox(
         description=option,
         indent=False,
         layout=widgets.Layout(width="100%")
     )
-    for option in options
+    for option in mcq_options
 ]
 
-check = widgets.Button(description="Check Answer")
-solution = widgets.Button(description="Show Solution")
-feedback = widgets.HTML()
+mcq_check = widgets.Button(description="Check Answer")
+mcq_solution = widgets.Button(description="Show Solution")
+mcq_feedback = widgets.HTML()
 
 
 def check_answer(button):
-    selected = {i for i, answer in enumerate(answers) if answer.value}
+    selected = {i for i, answer in enumerate(mcq_answers) if answer.value}
 
     if selected == {1, 3}:
-        feedback.value = (
+        mcq_feedback.value = (
             "<span style='color:green'>✅ Correct!</span> "
             "B and D are the correct answers."
         )
     else:
-        feedback.value = (
+        mcq_feedback.value = (
             "<span style='color:#C2410C'>Not quite. Try again!</span><br>"
             "Think about which data units must stay together during splitting."
         )
 
 
 def show_solution(button):
-    feedback.value = (
+    mcq_feedback.value = (
         "<b>Correct answers: B and D</b><br><br>"
         "<b>A — False:</b> Bounding boxes from the same image must stay together.<br>"
         "<b>B — True:</b> Images may contain multiple classes, making stratification more complex.<br>"
@@ -750,12 +750,12 @@ def show_solution(button):
     )
 
 
-check.on_click(check_answer)
-solution.on_click(show_solution)
+mcq_check.on_click(check_answer)
+mcq_solution.on_click(show_solution)
 
 display(
-    question,
-    *answers,
-    widgets.HBox([check, solution]),
-    feedback
+    mcq_question,
+    *mcq_answers,
+    widgets.HBox([mcq_check, mcq_solution]),
+    mcq_feedback
 )

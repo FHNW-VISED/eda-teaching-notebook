@@ -30,7 +30,7 @@ HTML(r"""<div class="callout callout-theory" style="background:#E3F2FD;color:#0D
 #
 # The dataset is organized into two tables:
 #
-# - `images`: One row per image, including its dimensions, animal class, and number of annotated animals (`n_animals`).
+# - `images`: One row per image, including its dimensions, animal class, and number of annotated animals (`n_objects`).
 # - `annotations`: One row per annotated animal, including its bounding box and segmentation mask.
 
 # %%

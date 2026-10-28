@@ -104,6 +104,7 @@ HTML(r"""
 # %%
 # @title 🔎 Helpers: Duplicate Detection and Image Quality { display-mode: "form" }
 MAX_PAIR_BITS = 20  # pairs up to this many differing bits are kept as candidates for the pair browser
+PAIR_THRESHOLD = 8  # the bit distance threshold a pair browser and the copy comparison start with
 
 
 def file_md5(path) -> str:
@@ -175,7 +176,7 @@ candidate_pairs = sorted(zip(_i.tolist(), _j.tolist(), pair_dist[_i, _j].tolist(
 print(f"Found {len(candidate_pairs)} candidate pairs within {MAX_PAIR_BITS} bits.")
 
 dup_threshold = widgets.IntSlider(
-    value=8, min=0, max=20, step=1,
+    value=PAIR_THRESHOLD, min=0, max=MAX_PAIR_BITS, step=1,
     description="Bit distance threshold:",
     continuous_update=False,
     style={"description_width": "initial"},
@@ -494,12 +495,12 @@ HTML(r"""
 
 # %%
 # @title 🔎 Generate a Dataset with Known Duplicates { display-mode: "form" }
-HUNT_DIR = DATA_DIR / "cache" / "hunt5"
+DUPLICATE_CARD_DIR = DATA_DIR / "cache" / "hunt5"
 N_CARD_ORIGINALS = 12 if SMOKE else 40  # distinct photos on the card (N-014: fewer in smoke mode)
 PLANT_KINDS = ["exact", "exact", "flipped", "rotated", "recompressed"]  # ≥ 4 planted copies, always present
 
 
-def plant_hunt5(dest: Path, n_originals: int, seed: int) -> tuple[dict[str, Path], list[dict]]:
+def plant_duplicates(dest: Path, n_originals: int, seed: int) -> tuple[dict[str, Path], list[dict]]:
     """Write a 'memory card': n_originals distinct photos plus one planted copy per entry of PLANT_KINDS.
 
     Returns (files, key): files maps the card's neutral file names to paths; key lists the planted copies as
@@ -544,9 +545,9 @@ def plant_hunt5(dest: Path, n_originals: int, seed: int) -> tuple[dict[str, Path
     return dict(sorted(files.items())), key
 
 
-hunt_files, HUNT5_KEY = plant_hunt5(HUNT_DIR, N_CARD_ORIGINALS, SEED)
+hunt_files, duplicate_key = plant_duplicates(DUPLICATE_CARD_DIR, N_CARD_ORIGINALS, SEED)
 
-print(f"Generated {len(hunt_files)} images, including {len(HUNT5_KEY)} intentionally added duplicates.")
+print(f"Generated {len(hunt_files)} images, including {len(duplicate_key)} intentionally added duplicates.")
 
 # %%
 # @title Helpers: Compare Duplicate Detection Methods { display-mode: "form" }
@@ -619,12 +620,12 @@ def score_hunt(found: pd.DataFrame, key: list[dict]) -> int:
 
 # %%
 # @title 🔎 Compare Duplicate Detection Methods { display-mode: "form" }
-plain = find_copies(hunt_files, threshold=8, use_variants=False)
-variant = find_copies(hunt_files, threshold=8, use_variants=True)
+plain = find_copies(hunt_files, threshold=PAIR_THRESHOLD, use_variants=False)
+variant = find_copies(hunt_files, threshold=PAIR_THRESHOLD, use_variants=True)
 
-print(f"Ground truth of intentionally added duplicates:\t{len(HUNT5_KEY)}")
-print(f"MD5 + standard pHash detected:\t\t\t{score_hunt(plain, HUNT5_KEY)}")
-print(f"MD5 + transformation-aware pHash detected:\t{score_hunt(variant, HUNT5_KEY)}")
+print(f"Ground truth of intentionally added duplicates:\t{len(duplicate_key)}")
+print(f"MD5 + standard pHash detected:\t\t\t{score_hunt(plain, duplicate_key)}")
+print(f"MD5 + transformation-aware pHash detected:\t{score_hunt(variant, duplicate_key)}")
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }
@@ -748,7 +749,7 @@ HTML("""
 # %%
 # @title 🔎 Find Unusual Images Using Color Histograms { display-mode: "form" }
 N_ATYPICAL = 1 if SMOKE else 2  # Images shown per class
-_features = CHANNEL_HISTS.reshape(len(image_stats), -1)
+_features = channel_hists.reshape(len(image_stats), -1)
 _class_mean = {c: _features[(image_stats["class"] == c).to_numpy()].mean(axis=0) for c in CLASSES}
 image_stats["atypicality"] = [float(np.abs(f - _class_mean[c]).sum())
                               for f, c in zip(_features, image_stats["class"], strict=True)]
@@ -881,8 +882,8 @@ from tqdm.auto import tqdm
 MODEL_NAME = "facebook/dinov2-small"
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
-processor = AutoImageProcessor.from_pretrained(MODEL_NAME)
-model = AutoModel.from_pretrained(MODEL_NAME).to(DEVICE).eval()
+dino_processor = AutoImageProcessor.from_pretrained(MODEL_NAME)
+dino_model = AutoModel.from_pretrained(MODEL_NAME).to(DEVICE).eval()
 
 def dinov2_embeddings(paths, batch_size=16):
     vectors = []
@@ -894,10 +895,10 @@ def dinov2_embeddings(paths, batch_size=16):
             with Image.open(path) as im:
                 batch.append(im.convert("RGB"))
 
-        inputs = processor(images=batch, return_tensors="pt").to(DEVICE)
+        inputs = dino_processor(images=batch, return_tensors="pt").to(DEVICE)
 
         with torch.inference_mode():
-            features = model(**inputs).last_hidden_state[:, 0]
+            features = dino_model(**inputs).last_hidden_state[:, 0]
             features = torch.nn.functional.normalize(features, dim=1)
 
         vectors.append(features.cpu().numpy())
@@ -912,11 +913,11 @@ import umap
 CACHE_DIR = DATA_DIR / "cache" / "embeddings"
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
-paths = image_stats["path"].tolist()
+embedding_paths = image_stats["path"].tolist()
 
 def cached_features(name, compute):
     key = hashlib.sha256(
-        (name + MODEL_NAME + repr(paths)).encode()
+        (name + MODEL_NAME + repr(embedding_paths)).encode()
     ).hexdigest()[:16]
     cache_path = CACHE_DIR / f"{name}_{key}.npy"
 
@@ -930,30 +931,29 @@ def cached_features(name, compute):
     return features
 
 representations = {
-    "Color histograms": CHANNEL_HISTS.reshape(
+    "Color histograms": channel_hists.reshape(
         len(image_stats), -1
     ).astype("float32"),
 
     "Pretrained visual embeddings": cached_features(
         "global_dinov2",
-        lambda: dinov2_embeddings(paths)
+        lambda: dinov2_embeddings(embedding_paths)
     ),
 }
 
 # Compute or load one UMAP projection per representation
 projections = {}
+UMAP_SETTINGS = dict(
+    n_neighbors=15,
+    min_dist=0.1,
+    metric="cosine",
+    random_state=SEED
+)
 
 for name, features in representations.items():
-    settings = dict(
-        n_neighbors=15,
-        min_dist=0.1,
-        metric="cosine",
-        random_state=SEED
-    )
-
     key = hashlib.sha256(
         np.ascontiguousarray(features).tobytes()
-        + repr(settings).encode()
+        + repr(UMAP_SETTINGS).encode()
     ).hexdigest()[:16]
 
     cache_path = CACHE_DIR / f"umap_{key}.npy"
@@ -967,7 +967,7 @@ for name, features in representations.items():
                 "ignore", message="n_jobs value 1 overridden"
             )
             projections[name] = umap.UMAP(
-                **settings
+                **UMAP_SETTINGS
             ).fit_transform(features)
 
         np.save(cache_path, projections[name])
@@ -994,16 +994,16 @@ def thumbnail_uri(path):
 
 projection = projections[UMAP_FEATURES]
 
-source = ColumnDataSource(dict(
+umap_source = ColumnDataSource(dict(
     x=projection[:, 0],
     y=projection[:, 1],
     cls=image_stats["class"].tolist(),
-    image=[thumbnail_uri(p) for p in image_stats["path"]],
+    image=[thumbnail_uri(umap_fig) for umap_fig in image_stats["path"]],
 ))
 
 output_notebook()
 
-p = figure(
+umap_fig = figure(
     title=f"UMAP of Image Representations — {UMAP_FEATURES}",
     width=850,
     height=500,
@@ -1011,9 +1011,9 @@ p = figure(
     active_scroll="wheel_zoom"
 )
 
-p.scatter(
+umap_fig.scatter(
     "x", "y",
-    source=source,
+    source=umap_source,
     size=8,
     alpha=0.8,
     color=factor_cmap(
@@ -1024,7 +1024,7 @@ p.scatter(
     legend_field="cls"
 )
 
-p.add_tools(HoverTool(tooltips="""
+umap_fig.add_tools(HoverTool(tooltips="""
     <div style="width:150px;">
         <img src="@image" width="130"
              style="max-height:130px;object-fit:contain;">
@@ -1032,20 +1032,20 @@ p.add_tools(HoverTool(tooltips="""
     </div>
 """))
 
-p.xaxis.axis_label = "UMAP 1"
-p.yaxis.axis_label = "UMAP 2"
-p.legend.title = "Class"
-p.legend.location = "top_right"
-p.legend.click_policy = "hide"
+umap_fig.xaxis.axis_label = "UMAP 1"
+umap_fig.yaxis.axis_label = "UMAP 2"
+umap_fig.legend.title = "Class"
+umap_fig.legend.location = "top_right"
+umap_fig.legend.click_policy = "hide"
 
-show(p)
+show(umap_fig)
 
 # %%
 # @title 🔎 Explore Similar and Unusual Images { display-mode: "form" }
 SIMILARITY_FEATURES = "Pretrained visual embeddings" # @param ["Color histograms", "Pretrained visual embeddings"]
 
 features = representations[SIMILARITY_FEATURES]
-classes = image_stats["class"].to_numpy()
+image_classes = image_stats["class"].to_numpy()
 indices = np.arange(len(image_stats))
 
 sim = cosine_similarity_matrix(features)
@@ -1058,13 +1058,13 @@ top_pairs = [(int(i[k]), int(j[k])) for k in order]
 
 # Rank images by average similarity to others in their class
 class_similarity = np.array([
-    sim[k, (classes == c) & (indices != k)].mean()
-    for k, c in enumerate(classes)
+    sim[k, (image_classes == c) & (indices != k)].mean()
+    for k, c in enumerate(image_classes)
 ])
 
 outlier_indices = {
-    c: np.where(classes == c)[0][
-        np.argsort(class_similarity[classes == c])
+    c: np.where(image_classes == c)[0][
+        np.argsort(class_similarity[image_classes == c])
     ].tolist()
     for c in CLASSES
 }
@@ -1165,7 +1165,7 @@ sim_update_view()
 # %%
 # @title 🔎 Compare Within-Class Image Similarity { display-mode: "form" }
 for c in CLASSES:
-    idx = np.where(classes == c)[0]
+    idx = np.where(image_classes == c)[0]
     values = sim[np.ix_(idx, idx)]
     values = values[np.triu_indices(len(idx), k=1)]
     print(f"{c:8s} median similarity: {np.median(values):.3f}")

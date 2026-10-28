@@ -90,7 +90,6 @@ boxes = annotations.copy()  # one row per box; a copy, because later cells add c
 # @title 🔎 Explore Bounding Boxes { display-mode: "form" }
 
 boxview_page = 0
-page_size = 4
 boxview_output = widgets.Output()
 
 boxview_previous = widgets.Button(description="← Previous")
@@ -102,8 +101,8 @@ def boxview_show_page():
     with boxview_output:
         clear_output(wait=True)
 
-        start = boxview_page * page_size
-        selected = images.iloc[start:start + page_size]
+        start = boxview_page * PAGE_SIZE
+        selected = images.iloc[start:start + PAGE_SIZE]
 
         show_boxes(
             selected,
@@ -112,7 +111,7 @@ def boxview_show_page():
             caption=lambda r: r["class"]
         )
 
-        total_pages = (len(images) + page_size - 1) // page_size
+        total_pages = (len(images) + PAGE_SIZE - 1) // PAGE_SIZE
         boxview_counter.value = f"Page {boxview_page + 1} of {total_pages}"
         boxview_previous.disabled = boxview_page == 0
         boxview_next_button.disabled = boxview_page >= total_pages - 1
@@ -184,15 +183,14 @@ boxes_per_class = use(count_boxes_per_class, boxes, reference=_ref_count_boxes_p
 # %%
 # @title 🔎 Compare Class Distributions: Photos vs. Boxes { display-mode: "form" }
 
-photos_per_class = {c: int((images["class"] == c).sum()) for c in CLASSES}
 RESULTS["boxes_per_class"] = boxes_per_class
 RESULTS["n_boxes"] = int(len(boxes))
 
-by_photos = sorted(CLASSES, key=lambda c: -photos_per_class[c])
+by_photos = sorted(CLASSES, key=lambda c: -images_per_class[c])
 by_boxes = sorted(CLASSES, key=lambda c: -boxes_per_class[c])
 
 print(f"{len(images)} photos · {len(boxes)} boxes")
-print("Ranked by photos: " + " > ".join(f"{c} {photos_per_class[c]}" for c in by_photos))
+print("Ranked by photos: " + " > ".join(f"{c} {images_per_class[c]}" for c in by_photos))
 print("Ranked by boxes:  " + " > ".join(f"{c} {boxes_per_class[c]}" for c in by_boxes))
 
 for c in CLASSES:
@@ -208,7 +206,7 @@ fig, axes = plt.subplots(1, 2, figsize=(10, 3.6))
 
 for ax, counts, order, what in zip(
     axes,
-    [photos_per_class, boxes_per_class],
+    [images_per_class, boxes_per_class],
     [by_photos, by_boxes],
     ["Photos", "Boxes"],
     strict=True
@@ -570,7 +568,7 @@ However, the heatmaps alone do not establish how well the detector performs.
 # @title 🔎 Explore Object Counts Across Classes { display-mode: "form" }
 
 # Annotated objects per image (the images table already counts them)
-crowding = images[["id", "class", "n_animals"]].rename(columns={"n_animals": "n_objects"})
+crowding = images[["id", "class", "n_objects"]]
 
 RESULTS["max_objects_per_image"] = int(crowding["n_objects"].max())
 
@@ -643,7 +641,6 @@ crowd_count_selector = widgets.Dropdown(
 )
 
 crowd_page = 0
-page_size = 4
 
 crowd_first = widgets.Button(description="⇤ First")
 crowd_previous = widgets.Button(description="← Previous")
@@ -665,17 +662,17 @@ def crowd_filtered_images():
 
 def crowd_show_page():
     filtered = crowd_filtered_images()
-    total_pages = max(1, (len(filtered) + page_size - 1) // page_size)
+    total_pages = max(1, (len(filtered) + PAGE_SIZE - 1) // PAGE_SIZE)
 
     with crowd_output:
         clear_output(wait=True)
 
         selected = filtered.iloc[
-            crowd_page * page_size:(crowd_page + 1) * page_size
+            crowd_page * PAGE_SIZE:(crowd_page + 1) * PAGE_SIZE
         ]
 
         # Preserve the selected order
-        selected_images = selected[["id", "n_objects"]].merge(
+        selected_images = selected[["id"]].merge(
             images, on="id", how="left", sort=False
         )
 
@@ -704,7 +701,7 @@ def crowd_show_page():
 def crowd_go_to_page(new_page):
     global crowd_page
     total_pages = max(
-        1, (len(crowd_filtered_images()) + page_size - 1) // page_size
+        1, (len(crowd_filtered_images()) + PAGE_SIZE - 1) // PAGE_SIZE
     )
     crowd_page = max(0, min(new_page, total_pages - 1))
     crowd_show_page()
@@ -770,6 +767,9 @@ display(HTML("""
 
 # %%
 # @title IOU Helper Function { display-mode: "form" }
+OVERLAP_IOU = 0.1  # two boxes count as overlapping above this IoU
+
+
 def box_iou_dice(a: tuple, b: tuple) -> tuple[float, float]:
     """IoU and Dice of two boxes given as (x, y, w, h)."""
     ix = max(0, min(a[0] + a[2], b[0] + b[2]) - max(a[0], b[0]))
@@ -782,7 +782,6 @@ def box_iou_dice(a: tuple, b: tuple) -> tuple[float, float]:
 # %%
 # @title 🔎 Explore Bounding Box Overlap (IOU) { display-mode: "form" }
 
-overlap_iou = 0.1
 
 REFERENCE_BOX = (20, 20, 60, 40)
 
@@ -826,7 +825,7 @@ def show_overlap(x_shift, y_shift):
 
     ax.set_title(
         f"IOU = {intersection} / {union} = {iou:.2f} "
-        f"({'overlapping' if iou > overlap_iou else 'not counted'})",
+        f"({'overlapping' if iou > OVERLAP_IOU else 'not counted'})",
         fontsize=11
     )
 
@@ -888,7 +887,6 @@ display(HTML("""
 # %%
 # @title 🔎 Explore Bounding Box Overlap Across Classes { display-mode: "form" }
 
-overlap_iou = 0.1
 
 # Count overlapping box pairs in each image
 rows = []
@@ -899,7 +897,7 @@ for image_id, group in boxes.groupby("image_id"):
     n_box_pairs = n_boxes * (n_boxes - 1) // 2
 
     n_overlapping = sum(
-        box_iou_dice(box_a, box_b)[0] > overlap_iou
+        box_iou_dice(box_a, box_b)[0] > OVERLAP_IOU
         for box_a, box_b in combinations(bounding_boxes, 2)
     )
 
@@ -1014,7 +1012,6 @@ quality_class_selector = widgets.Dropdown(
     style={"description_width": "initial"}
 )
 
-page_size = 4
 quality_page = 0
 
 quality_previous = widgets.Button(description="← Previous")
@@ -1031,7 +1028,7 @@ def show_quality_page():
         clear_output(wait=True)
 
         selected = quality_images.iloc[
-            quality_page * page_size:(quality_page + 1) * page_size
+            quality_page * PAGE_SIZE:(quality_page + 1) * PAGE_SIZE
         ]
 
         show_boxes(
@@ -1041,7 +1038,7 @@ def show_quality_page():
             caption=lambda r: f"{r['class']} · Image {r['id']}"
         )
 
-    total_pages = max(1, (len(quality_images) + page_size - 1) // page_size)
+    total_pages = max(1, (len(quality_images) + PAGE_SIZE - 1) // PAGE_SIZE)
     quality_counter.value = f"Page {quality_page + 1} of {total_pages}"
     quality_previous.disabled = quality_page == 0
     quality_next_button.disabled = quality_page >= total_pages - 1
@@ -1169,19 +1166,19 @@ def simulate_missing_box(boxes_df, images_df, seed):
 
 
 # Create the simulated dataset (keep the answer key hidden)
-park_boxes, hunt_answer_key = simulate_missing_box(
+park_boxes, missing_box_key = simulate_missing_box(
     boxes, images, SEED
 )
 
 # Compare recorded animal counts with the simulated annotations
 box_counts = park_boxes.groupby("image_id").size()
 
-annotation_check = images[["id", "class", "n_animals"]].copy()
+annotation_check = images[["id", "class", "n_objects"]].copy()
 annotation_check["n_boxes"] = (
     annotation_check["id"].map(box_counts).fillna(0).astype(int)
 )
 annotation_check["difference"] = (
-    annotation_check["n_animals"] - annotation_check["n_boxes"]
+    annotation_check["n_objects"] - annotation_check["n_boxes"]
 )
 
 suspicious_images = annotation_check[
@@ -1194,11 +1191,11 @@ print(f"Images with mismatched counts: {len(suspicious_images)}")
 
 display(
     suspicious_images[
-        ["id", "class", "n_animals", "n_boxes", "difference"]
+        ["id", "class", "n_objects", "n_boxes", "difference"]
     ].rename(columns={
         "id": "Image ID",
         "class": "Class",
-        "n_animals": "Animals",
+        "n_objects": "Animals",
         "n_boxes": "Boxes",
         "difference": "Missing boxes"
     })
@@ -1233,7 +1230,7 @@ def missing_inspect(change=None):
             "Inspect the available bounding boxes",
             caption=lambda r: (
                 f"{r['class']} · "
-                f"{r['n_animals']} animals expected"
+                f"{r['n_objects']} animals expected"
             )
         )
 

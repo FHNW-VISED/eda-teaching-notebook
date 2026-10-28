@@ -189,7 +189,6 @@ mask_images = images[images["id"].isin(masks["image_id"].unique())].copy()
 mask_images = mask_images.sample(frac=1, random_state=SEED).reset_index(drop=True)
 
 maskview_page = 0
-page_size = 4
 
 maskview_prev_btn = widgets.Button(description="Previous", icon="chevron-left")
 maskview_next_btn = widgets.Button(description="Next", icon="chevron-right")
@@ -202,9 +201,9 @@ maskview_page_label = widgets.HTML()
 maskview_output = widgets.Output()
 
 def maskview_show_page():
-    total_pages = (len(mask_images) + page_size - 1) // page_size
-    start = maskview_page * page_size
-    selected = mask_images.iloc[start:start + page_size]
+    total_pages = (len(mask_images) + PAGE_SIZE - 1) // PAGE_SIZE
+    start = maskview_page * PAGE_SIZE
+    selected = mask_images.iloc[start:start + PAGE_SIZE]
 
     maskview_page_label.value = f"Page {maskview_page + 1} of {total_pages}"
     maskview_prev_btn.disabled = (maskview_page == 0)
@@ -224,7 +223,7 @@ def maskview_show_page():
 def maskview_navigate(change):
     global maskview_page, mask_images
 
-    total_pages = (len(mask_images) + page_size - 1) // page_size
+    total_pages = (len(mask_images) + PAGE_SIZE - 1) // PAGE_SIZE
 
     if change == "previous":
         maskview_page = max(0, maskview_page - 1)
@@ -347,7 +346,7 @@ BACKGROUND_COLOR = "#D9DEDF"
 # Compare class distributions across counting units
 units = {
     "photos": {
-        c: photos_per_class[c] / sum(photos_per_class.values())
+        c: images_per_class[c] / sum(images_per_class.values())
         for c in CLASSES
     },
     "boxes": {
@@ -583,13 +582,12 @@ fill_page_label = widgets.HTML()
 fill_output = widgets.Output()
 
 fill_page = 0
-page_size = 4
 
 def fill_show_page():
     selected = fill_examples[fill_category.value]
-    total_pages = max(1, (len(selected) + page_size - 1) // page_size)
-    start = fill_page * page_size
-    current = selected.iloc[start:start + page_size]
+    total_pages = max(1, (len(selected) + PAGE_SIZE - 1) // PAGE_SIZE)
+    start = fill_page * PAGE_SIZE
+    current = selected.iloc[start:start + PAGE_SIZE]
 
     fill_page_label.value = f"Page {fill_page + 1} of {total_pages}"
     fill_prev_btn.disabled = fill_page == 0
@@ -612,7 +610,7 @@ def fill_show_page():
 
 def fill_navigate(direction):
     global fill_page
-    total_pages = max(1, (len(fill_examples[fill_category.value]) + page_size - 1) // page_size)
+    total_pages = max(1, (len(fill_examples[fill_category.value]) + PAGE_SIZE - 1) // PAGE_SIZE)
     fill_page = max(0, min(fill_page + direction, total_pages - 1))
     fill_show_page()
 
@@ -819,7 +817,7 @@ always appear. Averaging also hides variation between images.</p>
 # %%
 # @title Simulate Mask Annotation Errors { display-mode: "form" }
 
-HUNT9_KINDS = ["another animal", "chunk missing", "shifted", "swollen", "crude polygon"]
+MASK_ERROR_KINDS = ["another animal", "chunk missing", "shifted", "swollen", "crude polygon"]
 SHIFT_PX = 15
 BOX_IOU_MIN = 0.9  # check 1: suspect when the mask's own box overlaps the annotated box less than this
 FILL_RANGE = (0.15, 0.95)  # suspect when mask area / box area is outside this range
@@ -848,9 +846,9 @@ def _crude_polygon(mask: np.ndarray, max_vertices: int = 6) -> list[float]:
     return [float(v) for v in poly.reshape(-1)]
 
 
-def plant_hunt9(animals_df: pd.DataFrame, table: pd.DataFrame,
+def plant_mask_errors(animals_df: pd.DataFrame, table: pd.DataFrame,
                 seed: int) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Return (park_masks, key): the masks of `animals_df` with one ugly mask of each of HUNT9_KINDS.
+    """Return (park_masks, key): the masks of `animals_df` with one ugly mask of each of MASK_ERROR_KINDS.
 
     Each kind spoils a different photo's mask, picked in a seeded order among masks large enough to judge,
     and the mask is changed through pycocotools (decode → OpenCV → encode). With no mask fitting a kind's
@@ -906,7 +904,7 @@ def plant_hunt9(animals_df: pd.DataFrame, table: pd.DataFrame,
             return to_rle([poly], H, W), f"{len(poly) // 2} clicked points"
         raise ValueError(kind)
 
-    for kind in HUNT9_KINDS:
+    for kind in MASK_ERROR_KINDS:
         free = [i for i in order if pool.at[i, "image_id"] not in used and i not in new_rle]
         spoiled = next(((i, out) for i in free if (out := fits(kind, i)) is not None), None)
         if spoiled is None:  # nothing fits the condition: give the first free mask another photo's mask
@@ -925,7 +923,7 @@ def plant_hunt9(animals_df: pd.DataFrame, table: pd.DataFrame,
     return park, pd.DataFrame(key)
 
 
-park_masks, HUNT9_KEY = plant_hunt9(animals, images, SEED)
+park_masks, mask_error_key = plant_mask_errors(animals, images, SEED)
 print(f"park_masks: {len(park_masks)} animal masks on {park_masks['image_id'].nunique()} photos. "
       "Five of them are ugly. Find them.")
 
@@ -1188,8 +1186,8 @@ def run_checks(shape: pd.DataFrame, box_iou_min: float) -> dict[str, pd.Series]:
     }
 
 
-CHECKS = run_checks(park_shape, BOX_IOU_MIN)
-park_shape["checks"] = [", ".join(name for name, hit in CHECKS.items() if hit.iloc[i])
+check_hits = run_checks(park_shape, BOX_IOU_MIN)
+park_shape["checks"] = [", ".join(name for name, hit in check_hits.items() if hit.iloc[i])
                         for i in range(len(park_shape))]
 mask_suspects = park_shape[park_shape["checks"] != ""].copy()
 mask_suspects["n_checks"] = mask_suspects["checks"].str.count(",") + 1
@@ -1197,7 +1195,7 @@ mask_suspects = mask_suspects.sort_values(["n_checks", "box_iou", "id"], ascendi
 
 print(f"{len(_judge)} masks judged · {len(mask_suspects)} suspects "
       f"({len(mask_suspects) / max(len(_judge), 1):.1%}). Suspects per check:")
-for name, hit in CHECKS.items():
+for name, hit in check_hits.items():
     print(f"  {name:9s} {int(hit.sum())}")
 _cols = ["id", "image_id", "class", "checks", "box_iou", "fill", "pieces", "holes", "solidity"]
 display(mask_suspects[_cols].head(12).round(2).set_index("id"))
@@ -1225,28 +1223,28 @@ from html import escape
 # Identify which planted errors were detected.
 _checks_by_id = park_shape.set_index("id")["checks"]
 
-HUNT9_KEY["checks"] = HUNT9_KEY["ann_id"].map(_checks_by_id).fillna("")
-HUNT9_KEY["found"] = HUNT9_KEY["checks"] != ""
+mask_error_key["checks"] = mask_error_key["ann_id"].map(_checks_by_id).fillna("")
+mask_error_key["found"] = mask_error_key["checks"] != ""
 
-hunt9_found = int(HUNT9_KEY["found"].sum())
+n_errors_found = int(mask_error_key["found"].sum())
 
 RESULTS["hunt9"] = {
-    "planted": len(HUNT9_KEY),
-    "found": hunt9_found,
+    "planted": len(mask_error_key),
+    "found": n_errors_found,
 }
 RESULTS["mask_suspects_real"] = int(
-    (~mask_suspects["id"].isin(HUNT9_KEY["ann_id"])).sum()
+    (~mask_suspects["id"].isin(mask_error_key["ann_id"])).sum()
 )
 
 # Prepare the detection summary.
-lines = [
+_lines = [
     f"{'✓' if k['found'] else '✗'} {k['kind']}: "
     f"{k['checks'] or 'no check fired'}"
-    for _, k in HUNT9_KEY.iterrows()
+    for _, k in mask_error_key.iterrows()
 ]
 
-lines.append(
-    f"Detected {hunt9_found} of {len(HUNT9_KEY)} planted errors; "
+_lines.append(
+    f"Detected {n_errors_found} of {len(mask_error_key)} planted errors; "
     f"{RESULTS['mask_suspects_real']} original COCO annotations "
     "were also flagged."
 )
@@ -1255,12 +1253,12 @@ lines.append(
 
 fig, axes = plt.subplots(
     2,
-    len(HUNT9_KEY),
-    figsize=(3.2 * len(HUNT9_KEY), 6.2),
+    len(mask_error_key),
+    figsize=(3.2 * len(mask_error_key), 6.2),
     squeeze=False,
 )
 
-for col, (_, k) in enumerate(HUNT9_KEY.iterrows()):
+for col, (_, k) in enumerate(mask_error_key.iterrows()):
     photo = images_by_id.loc[k["image_id"]]
     thumb = load_thumb(photo["path"], (320, 320))
 
@@ -1319,12 +1317,12 @@ fig.suptitle(
 fig.tight_layout()
 
 # Convert the figure to an image without displaying it separately.
-buf = BytesIO()
-fig.savefig(buf, format="png", dpi=130, bbox_inches="tight")
+_buf = BytesIO()
+fig.savefig(_buf, format="png", dpi=130, bbox_inches="tight")
 plt.close(fig)
 
-img = base64.b64encode(buf.getvalue()).decode("utf-8")
-items = "".join(f"<li>{escape(line)}</li>" for line in lines)
+_img = base64.b64encode(_buf.getvalue()).decode("utf-8")
+_items = "".join(f"<li>{escape(line)}</li>" for line in _lines)
 
 # Display the complete answer inside one collapsible grey box.
 display(HTML(f"""
@@ -1337,9 +1335,9 @@ display(HTML(f"""
 </summary>
 
 <p><strong>Which errors were detected?</strong></p>
-<ul>{items}</ul>
+<ul>{_items}</ul>
 
-<img src="data:image/png;base64,{img}"
+<img src="data:image/png;base64,{_img}"
      style="width:100%; height:auto; margin:12px 0;">
 
 <p><strong>Why did these checks detect the errors?</strong></p>

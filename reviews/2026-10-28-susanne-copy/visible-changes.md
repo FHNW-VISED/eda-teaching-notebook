@@ -36,3 +36,15 @@ Code that only a helper cell holds, and renamed variables a student never reads,
   → removed (`boxes` is made in the box helper cell) · C-10
 - Check 3: exact, recompressed, flipped and rotated copies [210] · a copy found by plain pHash is listed with kind
   "original" → "recompressed" · C-06 / P10
+
+## Group 3 · Names
+
+- Load the manifest, download the images, build the tables [9] · the table printed under the cell has a column
+  `n_animals` → `n_objects` · N-21 / P8
+- The park does not have its own training data yet… [15] (markdown) · "number of annotated animals (`n_animals`)" →
+  "number of annotated animals (`n_objects`)" · N-21 / P8
+- Measure Image Dimensions and Other Properties [37] · summary table row `colourfulness` → `colorfulness` · N-18
+- 🔎 Inspect Images with Minimum, Median, and Maximum Property Values [39] · figure heading "Colourfulness" →
+  "Colorfulness" · N-18
+- 🔎 Explore Extreme Image Properties [49] · Colab form dropdown option `colourfulness` → `colorfulness` (and the
+  figure title "colourfulness: the 5 lowest, …" when it is picked) · N-18

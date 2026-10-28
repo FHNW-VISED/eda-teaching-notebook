@@ -409,14 +409,14 @@ if len(my_files) > MY_MAX_IMAGES:
                           for _, g in my_files.groupby("class")])
     print(f"⚠️ {_n_all} images found: the checks run on a stratified sample of {len(my_files)}.")
 my_files = my_files.sort_values(["class", "file"]).reset_index(drop=True)
-MY_CLASSES = sorted(my_files["class"].unique())
+my_classes = sorted(my_files["class"].unique())
 # Park classes keep their colour; any other class name borrows one from the same palette (L-003).
 _palette = list(CLASS_COLORS.values())
-MY_COLORS = {c: CLASS_COLORS.get(c, _palette[i % len(_palette)]) for i, c in enumerate(MY_CLASSES)}
-print(f"✅ source: {my_source} · {my_root} · {len(my_files)} images in {len(MY_CLASSES)} class folders: "
-      + ", ".join(f"{c} ({n})" for c, n in my_files["class"].value_counts().reindex(MY_CLASSES).items()))
+my_colors = {c: CLASS_COLORS.get(c, _palette[i % len(_palette)]) for i, c in enumerate(my_classes)}
+print(f"✅ source: {my_source} · {my_root} · {len(my_files)} images in {len(my_classes)} class folders: "
+      + ", ".join(f"{c} ({n})" for c, n in my_files["class"].value_counts().reindex(my_classes).items()))
 
-_shown = MY_CLASSES[:8]  # a first look: three images per class (at most eight classes)
+_shown = my_classes[:8]  # a first look: three images per class (at most eight classes)
 fig, axes = plt.subplots(len(_shown), 3, figsize=(7, 2.2 * len(_shown)), squeeze=False)
 for r, c in enumerate(_shown):
     _of_class = my_files[my_files["class"] == c].head(3)
@@ -451,12 +451,12 @@ Images deeper inside a class folder count, other files are listed and skipped. D
 
 # %%
 # @title Check 1: images per class, and the largest : smallest ratio { display-mode: "form" }
-my_counts = my_files["class"].value_counts().reindex(MY_CLASSES)
-fig, ax = plt.subplots(figsize=(max(5, 0.8 * len(MY_CLASSES) + 2), 3.2))
-ax.bar(MY_CLASSES, my_counts.to_numpy(), color=[MY_COLORS[c] for c in MY_CLASSES])
+my_counts = my_files["class"].value_counts().reindex(my_classes)
+fig, ax = plt.subplots(figsize=(max(5, 0.8 * len(my_classes) + 2), 3.2))
+ax.bar(my_classes, my_counts.to_numpy(), color=[my_colors[c] for c in my_classes])
 ax.set_ylabel("images")
 ax.set_title(f"Images per class folder ({len(my_files)} in total)")
-ax.tick_params(axis="x", rotation=30 if len(MY_CLASSES) > 6 else 0)
+ax.tick_params(axis="x", rotation=30 if len(my_classes) > 6 else 0)
 plt.tight_layout()
 plt.show()
 my_imbalance = float(my_counts.max() / my_counts.min())
@@ -483,13 +483,13 @@ my_stats = pd.DataFrame(_my_rows)
 _ok = my_stats[my_stats["readable"]]
 
 fig, ax = plt.subplots(figsize=(5.5, 4))
-for c in MY_CLASSES:
+for c in my_classes:
     sub = _ok[_ok["class"] == c]
-    ax.scatter(sub["width"], sub["height"], s=18, alpha=0.7, color=MY_COLORS[c], label=c)
+    ax.scatter(sub["width"], sub["height"], s=18, alpha=0.7, color=my_colors[c], label=c)
 ax.set_xlabel("width (px)")
 ax.set_ylabel("height (px)")
 ax.set_title("Image sizes per class")
-ax.legend(frameon=False, fontsize=8, ncol=2 if len(MY_CLASSES) > 6 else 1)
+ax.legend(frameon=False, fontsize=8, ncol=2 if len(my_classes) > 6 else 1)
 plt.tight_layout()
 plt.show()
 print(f"unreadable files: {int((~my_stats['readable']).sum())}")
@@ -531,7 +531,7 @@ if len(_show):
         for ax, idx in zip(row, [pr["ia"], pr["ib"]], strict=True):
             ax.imshow(load_thumb(my_files.at[idx, "path"], (256, 256)))
             ax.set_title(f"{my_files.at[idx, 'file']}\n{pr['kind']}", fontsize=8)
-            frame(ax, MY_COLORS[my_files.at[idx, "class"]])
+            frame(ax, my_colors[my_files.at[idx, "class"]])
     plt.tight_layout()
     plt.show()
 
@@ -572,7 +572,7 @@ my_split["split"] = "train"
 my_split.loc[_test_idx, "split"] = "test"
 _split_copies = sum(my_split.at[pr["ia"], "split"] != my_split.at[pr["ib"], "split"]
                     for _, pr in my_copies.iterrows())
-display(pd.crosstab(my_split["class"], my_split["split"]).reindex(MY_CLASSES))
+display(pd.crosstab(my_split["class"], my_split["split"]).reindex(my_classes))
 _test_small = int((my_split["split"] == "test").groupby(my_split["class"]).sum().min())
 print(f"test share {len(_test_idx) / len(my_files):.0%} · copy pairs across train/test: {_split_copies}")
 if _test_small < 10:
@@ -598,7 +598,7 @@ print(f"split saved to {_split_csv}")
 _n_unreadable = int((~my_stats["readable"]).sum())
 _n_not_rgb = int(((my_stats["mode"] != "RGB") & my_stats["readable"]).sum())
 my_report = [
-    ("✅" if my_imbalance < 3 else "⚠️", f"classes: {len(MY_CLASSES)}, imbalance {my_imbalance:.1f} : 1"),
+    ("✅" if my_imbalance < 3 else "⚠️", f"classes: {len(my_classes)}, imbalance {my_imbalance:.1f} : 1"),
     ("✅" if _n_unreadable == 0 else "⚠️", f"unreadable files: {_n_unreadable}"),
     ("✅" if _n_not_rgb == 0 else "⚠️", f"files not stored as RGB: {_n_not_rgb}"),
     ("✅" if len(my_copies) == 0 else "⚠️", f"copy pairs: {len(my_copies)} "
@@ -609,7 +609,7 @@ my_report = [
 for mark, line in my_report:
     print(mark, line)
 RESULTS["swap_in_ok"] = bool(len(my_files) > 0 and len(my_stats) == len(my_split) == len(my_files))
-RESULTS["swap_in"] = {"source": my_source, "n_images": int(len(my_files)), "n_classes": len(MY_CLASSES),
+RESULTS["swap_in"] = {"source": my_source, "n_images": int(len(my_files)), "n_classes": len(my_classes),
                       "copies": int(len(my_copies)), "not_rgb": _n_not_rgb}
 
 # %% [markdown]

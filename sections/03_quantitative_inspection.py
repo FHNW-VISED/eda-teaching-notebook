@@ -73,14 +73,14 @@ These measurements do not require class labels and can be applied to any image d
 # @title Measurement helpers { display-mode: "form" }
 HIST_BINS = 32
 CHANNEL_COLORS = {"R": "#C0392B", "G": "#27AE60", "B": "#2980B9"}
-COLOUR_MODES = ["RGB", "L", "RGBA", "CMYK"]  # the modes we always report, even when the count is 0
+COLOR_MODES = ["RGB", "L", "RGBA", "CMYK"]  # the modes we always report, even when the count is 0
 
 
 def measure_image(path, thumb: int) -> tuple[dict, np.ndarray]:
     """Open one photo and return (stats, channel_hist).
 
     stats: width, height, mode (as stored in the file), aspect (width / height), long_side, megapixels,
-    brightness (mean grey level 0–255 on a thumbnail), contrast (its standard deviation), colourfulness
+    brightness (mean grey level 0–255 on a thumbnail), contrast (its standard deviation), colorfulness
     (Hasler & Süsstrunk 2003: 0 for a grayscale picture), mean_r / mean_g / mean_b.
     channel_hist: a (3, HIST_BINS) array, the density histogram of the R, G and B channels.
     """
@@ -106,7 +106,7 @@ def measure_image(path, thumb: int) -> tuple[dict, np.ndarray]:
         "megapixels": w * h / 1e6,
         "brightness": float(grey.mean()),
         "contrast": float(grey.std()),
-        "colourfulness": float(np.hypot(rg.std(), yb.std()) + 0.3 * np.hypot(rg.mean(), yb.mean())),
+        "colorfulness": float(np.hypot(rg.std(), yb.std()) + 0.3 * np.hypot(rg.mean(), yb.mean())),
         "mean_r": float(channels[:, 0].mean()),
         "mean_g": float(channels[:, 1].mean()),
         "mean_b": float(channels[:, 2].mean()),
@@ -166,7 +166,7 @@ def _photo(ax, row, caption: str) -> None:
 def show_extremes(stats_df: pd.DataFrame, stat: str, n: int = 4) -> None:
     """The `n` photos with the lowest value of `stat`, the median ('average') photo, and the `n` highest.
 
-    `stat` is a numeric column of `stats_df`, e.g. `image_stats` (e.g. "brightness", "aspect", "megapixels", "colourfulness").
+    `stat` is a numeric column of `stats_df`, e.g. `image_stats` (e.g. "brightness", "aspect", "megapixels", "colorfulness").
     Three rows: lowest (the minimum first), the typical photo in the middle, highest (the maximum first).
     """
     numeric = [c for c in stats_df.columns if pd.api.types.is_numeric_dtype(stats_df[c]) and c != "id"]
@@ -243,13 +243,13 @@ for _, _row in images.iterrows():
     _records.append({"id": _row["id"], "class": _row["class"], "path": _row["path"], **_stats})
     _hists.append(_hist)
 image_stats = pd.DataFrame(_records)
-CHANNEL_HISTS = np.stack(_hists)  # (n_images, 3, HIST_BINS)
+channel_hists = np.stack(_hists)  # (n_images, 3, HIST_BINS)
 RESULTS["image_stats_n"] = int(len(image_stats))
 
 _same_size = image_stats[["width", "height"]].to_numpy() == images[["width", "height"]].to_numpy()
 _agree = int(_same_size.all(axis=1).sum())
 print(f"measured {len(image_stats)} photos · the manifest's width/height matches the file for {_agree}")
-STAT_COLUMNS = ["width", "height", "aspect", "megapixels", "brightness", "contrast", "colourfulness"]
+STAT_COLUMNS = ["width", "height", "aspect", "megapixels", "brightness", "contrast", "colorfulness"]
 image_stats[STAT_COLUMNS].agg(["min", "median", "mean", "max"]).T.round(2)
 
 # %% [markdown]
@@ -402,11 +402,11 @@ HTML(r"""
 # %%
 # @title 🔎 Explore Color Modes, Grayscale Images, and RGB Distributions { display-mode: "form" }
 # Count color modes, show grayscale-looking images, and compare RGB distributions across classes.
-_modes = COLOUR_MODES + sorted(set(image_stats["mode"]) - set(COLOUR_MODES))
+_modes = COLOR_MODES + sorted(set(image_stats["mode"]) - set(COLOR_MODES))
 mode_by_class = pd.crosstab(image_stats["mode"], image_stats["class"])
 mode_by_class = mode_by_class.reindex(index=_modes, columns=CLASSES, fill_value=0)
 
-image_stats["looks_gray"] = (image_stats["mode"] == "L") | (image_stats["colourfulness"] < 2.0)
+image_stats["looks_gray"] = (image_stats["mode"] == "L") | (image_stats["colorfulness"] < 2.0)
 print("color modes: " + " · ".join(f"{m} {int(mode_by_class.loc[m].sum())}" for m in _modes))
 _n_gray = int(image_stats["looks_gray"].sum())
 print(f"photos that look grayscale (mode L, or RGB with colorfulness below 2): {_n_gray}")
@@ -437,13 +437,13 @@ ax_modes.set_title("Color mode as stored in the file", fontsize=10)
 ax_modes.legend(frameon=False, fontsize=8)
 
 _edges = np.linspace(0, 256, HIST_BINS + 1)
-_centres = (_edges[:-1] + _edges[1:]) / 2
+_centers = (_edges[:-1] + _edges[1:]) / 2
 
 for k, c in enumerate(CLASSES):
     ax = fig.add_subplot(_gs[k // 3, 1 + k % 3])
 
     # Per-image RGB histograms for this class
-    _hists = CHANNEL_HISTS[(image_stats["class"] == c).to_numpy()]
+    _hists = channel_hists[(image_stats["class"] == c).to_numpy()]
 
     _mean_hist = _hists.mean(axis=0)
     _q25 = np.percentile(_hists, 25, axis=0)
@@ -451,11 +451,11 @@ for k, c in enumerate(CLASSES):
 
     for ch_idx, ch in enumerate("RGB"):
         ax.plot(
-            _centres, _mean_hist[ch_idx],
+            _centers, _mean_hist[ch_idx],
             color=CHANNEL_COLORS[ch], lw=1.4, label=ch
         )
         ax.fill_between(
-            _centres, _q25[ch_idx], _q75[ch_idx],
+            _centers, _q25[ch_idx], _q75[ch_idx],
             color=CHANNEL_COLORS[ch], alpha=0.15,
             linewidth=0
         )
@@ -532,7 +532,7 @@ HTML(r"""
 # %%
 # @title 🔎 Explore Extreme Image Properties { display-mode: "form" }
 
-STAT_TO_SHOW = "brightness" # @param ["brightness", "contrast", "colourfulness", "aspect", "megapixels", "long_side"]
+STAT_TO_SHOW = "brightness" # @param ["brightness", "contrast", "colorfulness", "aspect", "megapixels", "long_side"]
 N_IMAGES = 5 # @param {type:"slider", min:1, max:5, step:1}
 
 show_extremes(image_stats, STAT_TO_SHOW, N_IMAGES)
@@ -725,16 +725,16 @@ HTML(r"""
 
 # %%
 # @title 🔎 Explore the Number of Animals per Image { display-mode: "form" }
-_max_n = int(images["n_animals"].max())
-_several = images[images["n_animals"] > 1]
+_max_n = int(images["n_objects"].max())
+_several = images[images["n_objects"] > 1]
 print(f"{len(_several)} of {len(images)} photos ({100 * len(_several) / len(images):.0f} %) hold more than "
       f"one animal; the most crowded photo has {_max_n}.")
 print("mean animals per photo: " + " · ".join(
-    f"{c} {images.loc[images['class'] == c, 'n_animals'].mean():.1f}" for c in CLASSES))
+    f"{c} {images.loc[images['class'] == c, 'n_objects'].mean():.1f}" for c in CLASSES))
 
 fig, ax = plt.subplots(figsize=(9, 3.8))
 _bins = np.arange(0.5, min(_max_n, 10) + 1.5, 1)
-_per_class = [images.loc[images["class"] == c, "n_animals"].clip(upper=10) for c in CLASSES]
+_per_class = [images.loc[images["class"] == c, "n_objects"].clip(upper=10) for c in CLASSES]
 ax.hist(_per_class, bins=_bins, stacked=True, color=[CLASS_COLORS[c] for c in CLASSES], label=CLASSES)
 ax.set_xticks(range(1, min(_max_n, 10) + 1))
 ax.set_xticklabels([str(i) if i < 10 else "10+" for i in range(1, min(_max_n, 10) + 1)])
@@ -747,8 +747,8 @@ display(fig)
 plt.close(fig)
 
 N_CROWDED = 3 if SMOKE else 6  # how many crowded photos to show (N-014)
-_crowded = images.sort_values(["n_animals", "id"], ascending=[False, True]).head(N_CROWDED)
-show_rows(_crowded, "the most crowded photos", lambda r: f"{r['n_animals']} × {r['class']}", cols=N_CROWDED)
+_crowded = images.sort_values(["n_objects", "id"], ascending=[False, True]).head(N_CROWDED)
+show_rows(_crowded, "the most crowded photos", lambda r: f"{r['n_objects']} × {r['class']}", cols=N_CROWDED)
 
 # %%
 # @title 💡 Sample Answer { display-mode: "form" }

@@ -159,6 +159,7 @@ CLASS_COLORS = {
 INK = "#21434A"
 GRAY, LIGHT_GRAY, DARK_GRAY, EDGE_GRAY = "#9CA3AF", "#B0B0B0", "#4B5563", "#666666"  # neutral figure colors
 HIGHLIGHT = "#FFDA00"  # what a figure points at (a held-out fold, a changed bit, a modified mask)
+PAGE_SIZE = 4  # images per page in the browsers
 mpl.rcParams.update(
     {
         "figure.facecolor": "white",
@@ -372,7 +373,7 @@ def build_tables(coco: dict, paths: dict[int, Path]) -> tuple[pd.DataFrame, pd.D
         if a["image_id"] in paths
     )
     per_image_class = anns.groupby("image_id")["class"].first()
-    n_animals = anns.groupby("image_id").size()
+    n_objects = anns.groupby("image_id").size()
     imgs = pd.DataFrame(
         {
             "id": im["id"],
@@ -381,7 +382,7 @@ def build_tables(coco: dict, paths: dict[int, Path]) -> tuple[pd.DataFrame, pd.D
             "width": im["width"],
             "height": im["height"],
             "class": per_image_class.get(im["id"]),
-            "n_animals": int(n_animals.get(im["id"], 0)),
+            "n_objects": int(n_objects.get(im["id"], 0)),
             "license": lic_name.get(im["license"], str(im["license"])),
         }
         for im in coco["images"]
@@ -394,16 +395,16 @@ def build_tables(coco: dict, paths: dict[int, Path]) -> tuple[pd.DataFrame, pd.D
 
 # %%
 # @title Load the manifest, download the images, build the tables { display-mode: "form" }
-COCO_RAW = json.loads(fetch_manifest("coco_animals_subset.json").read_text())
-_cat_name = {c["id"]: c["name"] for c in COCO_RAW["categories"]}
-_image_class = {a["image_id"]: _cat_name[a["category_id"]] for a in COCO_RAW["annotations"]}
+coco_raw = json.loads(fetch_manifest("coco_animals_subset.json").read_text())
+_cat_name = {c["id"]: c["name"] for c in coco_raw["categories"]}
+_image_class = {a["image_id"]: _cat_name[a["category_id"]] for a in coco_raw["annotations"]}
 
-_rows = COCO_RAW["images"]
+_rows = coco_raw["images"]
 if SMOKE:  # same code path, fewer images (N-014)
     _rng = random.Random(SEED)
     _rows = []
     for c in CLASSES:
-        _of_class = [im for im in COCO_RAW["images"] if _image_class[im["id"]] == c]
+        _of_class = [im for im in coco_raw["images"] if _image_class[im["id"]] == c]
         _rows += sorted(_rng.sample(_of_class, SMOKE_IMAGES_PER_CLASS), key=lambda im: im["id"])
 
 print(f"{len(_rows)} images to fetch from images.cocodataset.org (cached in {IMAGE_CACHE}/)")
@@ -411,7 +412,7 @@ _paths = download_images(_rows)
 if len(_paths) < len(_rows):
     print(f"  ⚠️ {len(_rows) - len(_paths)} images could not be downloaded and are left out; run again.")
 
-images, annotations = build_tables(COCO_RAW, _paths)
+images, annotations = build_tables(coco_raw, _paths)
 images_by_id = images.set_index("id")  # the same table, looked up by image id
 RESULTS["n_images"] = int(len(images))
 
