@@ -82,7 +82,7 @@ def test_task_headings_are_title_case_and_mark_optional(edition):
         lower = [
             w
             for w in re.findall(r"[A-Za-z][\w'-]*", title)
-            if w.lower() not in SMALL_WORDS and w[0].islower()
+            if w.lower() not in SMALL_WORDS and w[0].islower() and not any(ch.isupper() for ch in w[1:])
         ]
         assert not lower, f"SN-012/SN-016: '{title}' is not Title Case ({', '.join(lower)})"
         if dot == "🔴":

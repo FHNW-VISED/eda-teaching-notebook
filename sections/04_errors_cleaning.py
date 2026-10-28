@@ -250,6 +250,11 @@ callout("answer", "💡 Sample Answer", r"""
 """)
 
 
+# %% [markdown] edition="own"
+# ✍️ **Your answer** (double-click to edit):
+#
+# *In the park:* MD5 found no byte-identical files among the 633 images, and at a threshold of 8 bits pHash flagged one pair, the same cat in front of a brick wall.
+
 # %% [markdown]
 # ### 🔴 Bit Distance Distribution (Optional)
 #
@@ -299,6 +304,11 @@ callout("answer", "💡 Sample Answer", r"""
 </ul>
 """)
 
+
+# %% [markdown] edition="own"
+# ✍️ **Your answer** (double-click to edit):
+#
+# *In the park:* most images had a nearest-neighbor distance well above a strict duplicate threshold, and only a few pairs were very close.
 
 # %% [markdown]
 # ### 🔴 How Does Perceptual Hashing Work? (Optional)
@@ -418,6 +428,11 @@ callout("answer", "💡 Sample Answer", r"""
 </ul>
 """)
 
+
+# %% [markdown] edition="own"
+# ✍️ **Your answer** (double-click to edit):
+#
+# *In the park:* the recompressed copy had the same hash (0 differing bits), and the unrelated image differed in 38 of 64 bits.
 
 # %% [markdown] edition="teaching"
 # ### 🔴 Detecting Flipped and Rotated Duplicates (Optional)
@@ -589,8 +604,20 @@ callout("answer", "💡 Sample Answer", r"""
 """)
 
 
-# %% [markdown]
+# %% [markdown] edition="teaching"
 # Why, on one photo and five kinds of copy: the pHash distance to the original, plain vs variant.
+
+# %% [markdown] edition="own"
+# ### 🔴 Flipped and Rotated Copies: Does pHash Still Find Them? (Optional)
+#
+# Standard perceptual hashing can miss copies that are flipped or rotated. The next cell takes one photo from your dataset, makes five kinds of copy, and compares the pHash distance to the original, plain vs. transformation-aware.
+#
+# **Before running the code:**
+# - Which copies do you expect plain pHash to find, and which ones to miss?
+#
+# **Observe and interpret:**
+# - Which copies does plain pHash miss?
+# - What does the transformation-aware version add, and what does it cost?
 
 # %%
 # @title 🔎 How Do Image Transformations Affect pHash? { display-mode: "form" }
@@ -665,6 +692,11 @@ callout("answer", "💡 Sample Answer", r"""
   <p><strong>Important:</strong> A bit distance of zero means the perceptual hashes match, not necessarily that the image files are identical.</p>
 """)
 
+
+# %% [markdown] edition="own"
+# ✍️ **Your answer** (double-click to edit):
+#
+# *In the park:* plain pHash found the exact, resized, and recompressed copies and missed the flipped and rotated ones, and undoing the flip or rotation brought their distance down to zero.
 
 # %% [markdown]
 # ### 🔴 Identifying Unusual Images (Optional)
@@ -749,6 +781,11 @@ callout("answer", "💡 Sample Answer", r"""
   </ul>
 """)
 
+
+# %% [markdown] edition="own"
+# ✍️ **Your answer** (double-click to edit):
+#
+# *In the park:* the most unusual images differed in background, lighting, or framing, and most of them were valid images with correct labels.
 
 # %% [markdown]
 # ### 🔴 Exploring Image Embeddings (Optional)
@@ -1178,3 +1215,8 @@ of visual diversity and potential data quality issues.</p>
 """)
 
 
+
+# %% [markdown] edition="own"
+# ✍️ **Your answer** (double-click to edit):
+#
+# *In the park:* the two representations picked different similar pairs and different outliers, because color histograms follow colors and pretrained embeddings follow shape and scene content.

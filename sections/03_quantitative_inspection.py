@@ -252,7 +252,12 @@ callout("answer", "💡 Sample Answer", r"""
 """)
 
 
-# %% [markdown]
+# %% [markdown] edition="own"
+# ✍️ **Your answer** (double-click to edit):
+#
+# *In the park:* most images were up to 640 pixels wide, and a very wide zebra image stood out by its aspect ratio.
+
+# %% [markdown] edition="teaching"
 # #### 🟢 Image Dimensions: What Do Their Distributions Reveal?
 #
 # We've examined individual images and summary statistics. Now let's visualize how image dimensions and aspect ratios vary across the dataset.
@@ -262,6 +267,18 @@ callout("answer", "💡 Sample Answer", r"""
 # **Observe:**
 # - What patterns do you see in the width-versus-height scatter plot?
 # - How do aspect ratios differ between animal classes?
+# - What might these differences mean when preparing images for a computer vision model?
+
+# %% [markdown] edition="own"
+# #### 🟢 Image Dimensions: What Do Their Distributions Reveal?
+#
+# We've examined individual images and summary statistics. Now let's visualize how image dimensions and aspect ratios vary across your dataset.
+#
+# Images from one camera tend to share one size. Images collected from many sources come in many sizes.
+#
+# **Observe:**
+# - What patterns do you see in the width-versus-height scatter plot?
+# - How do aspect ratios differ between classes?
 # - What might these differences mean when preparing images for a computer vision model?
 
 # %%
@@ -332,6 +349,11 @@ callout("answer", "💡 Sample Answer", r"""
 </ul>
 """)
 
+
+# %% [markdown] edition="own"
+# ✍️ **Your answer** (double-click to edit):
+#
+# *In the park:* the scatter plot showed horizontal and vertical bands around 500 and 640 pixels, a sign of standardized sizes, with common ratios around 4:3 and 3:4.
 
 # %% [markdown]
 # #### 🟢 Color Modes and Colors: What Do They Reveal?
@@ -453,6 +475,11 @@ callout("answer", "💡 Sample Answer", r"""
 """)
 
 
+# %% [markdown] edition="own"
+# ✍️ **Your answer** (double-click to edit):
+#
+# *In the park:* 632 images were RGB and one was grayscale (L), and 17 images looked grayscale although most of them were stored as RGB.
+
 # %% [markdown]
 # #### 🟢 Image Properties: Are Extreme Values Problematic?
 #
@@ -487,6 +514,11 @@ callout("answer", "💡 Sample Answer", r"""
 </ul>
 """)
 
+
+# %% [markdown] edition="own"
+# ✍️ **Your answer** (double-click to edit):
+#
+# *In the park:* most extremes were realistic, such as dusk, snow, or sand, and the images worth a second look were uniform gray images, photos of screens, and animals that were barely recognizable.
 
 # %% [markdown]
 # #### 🔴 Brightness: How Do Distributions Differ Between Classes? (Optional)
@@ -539,6 +571,11 @@ callout("answer", "💡 Sample Answer", r"""
 </ul>
 """)
 
+
+# %% [markdown] edition="own"
+# ✍️ **Your answer** (double-click to edit):
+#
+# *In the park:* the classes overlapped substantially, so brightness alone could not tell them apart, and some classes held both very dark and very bright images.
 
 # %% [markdown]
 # #### 🟢 Class Distribution: Are All Animal Classes Equally Represented?
@@ -606,7 +643,12 @@ callout("answer", "💡 Sample Answer", r"""
 """)
 
 
-# %% [markdown]
+# %% [markdown] edition="own"
+# ✍️ **Your answer** (double-click to edit):
+#
+# *In the park:* cats and dogs had the most images (130 and 129) and sheep the fewest (59), so the largest classes were about 2.2 times the smallest.
+
+# %% [markdown] edition="teaching"
 # #### 🟢 Animals per Image: How Common Are Multiple Animals?
 #
 # Each image in the Play Dataset has one class label, but it may contain several animals of that class. The dataset was selected from COCO to include only one of our six animal classes per image.
@@ -620,6 +662,21 @@ callout("answer", "💡 Sample Answer", r"""
 #
 # **Go Deeper (optional):**
 # - Why might assigning one label to an entire image be problematic, even when all annotated animals belong to the same class?
+
+# %% [markdown] edition="own"
+# #### 🟢 Objects per Image: How Common Are Multiple Objects?
+#
+# Each image in your dataset has one class label, but it may contain several annotated objects. This task needs boxes, so it runs only if `TASKS` includes `"detection"`.
+#
+# The next visualization shows the number of annotated objects per image and examples with particularly many objects.
+#
+# **Observe:**
+# - What proportion of images contain more than one annotated object?
+# - Which classes tend to have the most objects per image?
+# - What do you notice when inspecting images with many objects?
+#
+# **Go Deeper (optional):**
+# - Why might assigning one label to an entire image be problematic, even when all annotated objects belong to the same class?
 
 # %%
 # @title 🔎 Explore the Number of Animals per Image { display-mode: "form" }
@@ -664,6 +721,11 @@ callout("answer", "💡 Sample Answer", r"""
 """)
 
 
+# %% [markdown] edition="own"
+# ✍️ **Your answer** (double-click to edit):
+#
+# *In the park:* 241 of 633 images (38%) had more than one annotated animal, sheep had the highest average with 5.7 per image, and cats and dogs usually appeared alone.
+
 # %% edition="teaching"
 # @title 📘 Labeling Strategies: One Label or Multiple Animals? { display-mode: "form" }
 callout("theory", "📘 Labeling Strategies: One Label or Multiple Animals?", r"""
@@ -698,6 +760,20 @@ callout("theory", "📘 Labeling Strategies: One Label or Multiple Animals?", r"
 # - What is the dog recall for each rule?
 # - How does the proportion of dog images affect accuracy and dog recall?
 # - Why is accuracy alone insufficient for evaluating the park's dog alert?
+
+# %% [markdown] edition="own"
+# #### 🟢 Class Imbalance: Which Mistake Is Expensive in Your Task?
+#
+# A rule that always predicts the most common class can reach high accuracy without ever finding a rare class. If the rare class is the expensive one, accuracy hides exactly the mistake that matters.
+#
+# **Observe and interpret:**
+# - Which class is the expensive mistake in your task?
+# - Is it one of the small classes in Class Distribution?
+# - Which metric would show that mistake, if accuracy does not?
+#
+# ✍️ **Your answer** (double-click to edit):
+#
+# *In the park:* the expensive class was dog, and always predicting "no dog" gave 98% accuracy with 0% dog recall when 2% of images contained dogs.
 
 # %% edition="teaching"
 # @title 🔎 Explore Accuracy and Dog Recall Under Class Imbalance { display-mode: "form" }

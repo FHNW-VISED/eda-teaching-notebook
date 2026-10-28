@@ -5,6 +5,15 @@
 #
 # The park ranger wants to use computer vision for three different tasks:
 
+# %% [markdown] edition="own"
+# ## Meet Your Data: Explore Your Dataset
+#
+# Your project uses computer vision to solve one task, on images you collected or found. Before you train a model, check whether these images and their labels fit that task.
+#
+# *In the park:* the ranger wanted to recognize dogs in the sheep paddock, count animals, and see how they use their enclosures, all with fixed outdoor cameras.
+#
+# Computer vision tasks come in three kinds:
+
 # %% edition="teaching"
 # @title 📘 Computer Vision Tasks { display-mode: "form" }
 callout("theory", "📘 Three Computer Vision Tasks", r"""
@@ -15,6 +24,16 @@ callout("theory", "📘 Three Computer Vision Tasks", r"""
 </ol>
 """)
 
+
+# %% edition="own"
+# @title 📘 Computer Vision Tasks { display-mode: "form" }
+callout("theory", "📘 Three Computer Vision Tasks", r"""
+<ol style="margin:6px 0 0 0;padding-left:22px;">
+<li style="margin:2px 0;"><strong>Classification – Recognize:</strong> Which class does the image show? One label per image.</li>
+<li style="margin:2px 0;"><strong>Object Detection – Count:</strong> How many objects are visible, and where are they located? One box per object.</li>
+<li style="margin:2px 0;"><strong>Segmentation – Map Pixels:</strong> Which areas of the image belong to which class? One mask per object.</li>
+</ol>
+""")
 
 # %% [markdown] edition="teaching"
 # The park does not have its own training data yet. Before collecting and annotating new images, the park ranger should ask: Does a suitable dataset already exist, and can we reuse it?
@@ -29,6 +48,24 @@ callout("theory", "📘 Three Computer Vision Tasks", r"""
 #
 # - `images`: One row per image, including its dimensions, animal class, and number of annotated animals (`n_objects`).
 # - `annotations`: One row per annotated animal, including its bounding box and segmentation mask.
+
+# %% [markdown] edition="own"
+# Your dataset is organized into the same two tables the park used:
+#
+# - `images`: One row per image, including its dimensions, class, and number of annotated objects (`n_objects`).
+# - `annotations`: One row per annotated object, with its bounding box and segmentation mask if your labels have them.
+#
+# ### 🟢 Your Task: Which Mistake Is Expensive?
+#
+# A model makes mistakes, and some of them cost more than others.
+#
+# **Question:**
+# - Which of the three tasks does your project solve?
+# - Which mistake would be the expensive one, and for whom?
+#
+# ✍️ **Your answer** (double-click to edit):
+#
+# *In the park:* the task was classification, and the expensive mistake was a missed dog in the sheep paddock.
 
 # %%
 # @title 🧾 Karpathy's Recipe · Step 1 { display-mode: "form" }
@@ -66,7 +103,7 @@ A Recipe for Training Neural Networks</a> (2019).
 #
 # We'll examine the annotations in more detail afterward.
 
-# %% [markdown]
+# %% [markdown] edition="teaching"
 #
 # #### 🟢 Images: What Do Images Look Like Across Classes?
 #
@@ -75,6 +112,16 @@ A Recipe for Training Neural Networks</a> (2019).
 # **Observe:**
 # - How do the images differ across classes?
 # - How much variation is there within each class (e.g., backgrounds, viewpoints, animal sizes)?
+# - Which images might be challenging for an image classification model, and why?
+
+# %% [markdown] edition="own"
+# #### 🟢 Images: What Do Images Look Like Across Classes?
+#
+# Let's start with a quick visual overview of your dataset. The next cell displays six example images from each class to give you a first impression.
+#
+# **Observe:**
+# - How do the images differ across classes?
+# - How much variation is there within each class (e.g., backgrounds, viewpoints, object sizes)?
 # - Which images might be challenging for an image classification model, and why?
 
 # %%
@@ -106,13 +153,21 @@ for j, c in enumerate(CLASSES):
 fig.tight_layout()
 plt.show()
 
-# %% [markdown]
+# %% [markdown] edition="teaching"
 # Select an animal class and browse at least twelve images to explore variation within the class. Pay attention to backgrounds, lighting, viewpoints, animal sizes, and other objects in the images. Look for recurring patterns and unusual examples. If an animal is difficult to spot, enable the bounding boxes.
 #
 # **Observe:**
 # - How much do images vary within each class?
 # - Which image characteristics might make classification challenging?
 # - Which classes contain images that are least representative of the park's fixed outdoor cameras?
+
+# %% [markdown] edition="own"
+# Select a class and browse at least twelve images to explore variation within the class. Pay attention to backgrounds, lighting, viewpoints, object sizes, and other objects in the images. Look for recurring patterns and unusual examples. If an object is difficult to spot and your dataset has boxes, enable the bounding boxes.
+#
+# **Observe:**
+# - How much do images vary within each class?
+# - Which image characteristics might make classification challenging?
+# - Which classes contain images that look least like the images your model will see in use?
 
 # %%
 
@@ -207,7 +262,7 @@ display(
 )
 
 
-# %% [markdown]
+# %% [markdown] edition="teaching"
 # #### 🟢 Document Your Observations
 #
 # Karpathy's first step also involves documenting what you discover. Write at least three specific observations about the images you explored in the next markdown cell. For each observation, briefly explain what the park should investigate further.
@@ -218,6 +273,18 @@ display(
 # - Specific: "Many dog images are taken indoors, often with people in the background. This may not represent the park's outdoor cameras."
 #
 # Consider backgrounds, lighting, animal sizes, distances, multiple animals, people, and unusual examples.
+
+# %% [markdown] edition="own"
+# #### 🟢 Document Your Observations
+#
+# Karpathy's first step also involves documenting what you discover. Write at least three specific observations about the images you explored in the next markdown cell. For each observation, briefly explain what you should investigate further.
+#
+# **Hint:** Be specific. *In the park*, for example:
+#
+# - Vague: "Dog images are different."
+# - Specific: "Many dog images are taken indoors, often with people in the background. This may not represent the park's outdoor cameras."
+#
+# Consider backgrounds, lighting, object sizes, distances, multiple objects, people, and unusual examples.
 
 # %% [markdown]
 # **My three observations** (double-click to edit):
@@ -249,7 +316,10 @@ Keep your observations in mind when evaluating your own dataset for the mini-pro
 """)
 
 
-# %% [markdown]
+# %% [markdown] edition="own"
+# *In the park:* many dog photos were taken indoors or on streets, often with people or leashes in the frame, and one photo in the sheep class showed ibexes.
+
+# %% [markdown] edition="teaching"
 #
 # #### 🟢 Dataset Suitability: How Suitable Are These Images for the Park?
 #
@@ -258,6 +328,14 @@ Keep your observations in mind when evaluating your own dataset for the mini-pro
 # **Question:**
 # Based on the images you explored, which animal classes seem least representative of the park's camera views, and why? Briefly justify your answer.
 #
+
+# %% [markdown] edition="own"
+# #### 🟢 Dataset Suitability: How Suitable Are These Images for Your Task?
+#
+# Think about where your model will be used: which camera, which setting, and how far from the objects.
+#
+# **Question:**
+# Based on the images you explored, which classes seem least representative of the images your model will see in use, and why? Briefly justify your answer.
 
 # %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
@@ -271,7 +349,12 @@ making their images somewhat closer to the park's camera views.
 """)
 
 
-# %% [markdown]
+# %% [markdown] edition="own"
+# ✍️ **Your answer** (double-click to edit):
+#
+# *In the park:* cats and dogs were the least representative, with indoor close-ups next to people or furniture, while the park's cameras are fixed, outdoors, and far from the animals.
+
+# %% [markdown] edition="teaching"
 #
 # #### 🟢 Annotations: What Does an Image Annotation Look Like?
 #
@@ -288,6 +371,22 @@ making their images somewhat closer to the park's camera views.
 # - What information does each type of annotation provide?
 # - How do bounding boxes and segmentation masks differ?
 # - Do the annotations correctly represent the animals in the image?
+
+# %% [markdown] edition="own"
+# #### 🟢 Annotations: What Does an Image Annotation Look Like?
+#
+# An image can have different types of annotations, such as class labels, bounding boxes, and segmentation masks. Your dataset has the ones you listed in `TASKS`.
+#
+# Let's visualize an example from your dataset and examine what information each annotation carries.
+#
+# **Explore the annotations**
+#
+# Run the next cell to visualize an image with its class label, and with its bounding boxes and segmentation masks if your dataset has them.
+#
+# **Observe:**
+# - What information does each type of annotation provide?
+# - If you have boxes or masks, how do they differ?
+# - Do the annotations correctly represent the objects in the image?
 
 # %%
 
@@ -458,6 +557,11 @@ some body parts are missing, and groups of animals may be annotated inconsistent
 """)
 
 
+# %% [markdown] edition="own"
+# ✍️ **Your answer** (double-click to edit):
+#
+# *In the park:* some masks extended beyond the animal, some body parts were missing, and groups of animals were annotated inconsistently.
+
 # %% [markdown]
 # #### 🔴 Image Classification: One Label per Image (Optional)
 #
@@ -478,3 +582,8 @@ when the goal is to locate or count individual animals.
 """)
 
 
+
+# %% [markdown] edition="own"
+# ✍️ **Your answer** (double-click to edit):
+#
+# *In the park:* some images labeled bird showed a tiny bird next to a large bear, so the label did not match the most prominent content.

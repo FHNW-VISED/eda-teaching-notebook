@@ -171,14 +171,14 @@ RESULTS["swap_in"] = {"source": dataset_source, "n_images": int(len(images)), "n
 # %% [markdown] edition="own"
 # ### After the lab · Read your results and answer the guiding questions
 #
-# Everything above runs in class. This block is for you to do afterwards, on your own dataset: it explains how
-# to read each check and ends with the seven guiding questions.
+# Everything above ran on your dataset. This block explains how to read the results and ends with the seven
+# guiding questions.
 
 # %% [markdown] edition="own"
 # 💡 How to read the ratio:
 #
 # - **2 or 3 to 1:** common and harmless if you watch the small class's recall.
-# - **10 to 1 and beyond:** accuracy hides the small class completely (Class Imbalance: Can High Accuracy Be Misleading?).
+# - **10 to 1 and beyond:** accuracy hides the small class completely (Class Imbalance: Which Mistake Is Expensive in Your Task?).
 # - **Always ask:** is the *expensive* class the small one?
 
 # %% [markdown] edition="own"
@@ -186,7 +186,7 @@ RESULTS["swap_in"] = {"source": dataset_source, "n_images": int(len(images)), "n
 #
 # - **One tight cluster of sizes:** one source.
 # - **A second cluster, or one class sitting apart:** a second source, and the model may learn the source
-#   instead of the animal.
+#   instead of the object.
 # - **Every file that is not RGB** is counted in the report card: decide whether to convert it or drop it.
 
 # %% [markdown] edition="own"
@@ -247,9 +247,9 @@ than the model will earn.</p>
 # %% [markdown] edition="own"
 # **Takeaway**
 #
-# - **When you get a new folder-per-class dataset** → **do** run the four checks (classes, sizes and modes,
-#   copies, split) before anything else; they take a few minutes.
-# - **When a check lists files** (not RGB, copy pairs, pairs across class folders) → **do** decide per file:
+# - **When you get a new dataset** → **do** run this notebook on it (look, count, measure, find copies, split)
+#   before anything else; it takes a few minutes.
+# - **When a check lists files** (not RGB, copy pairs, pairs across classes) → **do** decide per file:
 #   convert, keep one, or fix the label.
 # - **When you leave** → **do** download `data/cache/my_split.csv` (Colab deletes it) and bring it, with your
 #   answers to the guiding questions, to next week's training.

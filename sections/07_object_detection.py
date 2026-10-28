@@ -1,4 +1,4 @@
-# %% [markdown]
+# %% [markdown] edition="teaching"
 # ## Object Detection
 #
 # In image classification, a model predicts what is present in an image. But what if the park wants to count individual animals and determine where they are?
@@ -8,12 +8,39 @@
 # In this section, we explore how object size, position, crowding, and class imbalance affect an object detection dataset. We also examine the additional annotation effort required compared with image classification.
 #
 
-# %% [markdown]
+# %% [markdown] edition="own"
+# ## Object Detection
+#
+# In image classification, a model predicts what is present in an image. But what if you need to count individual objects and know where they are?
+#
+# This chapter runs only if `TASKS` includes `"detection"`, so its cells skip themselves when your labels have no boxes.
+#
+# Object detection extends classification by predicting a class label and a bounding box for each object. This allows us to investigate not only which objects appear, but also how many there are, where they are located, and how large they appear.
+#
+# In this section, we explore how object size, position, crowding, and class imbalance affect your object detection dataset. We also examine the additional annotation effort required compared with image classification.
+
+# %% [markdown] edition="teaching"
 # **From Labels to Bounding Boxes**
 #
 # Object detection datasets contain one annotation per object rather than one label per image. Each annotation specifies the object's class and bounding box.
 #
 # In our dataset, bounding boxes use the COCO format `[x, y, w, h]`, where `x` and `y` indicate the top-left corner and `w` and `h` specify the width and height in pixels.
+#
+# Unlike image classification, an image can contain multiple annotated objects, potentially belonging to different classes.
+#
+# We explore four characteristics of the object detection dataset:
+#
+# - **Class imbalance:** How are object instances distributed across classes?
+# - **Object size:** How large or small are the annotated objects?
+# - **Object position:** Where are objects located within images?
+# - **Crowding:** How many objects appear together, and how much do they overlap?
+
+# %% [markdown] edition="own"
+# **From Labels to Bounding Boxes**
+#
+# Object detection datasets contain one annotation per object, not one label per image. Each annotation specifies the object's class and bounding box.
+#
+# When you loaded your dataset, the notebook converted your boxes to the COCO format `[x, y, w, h]`, whatever format you stored them in. Here `x` and `y` indicate the top-left corner and `w` and `h` specify the width and height in pixels.
 #
 # Unlike image classification, an image can contain multiple annotated objects, potentially belonging to different classes.
 #
@@ -130,7 +157,7 @@ boxview_next_button.on_click(lambda b: boxview_change_page(1))
 display(widgets.HBox([boxview_previous, boxview_next_button, boxview_counter]), boxview_output)
 boxview_show_page()
 
-# %% [markdown]
+# %% [markdown] edition="teaching"
 # ### 🟢 Boxes per Class vs. Photos per Class
 #
 # In image classification, class distributions are typically counted by images. In object detection, we can also count individual objects. For example, one image containing 12 sheep contributes one image but 12 bounding boxes.
@@ -144,6 +171,25 @@ boxview_show_page()
 #
 # - Implement `count_boxes_per_class(annotations)` to return the number of bounding boxes per class.
 # - Run the validation and compare the resulting distribution with the image-level distribution from Class Distribution: Are All Animal Classes Equally Represented?
+#
+# **Observe and interpret:**
+# - Which classes change most in their relative frequency?
+# - Why might image-level and object-level class imbalance lead to different conclusions?
+
+# %% [markdown] edition="own"
+# ### 🟢 Boxes per Class vs. Photos per Class
+#
+# In image classification, class distributions are typically counted by images. In object detection, we can also count individual objects. For example, one image containing 12 objects contributes one image but 12 bounding boxes.
+#
+# **Before running the code:**
+# - Do you expect the class ranking to change when counting bounding boxes instead of images? Which class might increase the most?
+#
+# **Coding Exercise:**
+#
+# In this and subsequent coding exercises, you will implement small functions to explore the dataset. Complete the provided code cells and check your results. If you get stuck, you can reveal the reference solution. The notebook continues to work even if your implementation is incomplete.
+#
+# - Implement `count_boxes_per_class(annotations)` to return the number of bounding boxes per class.
+# - Run the validation and compare the resulting distribution with the image-level distribution from Class Distribution: Are All Classes Equally Represented?
 #
 # **Observe and interpret:**
 # - Which classes change most in their relative frequency?
@@ -235,6 +281,11 @@ Image-level counts describe how frequently classes appear in photos, whereas box
 </p>
 """)
 
+
+# %% [markdown] edition="own"
+# ✍️ **Your answer** (double-click to edit):
+#
+# *In the park:* bird and sheep moved up when counting boxes, and cat and dog moved down, because cats and dogs usually appear alone.
 
 # %% [markdown]
 # ### 🟢 Object Sizes: How Small Are the Animals?
@@ -468,6 +519,11 @@ Small objects are particularly challenging because they contain fewer pixels and
 """)
 
 
+# %% [markdown] edition="own"
+# ✍️ **Your answer** (double-click to edit):
+#
+# *In the park:* birds had the smallest boxes by a wide margin, while cats, dogs, and horses were mostly large.
+
 # %% [markdown]
 # ### 🟢 Object Positions: Where Are the Animals?
 #
@@ -538,6 +594,11 @@ However, the heatmaps alone do not establish how well the detector performs.
 </p>
 """)
 
+
+# %% [markdown] edition="own"
+# ✍️ **Your answer** (double-click to edit):
+#
+# *In the park:* box centers clustered near the middle of the images, and birds and sheep were spread more widely.
 
 # %% [markdown]
 # ### 🟢 Crowding: How Many Animals Appear Together?
@@ -732,6 +793,11 @@ callout("answer", "💡 Sample Answer", r"""
 """)
 
 
+# %% [markdown] edition="own"
+# ✍️ **Your answer** (double-click to edit):
+#
+# *In the park:* herd animals such as sheep and zebras had more boxes per image than cats or dogs, but a high count did not always mean the animals were packed together.
+
 # %% [markdown]
 # ### 🔴 Bounding Box Overlap: Understanding IoU (Optional)
 #
@@ -849,6 +915,11 @@ callout("answer", "💡 Sample Answer", r"""
 """)
 
 
+# %% [markdown] edition="own"
+# ✍️ **Your answer** (double-click to edit):
+#
+# *Look for:* the slider position where IoU drops to 0, and think of two boxes that overlap although the objects inside them do not touch.
+
 # %% [markdown]
 # ### 🔴 Crowding: Bounding Box Overlap Across Classes (Optional)
 #
@@ -962,6 +1033,11 @@ callout("answer", "💡 Sample Answer", r"""
 <p>Overlapping boxes make it harder to distinguish individual animals and assign accurate bounding boxes. This can lead to missed objects, inaccurate localization, or duplicate detections. The overlap statistics describe bounding boxes, not necessarily actual occlusion between animals.</p>
 """)
 
+
+# %% [markdown] edition="own"
+# ✍️ **Your answer** (double-click to edit):
+#
+# *Look for:* whether the class ranking changes between the number and the proportion of overlapping pairs. Images with many boxes also have many possible pairs.
 
 # %% [markdown]
 # ### 🟢 Bounding Box Quality: How Well Do the Boxes Fit?
@@ -1077,6 +1153,11 @@ callout("answer", "💡 Sample Answer", r"""
 <p>For very small animals, it is difficult to judge box accuracy. Partial visibility, occlusion, unusual poses, and unclear boundaries make annotation challenging. Inconsistent annotations can affect how accurately an object detector learns to localize animals.</p>
 """)
 
+
+# %% [markdown] edition="own"
+# ✍️ **Your answer** (double-click to edit):
+#
+# *In the park:* a cat wearing a hat had only its face boxed, and a cat's reflection on a car had no box at all.
 
 # %% [markdown] edition="teaching"
 # ### 🟢 Missing Annotations: Find the Missing Box

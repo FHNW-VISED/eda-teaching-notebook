@@ -15,6 +15,18 @@
 # *Inspired by Andrej Karpathy's [A Recipe for Training Neural Networks](https://karpathy.github.io/2019/04/25/recipe/), Step 1: Become one with the data.*
 #
 
+# %% [markdown] edition="own"
+# # Know Your Images
+# ## Exploring and Preparing Your Own Image Dataset
+#
+# Simone Bonato & Susanne Suter, FHNW
+#
+# This notebook is the companion of the class notebook *Know Your Images*. In class you explored the images of the Wildwood Farm Park; here you run the same analyses on your own project dataset. You load your images and labels once, and every cell after that reads your data. There are no Sample Answers: each task ends with a line for your own answer, and a short *In the park* note reminds you what the same cell showed in class.
+#
+# **Your goal:** Get to know your dataset well enough to explain what makes your task easy or difficult, and what must be fixed before training.
+#
+# *Inspired by Andrej Karpathy's [A Recipe for Training Neural Networks](https://karpathy.github.io/2019/04/25/recipe/), Step 1: Become one with the data.*
+
 # %% [markdown]
 # **A note about this notebook**
 #
@@ -92,6 +104,23 @@ HTML(r"""
 """)
 
 
+# %% edition="own"
+# @title How to Use This Notebook
+from IPython.display import HTML
+
+HTML(r"""
+<div class="callout" style="background:#F5F5F5;color:#374151;border-left:6px solid #9CA3AF;border-radius:6px;padding:12px 14px;line-height:1.5;font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;margin:2px 0;">
+<div style="font-weight:bold;">How to Use This Notebook</div>
+<ul style="margin:6px 0 0 0;padding-left:22px;">
+<li style="margin:2px 0;">This is the Own-Data Edition. It runs the activities from class on your own dataset.</li>
+<li style="margin:2px 0;">Load your dataset first, in the chapter <strong>Load Your Dataset</strong>. Every later cell reads it.</li>
+<li style="margin:2px 0;">The Object Detection chapter runs only if your labels have boxes, and the Semantic Segmentation chapter only if they have masks.</li>
+<li style="margin:2px 0;">Write your answer below each task. The <em>In the park</em> note tells you what to look for.</li>
+<li style="margin:2px 0;">The notebook runs in Google Colab. A CPU is sufficient for most activities, although computing image embeddings can take longer without a GPU.</li>
+</ul>
+</div>
+""")
+
 # %% [markdown]
 # ### Setup
 
@@ -101,6 +130,11 @@ HTML(r"""
 # >
 # > Continue reading while they execute. The last cell downloads the Play Dataset (~115 MB), which may take 1–2 minutes on the first run. Subsequent runs use the cache.
 #
+
+# %% [markdown] edition="own"
+# > ▶️ **Run the setup cells below, in order.**
+# >
+# > They load the notebook's tools. Your own images are read afterwards, in the chapter **Load Your Dataset**.
 
 # %%
 # @title Setup (run me first) { display-mode: "form" }

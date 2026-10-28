@@ -56,3 +56,22 @@ def test_unknown_edition_stops_the_build(tmp_path):
 def test_repo_build_has_both_notebooks():
     for name in build.EDITIONS.values():
         assert (ROOT / name).exists(), f"run `just build`: {name} is missing"
+
+
+def test_own_wording_swaps_apply_once_and_only_to_own(tmp_path):
+    sections = tmp_path / "sections"
+    sections.mkdir()
+    (sections / "00_a.py").write_text('# %% [markdown]\n# Count every animal.\n\n# %% edition="teaching"\nx = 1\n')
+    (sections / "own_wording.tsv").write_text("section\told\tnew\n00_a.py\tevery animal\tevery object\n")
+    outs = build.build_all(sections=sections, out_dir=tmp_path)
+    assert _sources(outs["teaching"])[0] == "Count every animal."
+    assert _sources(outs["own"])[0] == "Count every object."
+
+
+def test_own_wording_swap_that_no_longer_matches_stops_the_build(tmp_path):
+    sections = tmp_path / "sections"
+    sections.mkdir()
+    (sections / "00_a.py").write_text("# %% [markdown]\n# Count every sheep.\n")
+    (sections / "own_wording.tsv").write_text("section\told\tnew\n00_a.py\tevery animal\tevery object\n")
+    with pytest.raises(SystemExit, match="own_wording"):
+        build.build_all(sections=sections, out_dir=tmp_path)

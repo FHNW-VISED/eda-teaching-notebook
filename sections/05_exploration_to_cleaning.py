@@ -41,6 +41,11 @@ decisions, not automatic removal of every unusual or similar image.</p>
 """)
 
 
+# %% [markdown] edition="own"
+# ✍️ **Your answer** (double-click to edit):
+#
+# *In the park:* the plan was to remove unreadable images and confirmed duplicates, keeping one image per group, to review near-duplicates and suspicious labels, and to keep unusual images.
+
 # %%
 # @title 📘 Image Dataset Quality Checklist { display-mode: "form" }
 callout("theory", "📘 Image Dataset Quality Checklist", r"""

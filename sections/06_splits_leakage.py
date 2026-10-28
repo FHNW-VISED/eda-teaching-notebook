@@ -110,6 +110,11 @@ callout("answer", "💡 Sample Answer", r"""
 """)
 
 
+# %% [markdown] edition="own"
+# ✍️ **Your answer** (double-click to edit):
+#
+# *Look for:* your smallest class. A few images more or less change its share the most, and stratification keeps it close but not exact, because image counts are whole numbers.
+
 # %% [markdown]
 # ### 🟢 Cross-Validation: How Do We Choose Validation Sets?
 #
@@ -250,6 +255,11 @@ callout("answer", "💡 Sample Answer", r"""
 """)
 
 
+# %% [markdown] edition="own"
+# ✍️ **Your answer** (double-click to edit):
+#
+# *Look for:* the strategy that holds out a whole camera. It is the only one that tests a camera the model has never seen.
+
 # %% [markdown]
 # ### 🔴 Cross-Validation in Practice (Optional)
 #
@@ -316,6 +326,11 @@ callout("answer", "💡 Sample Answer", r"""
 """)
 
 
+# %% [markdown] edition="own"
+# ✍️ **Your answer** (double-click to edit):
+#
+# *In the park:* k-fold and stratified k-fold each needed 5 training runs, and leave-one-out needed one run per image, 40 in the example subset.
+
 # %% [markdown] edition="teaching"
 # ### Group-Based Splitting: The Trail-Camera Dataset
 #
@@ -324,6 +339,20 @@ callout("answer", "💡 Sample Answer", r"""
 # We use a subset of the [Caltech Camera Traps (CCT20) dataset](https://lila.science/datasets/caltech-camera-traps) containing images from eight cameras and five animal classes: opossum, raccoon, coyote, bobcat, and rabbit.
 #
 # The following cells load the dataset and display example image bursts. The first run may take a few minutes to download and resize the images.
+
+# %% [markdown] edition="own"
+# ### 🟢 Group-Based Splitting: What Ties Your Images Together?
+#
+# Some images are closely related: several shots from the same camera, the same session, the same patient, or the same burst. If related images end up in both the training and the test set, the test score looks better than the model will be. The box below explains the strategies.
+#
+# **Observe and interpret:**
+# - What ties your images together (same camera, same session, same patient, same burst)?
+# - Which split keeps those groups apart?
+# - Will your model be used on the same cameras or sources it was trained on, or on new ones?
+#
+# ✍️ **Your answer** (double-click to edit):
+#
+# *In the park:* the trail cameras took bursts of the same animal, so a random split put close siblings of test images into training, and grouping by camera left 0 cameras shared between the sets.
 
 # %%
 # @title 📘 Group-Based Splitting and Data Leakage { display-mode: "form" }

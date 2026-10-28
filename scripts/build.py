@@ -242,6 +242,8 @@ def read_cells(sections: Path = SECTIONS) -> list[nbformat.NotebookNode]:
             edition = cell.metadata.get("edition")
             if edition is not None and edition not in EDITIONS:
                 sys.exit(f"{where}: unknown edition '{edition}' (known: {', '.join(EDITIONS)}; none = both)")
+            if cell.cell_type == "code":  # inserting a cell after a code cell can leave a trailing blank line
+                cell.source = cell.source.rstrip()
             cell = convert_callout(cell, where)
             prerender_callout(cell, callout)
             if edition is not None:
@@ -254,6 +256,34 @@ def read_cells(sections: Path = SECTIONS) -> list[nbformat.NotebookNode]:
                 cell.metadata["cellView"] = "form"
             cells.append(cell)
     return cells
+
+
+def own_wording(sections: Path) -> list[tuple[str, str, str]]:
+    """(section file, old, new) rows of sections/own_wording.tsv: words of shared cells that the Own-Data
+    Edition says differently ("animal" → "object"). Kept as swaps, not copied cells, so her text stays one source."""
+    path = sections / "own_wording.tsv"
+    if not path.exists():
+        return []
+    rows = [line.split("\t") for line in path.read_text().splitlines()[1:] if line.strip()]
+    if any(len(r) != 3 for r in rows):
+        sys.exit("sections/own_wording.tsv: every row needs three tab-separated columns: section, old, new")
+    return [(r[0], r[1], r[2]) for r in rows]
+
+
+def apply_own_wording(cells: list[nbformat.NotebookNode], sections: Path) -> list[nbformat.NotebookNode]:
+    """Copies of the Own-Data cells with the swaps applied; every swap must match exactly once in its section."""
+    swaps = own_wording(sections)
+    out = [c if c.metadata.get("edition") == "teaching" else nbformat.from_dict(c) for c in cells]
+    for section, old, new in swaps:
+        stem = section.removesuffix(".py")
+        hits = [c for c in out if c.metadata.get("section") == stem and c.metadata.get("edition") != "teaching"
+                and old in c.source]
+        count = sum(c.source.count(old) for c in hits)
+        if count != 1:
+            sys.exit(f"sections/own_wording.tsv: '{old}' occurs {count} times in the Own-Data cells of {section} "
+                     "(must be once). Her text changed? Update or delete the row.")
+        hits[0].source = hits[0].source.replace(old, new)
+    return out
 
 
 def write_edition(cells: list[nbformat.NotebookNode], edition: str, out: Path) -> Path:
@@ -269,7 +299,8 @@ def write_edition(cells: list[nbformat.NotebookNode], edition: str, out: Path) -
 
 def build_all(sections: Path = SECTIONS, out_dir: Path = ROOT) -> dict[str, Path]:
     cells = read_cells(sections)
-    return {ed: write_edition(cells, ed, out_dir / name) for ed, name in EDITIONS.items()}
+    per_edition = {"teaching": cells, "own": apply_own_wording(cells, sections)}
+    return {ed: write_edition(per_edition[ed], ed, out_dir / name) for ed, name in EDITIONS.items()}
 
 
 def build() -> Path:

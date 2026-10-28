@@ -1,4 +1,4 @@
-# %% [markdown]
+# %% [markdown] edition="teaching"
 #
 # ## Semantic Segmentation: Which Pixels Belong to the Animals?
 #
@@ -13,7 +13,19 @@
 #
 #
 
-# %%
+# %% [markdown] edition="own"
+# ## Semantic Segmentation: Which Pixels Belong to the Objects?
+#
+# So far, we have explored two ways of describing objects in images:
+#
+# - **Image classification:** Which class is in the image?
+# - **Object detection:** Where are the individual objects, represented by bounding boxes?
+#
+# *Semantic segmentation* goes one step further: it assigns a class to every pixel, distinguishing object areas from the background.
+#
+# This chapter runs only if `TASKS` includes `"segmentation"`, so its cells skip themselves when your labels have no masks.
+
+# %% edition="teaching"
 # @title 📘 Semantic Segmentation: Masks and Pixels { display-mode: "form" }
 callout("theory", "📘 Semantic Segmentation: Masks and Pixels", r"""
 <ul>
@@ -33,6 +45,27 @@ We can combine these masks to obtain pixel-level class labels for semantic segme
 </p>
 """)
 
+
+# %% edition="own"
+# @title 📘 Semantic Segmentation: Masks and Pixels { display-mode: "form" }
+callout("theory", "📘 Semantic Segmentation: Masks and Pixels", r"""
+<ul>
+<li><strong>Binary mask:</strong> A two-dimensional array indicating which pixels
+belong to an object (1) and which do not (0).</li>
+
+<li><strong>Semantic segmentation:</strong> Assigns a class label to every pixel.
+Pixels that do not belong to any object are labeled as <em>background</em>.</li>
+
+<li><strong>Instance segmentation:</strong> Identifies individual objects using
+separate masks, even when they belong to the same class.</li>
+</ul>
+
+<p style="margin-bottom:0;">
+When you loaded your dataset, the notebook turned your labels into one mask per object.
+We combine these masks to obtain pixel-level class labels for semantic segmentation.
+PNG label masks store classes, not objects, so touching objects of the same class count as one object here.
+</p>
+""")
 
 # %% [markdown]
 # ### 🟢 Exploring Segmentation Masks
@@ -263,7 +296,12 @@ to segment accurately.</li>
 """)
 
 
-# %% [markdown]
+# %% [markdown] edition="own"
+# ✍️ **Your answer** (double-click to edit):
+#
+# *In the park:* the share of animal pixels varied a lot between images, and thin parts such as legs, tails, and beaks were the hardest to outline.
+
+# %% [markdown] edition="teaching"
 # ### 🟢 Pixel-Level Class Imbalance
 #
 # In semantic segmentation, class distribution is measured by pixels rather than images or objects.
@@ -271,6 +309,23 @@ to segment accurately.</li>
 # **Before running the code:**
 # - Do you expect background pixels to make up a quarter, half, or most of the dataset?
 # - Do you expect birds to be frequent or rare when measured by pixels?
+#
+# **Explore:**
+# - Compare class distributions measured by images, bounding boxes, and pixels, including background.
+#
+# **Observe and interpret:**
+# - How dominant is the background?
+# - Which classes change most in relative frequency when counting pixels instead of images or objects?
+# - How might these differences affect the training and evaluation of a segmentation model?
+
+# %% [markdown] edition="own"
+# ### 🟢 Pixel-Level Class Imbalance
+#
+# In semantic segmentation, class distribution is measured by pixels, not by images or objects.
+#
+# **Before running the code:**
+# - Do you expect background pixels to make up a quarter, half, or most of your dataset?
+# - Do you expect your smallest objects to be frequent or rare when measured by pixels?
 #
 # **Explore:**
 # - Compare class distributions measured by images, bounding boxes, and pixels, including background.
@@ -450,7 +505,12 @@ pixel-wise loss.</li>
 """)
 
 
-# %% [markdown]
+# %% [markdown] edition="own"
+# ✍️ **Your answer** (double-click to edit):
+#
+# *In the park:* about 85% of all pixels were background, and birds made up about 1% of the pixels despite representing 25% of the bounding boxes.
+
+# %% [markdown] edition="teaching"
 # ### 🟢 Mask Size, Shape, and Fine Structures
 #
 # A segmentation mask describes the pixels occupied by an animal. Its **fill ratio** measures how much of its bounding box is covered by the mask:
@@ -476,6 +536,35 @@ pixel-wise loss.</li>
 # - How do mask sizes and fill ratios differ between classes?
 # - What characteristics of an animal might explain a low fill ratio?
 # - Why can two animals with similar bounding box sizes have very different mask areas?
+# - How does excluding small masks change the frequency of thin regions, and why?
+# - What challenges might thin structures create when resizing masks?
+
+# %% [markdown] edition="own"
+# ### 🟢 Mask Size, Shape, and Fine Structures
+#
+# A segmentation mask describes the pixels occupied by an object. Its **fill ratio** measures how much of its bounding box is covered by the mask:
+#
+# $$
+# \text{Fill ratio} = \frac{\text{Mask area}}{\text{Bounding box area}}
+# $$
+#
+# Masks also reveal fine structures, such as thin parts, narrow edges, and small details, which may be difficult to preserve when images are resized.
+#
+# **Before running the code:**
+# - What proportion of its bounding box do you expect a typical object to fill: about 25%, 50%, or 80%?
+# - Which class do you expect to have the lowest fill ratio?
+# - Which classes might have the most masks containing thin structures?
+#
+# **Explore:**
+# - Compare the distributions of mask sizes and fill ratios across classes.
+# - Inspect examples with low, typical, and high fill ratios.
+# - Compare the proportion of masks with thin regions across classes, including and excluding small masks.
+# - Inspect examples with particularly thin regions.
+#
+# **Observe and interpret:**
+# - How do mask sizes and fill ratios differ between classes?
+# - What characteristics of an object might explain a low fill ratio?
+# - Why can two objects with similar bounding box sizes have very different mask areas?
 # - How does excluding small masks change the frequency of thin regions, and why?
 # - What challenges might thin structures create when resizing masks?
 
@@ -684,7 +773,12 @@ helps distinguish small-object effects from genuinely thin structures.</p>
 """)
 
 
-# %% [markdown]
+# %% [markdown] edition="own"
+# ✍️ **Your answer** (double-click to edit):
+#
+# *In the park:* median fill ratios ranged from about 44% (birds) to 57% (cats), and 67% of bird masks had thin regions, falling to 14% once small masks were excluded.
+
+# %% [markdown] edition="teaching"
 # ### 🔴 Where Are the Animal Pixels? (Optional)
 #
 # Segmentation masks reveal not only how much of an image an animal occupies, but also where its pixels are located. By averaging masks across images, we can identify spatial patterns in the dataset.
@@ -700,6 +794,23 @@ helps distinguish small-object effects from genuinely thin structures.</p>
 # - Where are animal pixels concentrated, and how do the patterns differ between classes?
 # - What might explain these patterns?
 # - How representative are these spatial distributions of images captured by fixed cameras at the Wildwood Farm Park?
+
+# %% [markdown] edition="own"
+# ### 🔴 Where Are the Object Pixels? (Optional)
+#
+# Segmentation masks reveal not only how much of an image an object occupies, but also where its pixels are located. By averaging masks across images, we can identify spatial patterns in your dataset.
+#
+# **Before running the code:**
+# - Predict where object pixels are most likely to occur in an image. Do you expect differences between classes?
+#
+# **Explore:**
+# - Examine the heatmaps showing the average mask for each class. All masks are resized to a common grid before averaging.
+# - Compare the spatial distributions and the average proportion of object pixels across classes.
+#
+# **Observe and interpret:**
+# - Where are object pixels concentrated, and how do the patterns differ between classes?
+# - What might explain these patterns?
+# - How representative are these spatial distributions of the images your model will see in use?
 
 # %%
 # @title 🔎 Explore Spatial Distributions of Animal Pixels { display-mode: "form" }
@@ -756,6 +867,11 @@ always appear. Averaging also hides variation between images.</p>
 """)
 
 
+# %% [markdown] edition="own"
+# ✍️ **Your answer** (double-click to edit):
+#
+# *In the park:* animal pixels were concentrated near the image center for every class, while the park's fixed cameras may see animals anywhere in the frame.
+
 # %% [markdown] edition="teaching"
 # ### 🔴 Mask Quality: Finding Annotation Errors (Optional)
 #
@@ -777,6 +893,25 @@ always appear. Averaging also hides variation between images.</p>
 # - Which checks detect which types of errors, and why?
 # - Which errors are difficult to detect automatically?
 # - Why might a valid COCO mask be flagged as suspicious?
+
+# %% [markdown] edition="own"
+# ### 🔴 Mask Quality: Which of Your Masks Look Suspicious? (Optional)
+#
+# Segmentation masks can contain annotation errors that are hard to see when you inspect images one by one. Five automated checks help you decide which masks to look at first.
+#
+# **Explore:**
+# 1. Study the five types of annotation errors and the five quality checks in the next two figures.
+# 2. Run the five checks on your masks in 🔎 Detect Suspicious Segmentation Masks.
+# 3. Inspect the strongest suspects one by one.
+#
+# **Observe and interpret:**
+# - Which checks flag the most masks in your dataset?
+# - For each suspect you inspected, is it an annotation error or a valid mask of an unusual object?
+# - Which masks would you fix, and which would you keep?
+#
+# ✍️ **Your answer** (double-click to edit):
+#
+# *In the park:* besides the planted errors, the checks flagged original COCO masks that were valid but unusual, for example because of occlusion or complex shapes, so every suspect needed a look.
 
 # %%
 # @title Helpers: Mask Quality Checks { display-mode: "form" }
