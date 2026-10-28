@@ -220,7 +220,7 @@ fig.tight_layout()
 display(fig)
 plt.close(fig)
 
-# %%
+# %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <p>
@@ -450,7 +450,7 @@ size_next_button.on_click(lambda b: size_change_page(1))
 display(widgets.HBox([size_previous, size_next_button, size_counter]), size_output)
 size_show_page()
 
-# %%
+# %% edition="teaching"
 # @title 💡 Sample Answer: Object Sizes { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <p>
@@ -512,7 +512,7 @@ fig.tight_layout()
 display(fig)
 plt.close(fig)
 
-# %%
+# %% edition="teaching"
 # @title 💡 Sample Answer: Object Positions { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <p>
@@ -711,7 +711,7 @@ display(
 
 crowd_show_page()
 
-# %%
+# %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <p>Images of herd animals, such as sheep or zebras, may contain more annotated objects than images of cats or dogs. Images with many objects often show animals close together, but some animals may still be clearly separated.</p>
@@ -828,7 +828,7 @@ overlap_output = widgets.interactive_output(
 
 display(widgets.VBox([x_slider, y_slider]), overlap_output)
 
-# %%
+# %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <p>IoU increases as the boxes overlap more strongly, reaching 1 when they are identical. When the boxes move apart, IoU decreases and becomes 0 when they no longer intersect.</p>
@@ -941,7 +941,7 @@ display(
     ].round(1)
 )
 
-# %%
+# %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <p>Classes with many animals per image may have more overlapping box pairs. However, the ranking can change when comparing the proportion of overlapping pairs, because images with more boxes also have more possible pairs.</p>
@@ -1054,7 +1054,7 @@ display(
 
 update_quality_images()
 
-# %%
+# %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <p>Bounding boxes do not always fit tightly around animals. For example, cats with long tails may require large boxes even though much of the box contains background. In another image, a cat wearing a hat has only its face annotated rather than its entire body.</p>
@@ -1063,7 +1063,7 @@ callout("answer", "💡 Sample Answer", r"""
 """)
 
 
-# %% [markdown]
+# %% [markdown] edition="teaching"
 # ### 🟢 Missing Annotations: Find the Missing Box
 #
 # Bounding-box annotations are not always complete. An annotator may overlook an animal, especially in crowded scenes. During training, an unannotated animal may then be treated as background.
@@ -1085,7 +1085,7 @@ callout("answer", "💡 Sample Answer", r"""
 # - Why might this annotation error be difficult to notice?
 # - How could missing annotations affect the training and evaluation of an object detector?
 
-# %%
+# %% edition="teaching"
 # @title 🔎 Simulate and Detect a Missing Annotation { display-mode: "form" }
 
 # Simulate an annotation error by removing exactly one bounding box
@@ -1162,7 +1162,7 @@ display(
     })
 )
 
-# %%
+# %% edition="teaching"
 # @title 🔎 Inspect Missing Annotations { display-mode: "form" }
 
 missing_image_selector = widgets.Dropdown(
@@ -1201,7 +1201,7 @@ missing_image_selector.observe(missing_inspect, names="value")
 display(missing_image_selector, missing_output)
 missing_inspect()
 
-# %%
+# %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <p><strong>Finding the error:</strong> Comparing the recorded number of animals with the remaining bounding boxes reveals the affected image. Inspecting that image shows an animal without a bounding box.</p>

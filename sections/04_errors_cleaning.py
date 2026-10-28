@@ -235,7 +235,7 @@ display(dup_output)
 
 dup_update_browser()
 
-# %%
+# %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <ul style="margin:6px 0 0 0;padding-left:22px;">
@@ -289,7 +289,7 @@ display(fig)
 plt.close(fig)
 
 
-# %%
+# %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <ul style="margin:6px 0 0 0;padding-left:22px;">
@@ -407,7 +407,7 @@ fig.tight_layout()
 display(fig)
 plt.close(fig)
 
-# %%
+# %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <ul style="margin:6px 0 0 0;padding-left:22px;">
@@ -419,7 +419,7 @@ callout("answer", "💡 Sample Answer", r"""
 """)
 
 
-# %% [markdown]
+# %% [markdown] edition="teaching"
 # ### 🔴 Detecting Flipped and Rotated Duplicates (Optional)
 #
 # Standard perceptual hashing can identify visually similar images, but may miss flipped or rotated copies.
@@ -442,7 +442,7 @@ callout("answer", "💡 Sample Answer", r"""
 # **Go Deeper (optional):**
 # - What are the computational costs and potential drawbacks of checking multiple transformations?
 
-# %%
+# %% edition="teaching"
 # @title 🔎 Generate a Dataset with Known Duplicates { display-mode: "form" }
 DUPLICATE_CARD_DIR = DATA_DIR / "cache" / "hunt5"
 N_CARD_ORIGINALS = 12 if SMOKE else 40  # distinct photos on the card (N-014: fewer in smoke mode)
@@ -567,7 +567,7 @@ def score_hunt(found: pd.DataFrame, key: list[dict]) -> int:
     return sum(frozenset((k["copy"], k["source"])) in pairs for k in key)
 
 
-# %%
+# %% edition="teaching"
 # @title 🔎 Compare Duplicate Detection Methods { display-mode: "form" }
 plain = find_copies(hunt_files, threshold=PAIR_THRESHOLD, use_variants=False)
 variant = find_copies(hunt_files, threshold=PAIR_THRESHOLD, use_variants=True)
@@ -576,7 +576,7 @@ print(f"Ground truth of intentionally added duplicates:\t{len(duplicate_key)}")
 print(f"MD5 + standard pHash detected:\t\t\t{score_hunt(plain, duplicate_key)}")
 print(f"MD5 + transformation-aware pHash detected:\t{score_hunt(variant, duplicate_key)}")
 
-# %%
+# %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
   <ul>
@@ -654,7 +654,7 @@ fig.subplots_adjust(bottom=0.30, top=0.82, wspace=0.12)
 display(fig)
 plt.close(fig)
 
-# %%
+# %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
   <ul>
@@ -739,7 +739,7 @@ _next.on_click(lambda _: _navigate(1))
 display(widgets.HBox([_prev, _next]), _out)
 _show_class()
 
-# %%
+# %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
   <ul>
@@ -1142,7 +1142,7 @@ for c in CLASSES:
     values = values[np.triu_indices(len(idx), k=1)]
     print(f"{c:8s} median similarity: {np.median(values):.3f}")
 
-# %%
+# %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <ul>

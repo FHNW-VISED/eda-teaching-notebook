@@ -241,7 +241,7 @@ image_stats[STAT_COLUMNS].agg(["min", "median", "mean", "max"]).T.round(2)
 # @title 🔎 Inspect Images with Minimum, Median, and Maximum Property Values { display-mode: "form" }
 show_min_median_max(image_stats, STAT_COLUMNS)
 
-# %%
+# %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <ul style="margin:6px 0 0 0;padding-left:22px;">
@@ -322,7 +322,7 @@ fig.tight_layout()
 display(fig)
 plt.close(fig)
 
-# %%
+# %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <ul style="margin:6px 0 0 0;padding-left:22px;">
@@ -435,7 +435,7 @@ fig.text(
 display(fig)
 plt.close(fig)
 
-# %%
+# %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <ul style="margin:6px 0 0 0;padding-left:22px;">
@@ -477,7 +477,7 @@ N_IMAGES = 5 # @param {type:"slider", min:1, max:5, step:1}
 
 show_extremes(image_stats, STAT_TO_SHOW, N_IMAGES)
 
-# %%
+# %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <ul style="margin:6px 0 0 0;padding-left:22px;">
@@ -524,7 +524,7 @@ fig.tight_layout()
 display(fig)
 plt.close(fig)
 
-# %%
+# %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <ul style="margin:6px 0 0 0;padding-left:22px;">
@@ -593,7 +593,7 @@ fig.tight_layout()
 display(fig)
 plt.close(fig)
 
-# %%
+# %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <ul style="margin:6px 0 0 0;padding-left:22px;">
@@ -648,7 +648,7 @@ N_CROWDED = 3 if SMOKE else 6  # how many crowded photos to show (N-014)
 _crowded = images.sort_values(["n_objects", "id"], ascending=[False, True]).head(N_CROWDED)
 show_rows(_crowded, "the most crowded images", lambda r: f"{r['n_objects']} × {r['class']}", cols=N_CROWDED)
 
-# %%
+# %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <ul style="margin:6px 0 0 0;padding-left:22px;">
@@ -663,7 +663,7 @@ callout("answer", "💡 Sample Answer", r"""
 """)
 
 
-# %%
+# %% edition="teaching"
 # @title 📘 Labeling Strategies: One Label or Multiple Animals? { display-mode: "form" }
 callout("theory", "📘 Labeling Strategies: One Label or Multiple Animals?", r"""
   <ul style="margin:6px 0;padding-left:22px;">
@@ -678,7 +678,7 @@ callout("theory", "📘 Labeling Strategies: One Label or Multiple Animals?", r"
 """)
 
 
-# %% [markdown]
+# %% [markdown] edition="teaching"
 # #### 🔴 Class Imbalance: Can High Accuracy Be Misleading? (Optional)
 #
 # Imagine a camera monitoring a sheep paddock. Most images contain only sheep, while dogs appear rarely. A rule that always predicts the most common class might achieve high accuracy without detecting any dogs.
@@ -698,7 +698,7 @@ callout("theory", "📘 Labeling Strategies: One Label or Multiple Animals?", r"
 # - How does the proportion of dog images affect accuracy and dog recall?
 # - Why is accuracy alone insufficient for evaluating the park's dog alert?
 
-# %%
+# %% edition="teaching"
 # @title 🔎 Explore Accuracy and Dog Recall Under Class Imbalance { display-mode: "form" }
 
 DOG_SHARE = 0.02 # @param {type:"slider", min:0.01, max:0.2, step:0.01}
@@ -721,7 +721,7 @@ print(f"\nRule B — Paddock camera ({DOG_SHARE:.0%} dog images, always 'no dog'
 print(f"  Accuracy:   {_accuracy_b:.1%}")
 print(f"  Dog recall: {_dog_recall_b:.1%}")
 
-# %%
+# %% edition="teaching"
 # @title 🔎 See How the Rule Classifies Real Images { display-mode: "form" }
 
 # The same day in miniature: 12 real photos, a share DOG_SHARE of them dogs, the rest sheep.
@@ -763,7 +763,7 @@ print(
     "The dog-in-the-paddock alert never fires."
 )
 
-# %%
+# %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <ul style="margin:6px 0 0 0;padding-left:22px;">

@@ -1,11 +1,11 @@
-# %% [markdown]
+# %% [markdown] edition="teaching"
 # ## Meet the Park: Explore Your Dataset
 #
 # Wildwood Farm Park wants to monitor animals across several enclosures using fixed outdoor cameras. The park has sheep and horses in its paddocks, birds near the aviary pond, zebras in the savanna area, and cats and dogs around the visitor yard.
 #
 # The park ranger wants to use computer vision for three different tasks:
 
-# %%
+# %% edition="teaching"
 # @title 📘 Computer Vision Tasks { display-mode: "form" }
 callout("theory", "📘 Three Computer Vision Tasks", r"""
 <ol style="margin:6px 0 0 0;padding-left:22px;">
@@ -16,7 +16,7 @@ callout("theory", "📘 Three Computer Vision Tasks", r"""
 """)
 
 
-# %% [markdown]
+# %% [markdown] edition="teaching"
 # The park does not have its own training data yet. Before collecting and annotating new images, the park ranger should ask: Does a suitable dataset already exist, and can we reuse it?
 #
 # To investigate this question, we'll use the Wildwood animal dataset, a subset of the [COCO 2017 Dataset](https://cocodataset.org/) containing images of six animal classes: cats, dogs, sheep, horses, birds, and zebras.
@@ -221,7 +221,7 @@ display(
 # 2. …
 # 3. …
 
-# %%
+# %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <p style="margin:6px 0 0 0;">
@@ -254,7 +254,7 @@ Keep your observations in mind when evaluating your own dataset for the mini-pro
 # Based on the images you explored, which animal classes seem least representative of the park's camera views, and why? Briefly justify your answer.
 #
 
-# %%
+# %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <p style="margin:6px 0 0 0;">
@@ -436,7 +436,7 @@ display(
 ann_show_image(0)
 
 
-# %%
+# %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <p style="margin:6px 0 0 0;">
@@ -454,7 +454,7 @@ some body parts are missing, and groups of animals may be annotated inconsistent
 #
 # Image classification assigns one label to an entire image, even if it contains multiple animals or different classes. What information is lost, and when might this become a problem?
 
-# %%
+# %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <p style="margin:6px 0 0 0;">

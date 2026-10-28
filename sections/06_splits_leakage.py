@@ -94,7 +94,7 @@ print(f"  random split: {_rel['random · test'].max():.0f} ({_rel['random · tes
 RESULTS["split_drift_random_pp"] = float(_drift["random · test"].max())
 RESULTS["split_drift_stratified_pp"] = float(_drift["stratified · test"].max())
 
-# %%
+# %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <ul>
@@ -233,7 +233,7 @@ fig.tight_layout()
 display(fig)
 plt.close(fig)
 
-# %%
+# %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <ul>
@@ -300,7 +300,7 @@ cv_rows = [
 
 display(pd.DataFrame(cv_rows))
 
-# %%
+# %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <ul>
@@ -312,7 +312,7 @@ callout("answer", "💡 Sample Answer", r"""
 """)
 
 
-# %% [markdown]
+# %% [markdown] edition="teaching"
 # ### Group-Based Splitting: The Trail-Camera Dataset
 #
 # The farm park has installed motion-triggered cameras in its woodland reserve. Each camera can capture several images of the same animal within a short period, producing bursts of closely related images (a *burst*).
@@ -345,7 +345,7 @@ The <strong>sibling rate</strong> measures the percentage of test images that ha
 """)
 
 
-# %%
+# %% edition="teaching"
 # @title Helpers: Trail Cameras { display-mode: "form" }
 CCT_DIR = DATA_DIR / "cache" / "cct20"
 CCT_SIDE = 512
@@ -448,7 +448,7 @@ def show_bursts(bursts: list[pd.DataFrame], size: int = 256, show_boxes: bool = 
     plt.show()
 
 
-# %%
+# %% edition="teaching"
 # @title 🔎 Explore Trail-Camera Image Bursts { display-mode: "form" }
 
 cct_all = pd.read_csv(fetch_manifest("cct20_slice.csv"))
@@ -510,7 +510,7 @@ burst_controls = widgets.HBox([burst_prev_btn, burst_next_btn, burst_counter])
 display(widgets.VBox([burst_box_toggle, burst_controls, burst_output]))
 burst_update_browser()
 
-# %% [markdown]
+# %% [markdown] edition="teaching"
 # #### 🟢 Splitting Strategies: What Does Grouping Change?
 #
 # Different splitting strategies determine which images can appear together in training and test sets. The appropriate strategy depends on what the model should generalize to.
@@ -531,7 +531,7 @@ burst_update_browser()
 # **Go Deeper (optional):**
 # - Which splitting strategy would you choose for a model deployed at existing cameras versus new camera locations? Justify your choice.
 
-# %%
+# %% edition="teaching"
 # @title 🔎 Explore Leakage Across Splitting Strategies { display-mode: "form" }
 
 split_strategy = widgets.Dropdown(
@@ -630,7 +630,7 @@ split_box_toggle.observe(split_update, names="value")
 display(widgets.HBox([split_strategy, split_seed, split_box_toggle]), split_output)
 split_update()
 
-# %%
+# %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <ul>
@@ -650,10 +650,10 @@ Group-based splitting may produce a test share different from 20% because entire
 """)
 
 
-# %% [markdown]
+# %% [markdown] edition="teaching"
 # ### 🔴 Splitting for Object Detection and Segmentation (Optional)
 
-# %%
+# %% edition="teaching"
 # @title 🔴 Splitting for Object Detection and Segmentation { display-mode: "form" }
 
 mcq_question = widgets.HTML(

@@ -243,7 +243,7 @@ display(
 maskview_show_page()
 
 
-# %%
+# %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <ul>
@@ -427,7 +427,7 @@ display(fig)
 plt.close(fig)
 
 
-# %%
+# %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <ul>
@@ -640,7 +640,7 @@ show_masks(images_by_id.loc[list(_most_thin["image_id"])].reset_index(), masks,
            f"the images with the most thin pixels (dark = narrower than {THIN_PX} px)", mark_thin=True,
            cols=N_THIN_SHOW)
 
-# %%
+# %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <ul>
@@ -721,7 +721,7 @@ fig.tight_layout()
 display(fig)
 plt.close(fig)
 
-# %%
+# %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <ul>
@@ -743,7 +743,7 @@ always appear. Averaging also hides variation between images.</p>
 """)
 
 
-# %% [markdown]
+# %% [markdown] edition="teaching"
 # ### 🔴 Mask Quality: Finding Annotation Errors (Optional)
 #
 # Segmentation masks can contain annotation errors that are difficult to identify by inspecting images individually. In this activity, we deliberately introduce five types of errors into copies of existing COCO masks. The modified annotations are stored in `park_masks`; the original `masks` remain unchanged.
@@ -766,23 +766,12 @@ always appear. Averaging also hides variation between images.</p>
 # - Why might a valid COCO mask be flagged as suspicious?
 
 # %%
-# @title Helpers: Simulate Mask Annotation Errors { display-mode: "form" }
-
-MASK_ERROR_KINDS = ["another animal", "chunk missing", "shifted", "swollen", "crude polygon"]
-SHIFT_PX = 15
+# @title Helpers: Mask Quality Checks { display-mode: "form" }
 BOX_IOU_MIN = 0.9  # check 1: suspect when the mask's own box overlaps the annotated box less than this
 FILL_RANGE = (0.15, 0.95)  # suspect when mask area / box area is outside this range
 MAX_PIECES = 3  # suspect with more separate pieces than this
 MAX_HOLES = 0  # suspect with more holes than this
 SOLIDITY_MAX = 0.97  # suspect when the mask fills more than this share of its rubber band (no dents at all)
-
-
-def _paste(mask: np.ndarray, height: int, width: int) -> np.ndarray:
-    """`mask` placed at the same coordinates on an empty canvas of another photo's size."""
-    out = np.zeros((height, width), np.uint8)
-    h, w = min(height, mask.shape[0]), min(width, mask.shape[1])
-    out[:h, :w] = mask[:h, :w]
-    return out
 
 
 def _crude_polygon(mask: np.ndarray, max_vertices: int = 6) -> list[float]:
@@ -795,6 +784,21 @@ def _crude_polygon(mask: np.ndarray, max_vertices: int = 6) -> list[float]:
         eps *= 1.5
         poly = cv2.approxPolyDP(hull, eps, True)
     return [float(v) for v in poly.reshape(-1)]
+
+
+# %% edition="teaching"
+# @title Helpers: Simulate Mask Annotation Errors { display-mode: "form" }
+
+MASK_ERROR_KINDS = ["another animal", "chunk missing", "shifted", "swollen", "crude polygon"]
+SHIFT_PX = 15
+
+
+def _paste(mask: np.ndarray, height: int, width: int) -> np.ndarray:
+    """`mask` placed at the same coordinates on an empty canvas of another photo's size."""
+    out = np.zeros((height, width), np.uint8)
+    h, w = min(height, mask.shape[0]), min(width, mask.shape[1])
+    out[:h, :w] = mask[:h, :w]
+    return out
 
 
 def plant_mask_errors(animals_df: pd.DataFrame, table: pd.DataFrame,
@@ -1103,7 +1107,7 @@ display(fig)
 plt.close(fig)
 
 
-# %% [markdown]
+# %% [markdown] edition="teaching"
 # **Predict and investigate**
 #
 # Match each of the five annotation errors in Picture A to the quality check(s) in Picture B that you expect to flag it. Write five pairs in the form *error type → check number(s)*. An error may trigger multiple checks, and some checks may detect none.
@@ -1165,7 +1169,7 @@ show_masks(images_by_id.loc[list(_show.index)].reset_index(), park_masks,
            f"the {len(_show)} strongest suspects: bright mask + solid box = suspect, faint = other animals",
            caption=_suspect_caption, highlight=dict(zip(_show.index, _show["id"], strict=True)))
 
-# %%
+# %% edition="teaching"
 
 # @title 💡 Sample Answer { display-mode: "form" }
 

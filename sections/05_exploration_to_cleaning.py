@@ -16,7 +16,7 @@
 # >
 # > If duplicate or near-duplicate images appear in both training and test sets, performance estimates may be overly optimistic. Review duplicates **before splitting** and ensure related images do not end up in different splits.
 
-# %%
+# %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
 callout("answer", "💡 Sample Answer", r"""
 <ul>

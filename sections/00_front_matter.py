@@ -1,4 +1,4 @@
-# %% [markdown]
+# %% [markdown] edition="teaching"
 # # Know Your Images
 # ## Exploring and Preparing the Wildwood Farm Park Image Dataset
 #
@@ -75,7 +75,7 @@ Activities are marked 🟢 core · 🔴 optional
 #
 # You do **not** need to memorize specific dataset statistics, thresholds, code implementations, or individual examples. The activities help you develop the competencies needed for both the exam and your own project.
 
-# %%
+# %% edition="teaching"
 
 # @title How to Use This Notebook
 from IPython.display import HTML
@@ -95,7 +95,7 @@ HTML(r"""
 # %% [markdown]
 # ### Setup
 
-# %% [markdown]
+# %% [markdown] edition="teaching"
 #
 # > ▶️ **Run the next three cells, in order.**
 # >
