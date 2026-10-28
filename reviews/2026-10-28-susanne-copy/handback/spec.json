@@ -1,0 +1,280 @@
+[
+ {
+  "html": "before.html",
+  "cells": [
+   47,
+   47
+  ],
+  "out": "b-numbers.png",
+  "marks": [
+   {
+    "cell": 47,
+    "text": "637",
+    "label": "1",
+    "open": true
+   }
+  ]
+ },
+ {
+  "html": "full-teaching.html",
+  "cells": [
+   48,
+   48
+  ],
+  "out": "a-numbers.png",
+  "marks": [
+   {
+    "cell": 48,
+    "text": "632",
+    "label": "1",
+    "open": true
+   }
+  ]
+ },
+ {
+  "html": "before.html",
+  "cells": [
+   63,
+   63
+  ],
+  "out": "b-dog.png",
+  "marks": [
+   {
+    "cell": 63,
+    "text": "10% dog images",
+    "label": "2"
+   }
+  ]
+ },
+ {
+  "html": "full-teaching.html",
+  "cells": [
+   64,
+   64
+  ],
+  "out": "a-dog.png",
+  "marks": [
+   {
+    "cell": 64,
+    "text": "2% dog images",
+    "label": "2"
+   }
+  ]
+ },
+ {
+  "html": "before.html",
+  "cells": [
+   94,
+   95
+  ],
+  "out": "b-emb.png",
+  "marks": [
+   {
+    "cell": 95,
+    "text": "Computed and cached global_dinov2",
+    "label": "3"
+   }
+  ]
+ },
+ {
+  "html": "full-teaching.html",
+  "cells": [
+   95,
+   96
+  ],
+  "out": "a-emb.png",
+  "marks": [
+   {
+    "cell": 96,
+    "text": "loaded from coco_animals_dinov2.npz",
+    "label": "3"
+   }
+  ]
+ },
+ {
+  "html": "before.html",
+  "cells": [
+   191,
+   193
+  ],
+  "out": "b-ch10.png",
+  "max_h": 900,
+  "marks": [
+   {
+    "cell": 191,
+    "text": "Continue here",
+    "label": "4"
+   }
+  ]
+ },
+ {
+  "html": "before.html",
+  "cells": [
+   201,
+   201
+  ],
+  "out": "b-ch10err.png",
+  "max_h": 700,
+  "marks": [
+   {
+    "cell": 201,
+    "text": "NameError",
+    "label": "5"
+   }
+  ]
+ },
+ {
+  "html": "full-teaching.html",
+  "cells": [
+   194,
+   197
+  ],
+  "out": "a-ch10.png",
+  "max_h": 1500,
+  "marks": [
+   {
+    "cell": 197,
+    "text": "Own-Data Edition",
+    "label": "4"
+   }
+  ]
+ },
+ {
+  "html": "full-own-coco.html",
+  "cells": [
+   0,
+   4
+  ],
+  "out": "o-title.png",
+  "max_h": 1300,
+  "marks": [
+   {
+    "cell": 0,
+    "text": "Your Own Image Dataset",
+    "label": "6"
+   }
+  ]
+ },
+ {
+  "html": "full-own-coco.html",
+  "cells": [
+   13,
+   16
+  ],
+  "out": "o-formats.png",
+  "max_h": 2600,
+  "marks": [
+   {
+    "cell": 16,
+    "text": "The four numbers",
+    "label": "7"
+   }
+  ]
+ },
+ {
+  "html": "full-own-coco.html",
+  "cells": [
+   20,
+   25
+  ],
+  "out": "o-load.png",
+  "max_h": 1300,
+  "marks": [
+   {
+    "cell": 20,
+    "text": "DATASET_PATH",
+    "label": "8"
+   },
+   {
+    "cell": 25,
+    "text": "How your files",
+    "label": "9"
+   }
+  ]
+ },
+ {
+  "html": "full-teaching.html",
+  "cells": [
+   41,
+   45
+  ],
+  "out": "t-task.png",
+  "max_h": 2200,
+  "marks": [
+   {
+    "cell": 45,
+    "text": "Sample Answer",
+    "label": "10"
+   }
+  ]
+ },
+ {
+  "html": "full-own-coco.html",
+  "cells": [
+   54,
+   57
+  ],
+  "out": "o-task.png",
+  "max_h": 2200,
+  "marks": [
+   {
+    "cell": 57,
+    "text": "Your answer",
+    "label": "10"
+   },
+   {
+    "cell": 57,
+    "text": "In the park",
+    "label": "11"
+   }
+  ]
+ },
+ {
+  "html": "full-own-folders.html",
+  "cells": [
+   124,
+   129
+  ],
+  "out": "o-skip.png",
+  "max_h": 2400,
+  "marks": [
+   {
+    "cell": 128,
+    "text": "Skipped",
+    "label": "12"
+   }
+  ]
+ },
+ {
+  "html": "before.html",
+  "cells": [
+   124,
+   124
+  ],
+  "out": "b-mcq.png",
+  "max_h": 1400,
+  "marks": [
+   {
+    "cell": 124,
+    "text": "Splitting for Object Detection",
+    "label": "13"
+   }
+  ]
+ },
+ {
+  "html": "full-teaching.html",
+  "cells": [
+   125,
+   125
+  ],
+  "out": "a-mcq.png",
+  "max_h": 1400,
+  "marks": [
+   {
+    "cell": 125,
+    "text": "(Optional)",
+    "label": "13"
+   }
+  ]
+ }
+]
