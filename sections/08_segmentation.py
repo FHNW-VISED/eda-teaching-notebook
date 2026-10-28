@@ -162,7 +162,8 @@ def show_masks(rows_df: pd.DataFrame, masks_df: pd.DataFrame, title: str, captio
 
 
 # Prepare masks for subsequent inspection activities.
-masks = boxes[
+masks = boxes.loc[
+    boxes["segmentation"].notna(),  # annotations without a mask (boxes or class labels only) are skipped
     ["id", "image_id", "class", "bbox", "iscrowd", "segmentation"]
 ].copy()
 
@@ -177,6 +178,7 @@ masks = masks.drop(columns="segmentation")
 # %%
 
 # @title 🔎 Explore Segmentation Masks { display-mode: "form" }
+# needs: masks
 mask_images = images[images["id"].isin(masks["image_id"].unique())].copy()
 mask_images = mask_images.sample(frac=1, random_state=SEED).reset_index(drop=True)
 
@@ -299,6 +301,7 @@ alternative loss functions can help address this imbalance.</li>
 # %%
 
 # @title 🔎 Explore Pixel-Level Class Imbalance { display-mode: "form" }
+# needs: masks
 
 # Calculate pixel shares
 photo_rle = {}  # One merged mask per photo, reused by the heatmaps below
@@ -478,12 +481,15 @@ pixel-wise loss.</li>
 
 # %%
 # @title 🔎 Explore Mask Sizes and Fill Ratios { display-mode: "form" }
+# needs: masks
 animals = masks[masks["iscrowd"] == 0].reset_index(drop=True)
 _shape = pd.DataFrame([mask_shape(decode(r), b)
                        for r, b in zip(animals["rle"], animals["bbox"], strict=True)])
 animals = pd.concat([animals, _shape], axis=1)
 _photo_px = animals["image_id"].map(images_by_id["width"] * images_by_id["height"])
 animals["photo_share"] = animals["mask_area"] / _photo_px
+# The masks the quality checks run on, with park_masks' columns (the Teaching Edition plants five errors first).
+masks_to_check = animals[["id", "image_id", "class", "bbox", "iscrowd", "rle", "mask_area"]]
 _fill = animals.groupby("class")["fill"].median().reindex(CLASSES)
 RESULTS["median_fill"] = {c: float(_fill[c]) for c in CLASSES}
 print(f"{len(animals)} animal masks measured · median fill ratio " + " · ".join(
@@ -520,6 +526,7 @@ plt.close(fig)
 # %%
 
 # @title 🔎 Inspect Mask Fill Ratios { display-mode: "form" }
+# needs: masks
 # Select examples, excluding very small masks
 candidates = (
     animals[animals["mask_area"] >= MIN_JUDGED_AREA]
@@ -605,6 +612,7 @@ fill_show_page()
 
 # %%
 # @title 🔎 Explore Thin Structures in Segmentation Masks { display-mode: "form" }
+# needs: masks
 
 THIN_SHARE = 0.05  # a mask "has thin parts" when at least this share of its pixels is thin
 _big = animals["mask_area"] >= MIN_JUDGED_AREA
@@ -695,6 +703,7 @@ helps distinguish small-object effects from genuinely thin structures.</p>
 
 # %%
 # @title 🔎 Explore Spatial Distributions of Animal Pixels { display-mode: "form" }
+# needs: masks
 
 # Mean mask per class on a common square: the share of the class's photos in which each spot is animal.
 HEAT_RES = 24 if SMOKE else 48  # coarser grid with few photos (N-014)
@@ -704,8 +713,12 @@ for image_id, rle in photo_rle.items():
     small = cv2.resize(decode(rle).astype(np.float32), (HEAT_RES, HEAT_RES), interpolation=cv2.INTER_AREA)
     heat[_class_of[image_id]] += small
 
-fig, axes = plt.subplots(1, len(CLASSES), figsize=(2.3 * len(CLASSES), 2.8))
-for ax, c in zip(axes, CLASSES, strict=True):
+_ncols = min(6, len(CLASSES))  # at most six classes per row
+_nrows = -(-len(CLASSES) // _ncols)
+fig, axes = plt.subplots(_nrows, _ncols, figsize=(2.3 * _ncols, 2.8 * _nrows), squeeze=False)
+for ax in axes.ravel()[len(CLASSES):]:
+    ax.axis("off")
+for ax, c in zip(axes.ravel(), CLASSES, strict=False):
     n_photos = max(int((_class_of == c).sum()), 1)
     cmap = mpl.colors.LinearSegmentedColormap.from_list(c, ["white", CLASS_COLORS[c]])
     ax.imshow(heat[c] / n_photos, cmap=cmap, vmin=0, vmax=1, extent=[0, 1, 1, 0])
@@ -881,6 +894,7 @@ def plant_mask_errors(animals_df: pd.DataFrame, table: pd.DataFrame,
 park_masks, mask_error_key = plant_mask_errors(animals, images, SEED)
 print(f"park_masks: {len(park_masks)} animal masks on {park_masks['image_id'].nunique()} images. "
       "Five of them are ugly. Find them.")
+masks_to_check = park_masks  # the masks the quality checks run on
 
 
 # %% [markdown]
@@ -1120,8 +1134,9 @@ plt.close(fig)
 
 # %%
 # @title 🔎 Detect Suspicious Segmentation Masks { display-mode: "form" }
+# needs: masks
 
-_judge = park_masks[park_masks["mask_area"] >= MIN_JUDGED_AREA].reset_index(drop=True)
+_judge = masks_to_check[masks_to_check["mask_area"] >= MIN_JUDGED_AREA].reset_index(drop=True)
 park_shape = pd.concat([_judge, pd.DataFrame([mask_shape(decode(r), b)
                                               for r, b in zip(_judge["rle"], _judge["bbox"], strict=True)])],
                        axis=1)
@@ -1165,7 +1180,7 @@ def _suspect_caption(r) -> str:
             f"box IoU {s['box_iou']:.2f} · fill {s['fill']:.2f}")
 
 
-show_masks(images_by_id.loc[list(_show.index)].reset_index(), park_masks,
+show_masks(images_by_id.loc[list(_show.index)].reset_index(), masks_to_check,
            f"the {len(_show)} strongest suspects: bright mask + solid box = suspect, faint = other animals",
            caption=_suspect_caption, highlight=dict(zip(_show.index, _show["id"], strict=True)))
 

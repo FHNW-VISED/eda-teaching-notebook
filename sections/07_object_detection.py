@@ -88,6 +88,7 @@ boxes = annotations.copy()  # one row per box; a copy, because later cells add c
 
 # %%
 # @title 🔎 Explore Bounding Boxes { display-mode: "form" }
+# needs: boxes
 
 boxview_page = 0
 boxview_output = widgets.Output()
@@ -165,6 +166,7 @@ def _ref_count_boxes_per_class(annotations):
 
 # %%
 # ✍️ YOUR CODE
+# needs: boxes
 def count_boxes_per_class(annotations):
     """Number of boxes (rows) per class.
 
@@ -180,6 +182,7 @@ boxes_per_class = use(count_boxes_per_class, boxes, reference=_ref_count_boxes_p
 
 # %%
 # @title 🔎 Compare Class Distributions: Photos vs. Boxes { display-mode: "form" }
+# needs: boxes
 
 RESULTS["boxes_per_class"] = boxes_per_class
 RESULTS["n_boxes"] = int(len(boxes))
@@ -259,6 +262,7 @@ Image-level counts describe how frequently classes appear in photos, whereas box
 
 # %%
 # @title 🔎 Explore Object Size Distributions { display-mode: "form" }
+# needs: boxes
 
 boxes["w"] = boxes["bbox"].map(lambda b: b[2])
 boxes["h"] = boxes["bbox"].map(lambda b: b[3])
@@ -335,6 +339,7 @@ plt.close(fig)
 
 # %%
 # @title 🔎 Explore Bounding Box Sizes in Images { display-mode: "form" }
+# needs: boxes
 
 by_area = boxes.sort_values(["box_area", "id"]).reset_index(drop=True)
 
@@ -484,6 +489,7 @@ Small objects are particularly challenging because they contain fewer pixels and
 
 # %%
 # @title 🔎 Explore Object Positions Across Classes { display-mode: "form" }
+# needs: boxes
 # Box centers on the unit square, one heatmap per class in its own color (white = no boxes there).
 _img_w = boxes["image_id"].map(images_by_id["width"])
 _img_h = boxes["image_id"].map(images_by_id["height"])
@@ -494,8 +500,12 @@ _edge_share = float(((boxes["cx"] < 0.2) | (boxes["cx"] > 0.8) | (boxes["cy"] < 
                     .mean())
 RESULTS["edge_box_share"] = _edge_share
 
-fig, axes = plt.subplots(1, len(CLASSES), figsize=(2.3 * len(CLASSES), 2.8))
-for ax, c in zip(axes, CLASSES, strict=True):
+_ncols = min(6, len(CLASSES))  # at most six classes per row
+_nrows = -(-len(CLASSES) // _ncols)
+fig, axes = plt.subplots(_nrows, _ncols, figsize=(2.3 * _ncols, 2.8 * _nrows), squeeze=False)
+for ax in axes.ravel()[len(CLASSES):]:
+    ax.axis("off")
+for ax, c in zip(axes.ravel(), CLASSES, strict=False):
     own = boxes[boxes["class"] == c]
     cmap = mpl.colors.LinearSegmentedColormap.from_list(c, ["white", CLASS_COLORS[c]])
     heat, _, _ = np.histogram2d(own["cy"], own["cx"], bins=HEAT_BINS, range=[[0, 1], [0, 1]])
@@ -505,7 +515,8 @@ for ax, c in zip(axes, CLASSES, strict=True):
     ax.set_yticks([0, 0.5, 1])
     ax.tick_params(labelsize=7)
     ax.grid(False)
-axes[0].set_ylabel("box center y (0 = top)")
+for _row in axes:
+    _row[0].set_ylabel("box center y (0 = top)")
 fig.suptitle(f"Where the box centers are · {_edge_share:.0%} of all boxes are in the outer 20 % of the frame",
              color=INK)
 fig.tight_layout()
@@ -548,6 +559,7 @@ However, the heatmaps alone do not establish how well the detector performs.
 
 # %%
 # @title 🔎 Explore Object Counts Across Classes { display-mode: "form" }
+# needs: boxes
 
 # Annotated objects per image (the images table already counts them)
 crowding = images[["id", "class", "n_objects"]]
@@ -600,6 +612,7 @@ plt.show()
 
 # %%
 # @title 🔎 Explore Crowded Images { display-mode: "form" }
+# needs: boxes
 
 # Sort images from most to fewest annotated objects
 crowded_images = crowding.sort_values(
@@ -857,6 +870,7 @@ callout("answer", "💡 Sample Answer", r"""
 
 # %%
 # @title 🔎 Explore Bounding Box Overlap Across Classes { display-mode: "form" }
+# needs: boxes
 
 
 # Count overlapping box pairs in each image
@@ -969,6 +983,7 @@ callout("answer", "💡 Sample Answer", r"""
 
 # %%
 # @title 🔎 Inspect Bounding Box Quality { display-mode: "form" }
+# needs: boxes
 
 # Browse annotated images by class
 quality_class_selector = widgets.Dropdown(

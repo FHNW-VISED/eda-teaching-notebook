@@ -623,6 +623,7 @@ callout("answer", "💡 Sample Answer", r"""
 
 # %%
 # @title 🔎 Explore the Number of Animals per Image { display-mode: "form" }
+# needs: boxes
 _max_n = int(images["n_objects"].max())
 _several = images[images["n_objects"] > 1]
 print(f"{len(_several)} of {len(images)} images ({100 * len(_several) / len(images):.0f} %) hold more than "

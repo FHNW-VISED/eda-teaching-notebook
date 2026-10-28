@@ -80,12 +80,16 @@ A Recipe for Training Neural Networks</a> (2019).
 # %%
 # @title 🔎 Explore Example Images per Class { display-mode: "form" }
 _per_class = 6
-fig, axes = plt.subplots(_per_class, len(CLASSES), figsize=(13, 2.2 * _per_class))
+_blocks = [CLASSES[k:k + 6] for k in range(0, len(CLASSES), 6)]  # at most six classes side by side
+fig, axes = plt.subplots(_per_class * len(_blocks), min(6, len(CLASSES)),
+                         figsize=(13, 2.2 * _per_class * len(_blocks)), squeeze=False)
+for ax in axes[:, len(_blocks[-1]):][-_per_class:].ravel():  # the last row of classes may be shorter
+    ax.axis("off")
 for j, c in enumerate(CLASSES):
     _of_class = images[images["class"] == c]
     _picked = _of_class.sample(min(_per_class, len(_of_class)), random_state=SEED)
     for i in range(_per_class):
-        ax = axes[i, j]
+        ax = axes[(j // 6) * _per_class + i, j % 6]
         ax.grid(False)
         ax.set_xticks([])
         ax.set_yticks([])
@@ -196,8 +200,9 @@ out = widgets.interactive_output(
     }
 )
 
+_has_boxes = bool(annotations["bbox"].notna().any())  # no boxes in the labels: no box checkbox
 display(
-    widgets.HBox([class_dropdown, page_slider, box_checkbox]),
+    widgets.HBox([class_dropdown, page_slider] + ([box_checkbox] if _has_boxes else [])),
     out
 )
 
@@ -306,15 +311,17 @@ ann_number_input = widgets.BoundedIntText(
 )
 ann_go_btn = widgets.Button(description="Go")
 
-# Annotation visibility controls
+# Annotation visibility controls (shown only for what the labels contain)
+ann_has_boxes = bool(annotations["bbox"].notna().any())
+ann_has_masks = bool(annotations["segmentation"].notna().any())
 ann_box_toggle = widgets.Checkbox(
-    value=True,
+    value=ann_has_boxes,
     description="Show bounding boxes",
     indent=False,
     layout=widgets.Layout(width="190px")
 )
 ann_mask_toggle = widgets.Checkbox(
-    value=True,
+    value=ann_has_masks,
     description="Show segmentation masks",
     indent=False,
     layout=widgets.Layout(width="210px")
@@ -336,7 +343,7 @@ def ann_show_image(index):
         color = CLASS_COLORS[ann["class"]]
 
         # Decode and overlay masks only when enabled
-        if ann_mask_toggle.value:
+        if ann_mask_toggle.value and ann["segmentation"] is not None:
             mask = decode(to_rle(
                 ann["segmentation"],
                 int(row["height"]),
@@ -362,6 +369,8 @@ def ann_show_image(index):
         # Draw bounding boxes only when enabled
         if ann_box_toggle.value:
             for ann, color in overlays:
+                if ann["bbox"] is None:
+                    continue
                 x, y, w, h = ann["bbox"]
                 ax.add_patch(
                     mpl.patches.Rectangle(
@@ -385,7 +394,7 @@ def ann_show_image(index):
             f"Size: {row['width']} × {row['height']} px"
         )
 
-        for ann, _ in overlays:
+        for ann, _ in (o for o in overlays if o[0]["bbox"] is not None):
             print(
                 f"{ann['class']}: "
                 f"box = {[round(v) for v in ann['bbox']]} px"
@@ -429,7 +438,7 @@ ann_mask_toggle.observe(
 display(
     widgets.HBox([ann_prev_btn, ann_counter, ann_next_btn]),
     widgets.HBox([ann_number_input, ann_go_btn]),
-    widgets.HBox([ann_box_toggle, ann_mask_toggle]),
+    widgets.HBox([t for t, has in ((ann_box_toggle, ann_has_boxes), (ann_mask_toggle, ann_has_masks)) if has]),
     ann_output
 )
 

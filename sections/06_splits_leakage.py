@@ -54,8 +54,11 @@ cameras, or locations, these groups should be kept separate across splits.</p>
 TEST_SIZE = 0.2
 _ids = images["id"].to_numpy()
 _y = images["class"].to_numpy()
-_, _te_rand = train_test_split(_ids, test_size=TEST_SIZE, random_state=SEED)
-_, _te_strat = train_test_split(_ids, test_size=TEST_SIZE, random_state=SEED, stratify=_y)
+# A very small dataset needs at least one test image per class, and every class needs two images to stratify.
+_test_size = TEST_SIZE if math.ceil(TEST_SIZE * len(_ids)) >= len(set(_y)) else len(set(_y))
+_stratify = _y if pd.Series(_y).value_counts().min() >= 2 else None
+_, _te_rand = train_test_split(_ids, test_size=_test_size, random_state=SEED)
+_, _te_strat = train_test_split(_ids, test_size=_test_size, random_state=SEED, stratify=_stratify)
 
 
 def class_shares(table: pd.DataFrame, ids) -> pd.Series:
@@ -279,16 +282,17 @@ def summarize_folds(name: str, splitter, X, y, groups=None) -> dict:
     }
 
 _loo_ids = _ids[:LOO_N]
+_k_folds = min(K_FOLDS, max(2, int(pd.Series(_y).value_counts().max())))  # a tiny dataset: fewer folds
 
 cv_rows = [
     summarize_folds(
         "K-fold",
-        KFold(K_FOLDS, shuffle=True, random_state=SEED),
+        KFold(_k_folds, shuffle=True, random_state=SEED),
         _ids, _y
     ),
     summarize_folds(
         "Stratified k-fold",
-        StratifiedKFold(K_FOLDS, shuffle=True, random_state=SEED),
+        StratifiedKFold(_k_folds, shuffle=True, random_state=SEED),
         _ids, _y
     ),
     summarize_folds(
