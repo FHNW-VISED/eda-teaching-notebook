@@ -869,10 +869,12 @@ _skips_announced = set()
 
 
 def announce_skip(need: str) -> None:
-    """Print once per kind why the cells that need boxes or masks are skipped."""
+    """Say in every skipped cell that it was skipped; the first time per kind, also why."""
     if need not in _skips_announced:
         _skips_announced.add(need)
         print(f"⏭️ Skipped: this part needs {need}, and TASKS does not include {NEEDS[need]!r}.")
+    else:
+        print(f"⏭️ Skipped: needs {need}.")
 
 
 def _skip_without_labels(lines: list[str]) -> list[str]:
