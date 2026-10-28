@@ -1,6 +1,14 @@
-# SPEC — Know Your Data: Exploring and Preparing Image Datasets at the Wildwood Farm Park
+# SPEC — Know Your Images: Exploring and Preparing the Wildwood Farm Park Image Dataset
 
 **With:** Susanne Suter
+
+> **2026-10-28: her edited copy is the base.** She rewrote v05 (title, structure, tasks, boxes); the repo now
+> builds **two Editions** from one ordered list of cells: the **Teaching Edition** (`eda-teaching-notebook.ipynb`,
+> her notebook) and the **Own-Data Edition** (`eda-own-dataset-notebook.ipynb`: the student's dataset is loaded at
+> the top, then the same analysis cells run on it; guiding questions with blank answers, short *In the park* hints,
+> no Sample Answers). Decisions: PRD `docs/work/prd/2026-10-28-eda-susanne-copy-and-own-data-edition.md` (vault)
+> and `reviews/2026-10-28-susanne-copy.md` (repo). Where this SPEC still describes v05 (§2–§4, §6 contents,
+> §8–§10), her copy wins.
 
 The single source of truth for **what** this notebook is. `AGENTS.md` says how to work,
 `RULES.md` says what every notebook must respect, and this file says what *this* one must do.
@@ -74,13 +82,14 @@ chosen in section 4.)
 
 | Item | Value |
 |---|---|
-| Runs on | Google Colab (web), **CPU runtime is enough** (no training) |
-| Python | 3.12 |
-| Preinstalled in Colab (checked 2026-10-19) | numpy, pandas 2.2.3, matplotlib 3.10.0, pillow 11.3.0, pycocotools 2.0.11, opencv 5.0.0.93, scikit-image 0.25.2, scikit-learn 1.6.1, seaborn 0.13.2 |
+| Runs on | Google Colab (web), **CPU runtime is the classroom target** (no training) |
+| Python | 3.12 in this repo; ⚠️ Colab moved to 3.13 (pip freeze, 2026-10-28): re-check the pins |
+| Preinstalled in Colab (checked 2026-10-28) | numpy, pandas, matplotlib, pillow, pycocotools, opencv, scikit-image, scikit-learn, umap-learn 0.5.12, bokeh 3.8.2, transformers, torch (CPU and GPU runtimes) |
 | `%pip install` needed | `imagehash` only |
-| 🔴 optional model-based search | precomputed embeddings downloaded in one cell **[PROPOSAL]**, so no model runs on CPU |
+| 🔴 image embeddings (DINOv2-small) | park vectors precomputed in `data/coco_animals_dinov2.npz` (`scripts/precompute_dinov2.py`); computed live only on a GPU or with `COMPUTE_EMBEDDINGS = True` |
 | Data download | ~115 MB COCO images + CCT20 slice, cached in `data/` |
-| Smoke run | `NB_SMOKE=1`, CPU, budget 900 s |
+| Own-Data Edition input | folder per class · CSV `file,label` · COCO JSON (boxes, polygon/RLE masks) · YOLO (boxes or polygons) · Pascal VOC XML · PNG label masks; converted to the same `images` / `annotations` tables; `TASKS` says which chapters run |
+| Smoke run | `NB_SMOKE=1`, CPU: Teaching once, Own-Data once per input format plus a broken file |
 | Dev access in Colab | GitHub token in Colab Secrets, or the repo temporarily public (G-29) |
 
 ## 6. Sections
