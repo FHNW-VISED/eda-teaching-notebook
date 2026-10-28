@@ -84,25 +84,25 @@ chosen in section 4.)
 | Dev access in Colab | GitHub token in Colab Secrets, or the repo temporarily public (G-29) |
 
 ## 6. Sections
-Time = participant minutes at lab pace. **Estimate, not re-timed:** ≈ 108 after the cuts of 2026-10-22 (C1–C4, R1–R6; was ≈ 144 after the cut pass), time keeper ±15 %, slot 90. The 🔴 parts and section 10's "After the lab" block are not included; Susanne may cut section 1 and the 🔴 parts first. Status: todo · in-progress · done · blocked.
-🧾 = opens with a Karpathy Recipe Callout (2–3 verbatim sentences + link). ✏️ = change a value. ✍️ = write a function via `use()`.
+**Since 2026-10-28 the sections are Susanne's chapters** (her edited copy is the base; PRD
+`docs/work/prd/2026-10-28-eda-susanne-copy-and-own-data-edition.md` in the vault). Timing is hers to decide and was not
+re-estimated. Edition: T = Teaching Edition, O = Own-Data Edition (cells tagged inside a file may differ).
+Status: todo · in-progress · done · blocked.
 
-| # | File | Title | Objective (one line) | Level | Time | Status |
-|---|---|---|---|---|---|---|
-| 0 | sections/00_setup.py | Setup & the park | Run setup, meet the park, see the three outcomes | 🟢 | 5 | done |
-| 1 | sections/01_image_datasets.py | Image datasets | Know where datasets come from and what makes a good one | 🟢 | 6 | done |
-| 2 | sections/02_become_one.py | Become one with the data 🧾 | Look at many images before computing anything | 🟢 | 8 | done |
-| 3 | sections/03_image_inspection.py | Image inspection 🧾 | Measure sizes, aspect ratios, colour modes and colour statistics | 🟢🟡 | 11 | done |
-| 4 | sections/04_labels_distribution.py | Labels & class distribution 🧾 | Count classes, see why imbalance matters for the dog alert, and pick its metric | 🟢🟡 | 12 | done |
-| 5 | sections/05_errors_cleaning.py | Common dataset errors & cleaning 🧾 | Find duplicates, flipped/rotated copies and suspicious labels; produce a cleaned dataset | 🟡 | 15 | done |
-| 6 | sections/06_splits_leakage.py | Splits & leakage | Choose a split that does not leak, and understand cross-validation | 🟡 | 10 | done |
-| 7 | sections/07_boxes.py | Same data, boxes | See what imbalance, size, position and label quality mean for detection | 🟡 | 14 | done |
-| 8 | sections/08_masks.py | Same data, masks | See what they mean for segmentation; find ugly masks | 🟡 | 12 | done |
-| 9 | sections/09_challenge.py | Data-centric AI in practice: the Challenge | Watch the planted problems in a new batch get found; the hunt itself is optional | 🟡🔴 | 7 | done |
-| 10 | sections/10_your_dataset.py | Your project dataset | Run the checklist on your own folder-per-class dataset | 🟢 | 5 | done |
-| 11 | sections/11_wrap_up.py | Wrap-up & next week | Takeaways and where to go next | 🟢 | 3 | done |
+| # | File | Title (hers) | Edition | Status |
+|---|---|---|---|---|
+| 0 | sections/00_front_matter.py | Know Your Images · Setup · Optional Coding Exercises | T O | done |
+| 1 | sections/01_load_your_dataset.py | Load Your Dataset | O | in-progress |
+| 2 | sections/02_meet_the_park.py | Meet the Park: Explore Your Dataset · Qualitative Inspection | T O | done |
+| 3 | sections/03_quantitative_inspection.py | Quantitative Inspection | T O | done |
+| 4 | sections/04_errors_cleaning.py | Common Dataset Errors & Cleaning | T O | done |
+| 5 | sections/05_exploration_to_cleaning.py | From Data Exploration to Cleaning | T O | done |
+| 6 | sections/06_splits_leakage.py | Dataset Splitting & Data Leakage | T O | done |
+| 7 | sections/07_object_detection.py | Object Detection | T O | done |
+| 8 | sections/08_segmentation.py | Semantic Segmentation: Which Pixels Belong to the Animals? | T O | done |
+| 9 | sections/09_your_dataset.py | Your Project Dataset | T O | in-progress |
 
-### Section contents
+### Section contents (v05, kept for history; her copy superseded them on 2026-10-28)
 - **00 Setup & the park**
   - A **title banner** (Theme, §8 L-003) with the title, the three outcomes and "Questions are marked 🟢 beginner · 🟡 intermediate · 🔴 advanced (optional)".
   - The park story as a short illustrated paragraph.
