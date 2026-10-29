@@ -78,3 +78,13 @@ def test_own_wording_swap_that_no_longer_matches_stops_the_build(tmp_path):
     (sections / "own_wording.tsv").write_text("section\told\tnew\n00_a.py\tevery animal\tevery object\n")
     with pytest.raises(SystemExit, match="own_wording"):
         build.build_all(sections=sections, out_dir=tmp_path)
+
+
+def test_teaching_edition_has_no_skip_markers(tmp_path):
+    """`# needs: boxes|masks` lines drive the Own-Data skip hook; the Teaching Edition never shows them."""
+    sections = tmp_path / "sections"
+    sections.mkdir()
+    (sections / "00_a.py").write_text("# %%\n# @title Boxes\n# needs: boxes\nprint(1)\n")
+    outs = build.build_all(sections=sections, out_dir=tmp_path)
+    assert _sources(outs["teaching"]) == ["# @title Boxes\nprint(1)"]
+    assert _sources(outs["own"]) == ["# @title Boxes\n# needs: boxes\nprint(1)"]

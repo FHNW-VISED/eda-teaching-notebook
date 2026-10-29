@@ -295,6 +295,21 @@ def apply_own_wording(cells: list[nbformat.NotebookNode], sections: Path) -> lis
     return out
 
 
+SKIP_MARKER_RE = re.compile(r"^# needs: (boxes|masks)[ \t]*\n?", re.M)
+
+
+def strip_skip_markers(cells: list[nbformat.NotebookNode]) -> list[nbformat.NotebookNode]:
+    """Copies without the `# needs: boxes|masks` lines: they drive the Own-Data skip hook and mean nothing in
+    the Teaching Edition, where every chapter runs."""
+    out = []
+    for c in cells:
+        if c.cell_type == "code" and SKIP_MARKER_RE.search(c.source):
+            c = nbformat.from_dict(c)
+            c.source = SKIP_MARKER_RE.sub("", c.source)
+        out.append(c)
+    return out
+
+
 def write_edition(cells: list[nbformat.NotebookNode], edition: str, out: Path) -> Path:
     keep = [c for c in cells if c.metadata.get("edition", edition) == edition]
     nb = nbformat.v4.new_notebook(cells=keep)
@@ -308,7 +323,7 @@ def write_edition(cells: list[nbformat.NotebookNode], edition: str, out: Path) -
 
 def build_all(sections: Path = SECTIONS, out_dir: Path = ROOT) -> dict[str, Path]:
     cells = read_cells(sections)
-    per_edition = {"teaching": cells, "own": apply_own_wording(cells, sections)}
+    per_edition = {"teaching": strip_skip_markers(cells), "own": apply_own_wording(cells, sections)}
     return {ed: write_edition(per_edition[ed], ed, out_dir / name) for ed, name in EDITIONS.items()}
 
 

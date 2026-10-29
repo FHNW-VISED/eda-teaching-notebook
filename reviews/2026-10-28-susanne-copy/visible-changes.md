@@ -1,3 +1,7 @@
+> **Superseded as the record (2026-10-29):** this list was written by the implementers and is incomplete for the
+> chapter-10 move and the later additions. The independent check `verify-her-text.md` compares her copy with the
+> built Teaching notebook cell by cell (0 unapproved changes) and is the record.
+
 # Visible changes to Susanne's copy (work-list groups 1–6)
 
 Every change a student can see: markdown, box HTML, headings, cell titles shown in Colab's form view, printed
