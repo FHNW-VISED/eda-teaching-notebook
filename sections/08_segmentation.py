@@ -364,7 +364,9 @@ animal_px = dict.fromkeys(CLASSES, 0)
 
 for image_id, own in masks.groupby("image_id"):
     photo_rle[image_id] = mask_utils.merge(list(own["rle"]), intersect=False)
-    animal_px[own["class"].iloc[0]] += int(mask_utils.area(photo_rle[image_id]))
+    for c, of_class in own.groupby("class"):  # a park image has one class; an image with several counts each
+        class_rle = mask_utils.merge(list(of_class["rle"]), intersect=False)
+        animal_px[c] = animal_px.get(c, 0) + int(mask_utils.area(class_rle))
 
 total_px = int((images["width"] * images["height"]).sum())
 

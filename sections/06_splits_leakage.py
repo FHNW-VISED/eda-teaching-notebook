@@ -383,7 +383,8 @@ The <strong>sibling rate</strong> measures the percentage of test images that ha
 CCT_DIR = DATA_DIR / "cache" / "cct20"
 CCT_SIDE = 512
 CCT_CLASSES = ["opossum", "raccoon", "coyote", "bobcat", "rabbit"]
-CCT_COLORS = dict(zip(CCT_CLASSES, [CLASS_COLORS[c] for c in CLASSES], strict=False))
+# Five colors no park class uses: a color means one class in the whole notebook (T-30, N-027).
+CCT_COLORS = dict(zip(CCT_CLASSES, ["#4E79A7", "#F28E2B", "#E15759", "#76B7B2", "#59A14F"], strict=True))
 SMOKE_CCT_LOCATIONS = 3
 SMOKE_CCT_IMAGES = 30
 
