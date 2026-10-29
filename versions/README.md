@@ -13,3 +13,4 @@ Never edit a version folder.
 | v04 | 2026-10-22 | Review, cuts and order fixes 2026-10-22 (PR #19) | 42dcb55 |
 | v05 | 2026-10-26 | SPEC: made with Susanne Suter (SN rules incl. SN-006), port tooling, walkthrough work list | a262aa5 |
 | v06 | 2026-10-28 | Susanne's copy as base, clean-up, Own-Data Edition | 33b96d5 |
+| v07 | 2026-10-29 | Review fixes: real datasets, embeddings note, independent text check | 83fdb7e |
