@@ -539,7 +539,7 @@ def encode(mask: np.ndarray) -> dict:
     return mask_utils.encode(np.asfortranarray(mask.astype(np.uint8)))
 
 
-# %% [markdown]
+# %% [markdown] edition="teaching"
 # ### Optional Coding Exercises
 #
 # Some parts of this notebook let you choose how to work:
@@ -550,13 +550,13 @@ def encode(mask: np.ndarray) -> dict:
 # Both approaches let you continue through the notebook. If you choose to implement a function, run the reference cell first, then complete the ✍️ cell. An incomplete or incorrect implementation will not prevent you from continuing.
 #
 
-# %%
+# %% edition="teaching"
 # @title Reference solution — run this cell; open it only if you are stuck { display-mode: "form" }
 def _ref_double(x):
     return 2 * x
 
 
-# %%
+# %% edition="teaching"
 # ✍️ YOUR CODE
 def double(x):
     """Return twice x.

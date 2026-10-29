@@ -11,13 +11,9 @@
 # %% [markdown] edition="own"
 # ## Object Detection
 #
-# In image classification, a model predicts what is present in an image. But what if you need to count individual objects and know where they are?
+# What if you need to count individual objects and know where they are? Object detection predicts a class label and a bounding box for each object, so we can see how many objects there are, where they are, and how large they appear.
 #
-# This chapter runs only if `TASKS` includes `"detection"`, so its cells skip themselves when your labels have no boxes.
-#
-# Object detection extends classification by predicting a class label and a bounding box for each object. This allows us to investigate not only which objects appear, but also how many there are, where they are located, and how large they appear.
-#
-# In this section, we explore how object size, position, crowding, and class imbalance affect your object detection dataset. We also examine the additional annotation effort required compared with image classification.
+# This chapter explores how object size, position, crowding, and class imbalance affect your dataset. It runs only if `TASKS` includes `"detection"` or `"segmentation"`; otherwise its cells skip themselves.
 
 # %% [markdown] edition="teaching"
 # **From Labels to Bounding Boxes**
@@ -184,18 +180,14 @@ boxview_show_page()
 # **Before running the code:**
 # - Do you expect the class ranking to change when counting bounding boxes instead of images? Which class might increase the most?
 #
-# **Coding Exercise:**
-#
-# In this and subsequent coding exercises, you will implement small functions to explore the dataset. Complete the provided code cells and check your results. If you get stuck, you can reveal the reference solution. The notebook continues to work even if your implementation is incomplete.
-#
-# - Implement `count_boxes_per_class(annotations)` to return the number of bounding boxes per class.
-# - Run the validation and compare the resulting distribution with the image-level distribution from Class Distribution: Are All Classes Equally Represented?
+# **Explore:**
+# - Compare the number of boxes per class with the image-level distribution from Class Distribution: Are All Classes Equally Represented?
 #
 # **Observe and interpret:**
 # - Which classes change most in their relative frequency?
 # - Why might image-level and object-level class imbalance lead to different conclusions?
 
-# %% [markdown]
+# %% [markdown] edition="teaching"
 # **✏️ Your turn · `count_boxes_per_class`**
 #
 # Write the function in the next cell: given an annotations table (one row per animal, with a `class`
@@ -203,14 +195,14 @@ boxview_show_page()
 # plain `int`s. `use()` checks it against the reference and continues with the reference either way.
 
 
-# %%
+# %% edition="teaching"
 # @title Reference solution — run this cell; open it only if you are stuck { display-mode: "form" }
 def _ref_count_boxes_per_class(annotations):
     counts = annotations["class"].value_counts()
     return {c: int(counts.get(c, 0)) for c in CLASSES}
 
 
-# %%
+# %% edition="teaching"
 # ✍️ YOUR CODE
 # needs: boxes
 def count_boxes_per_class(annotations):
@@ -225,6 +217,13 @@ def count_boxes_per_class(annotations):
 
 
 boxes_per_class = use(count_boxes_per_class, boxes, reference=_ref_count_boxes_per_class)
+
+# %% edition="own"
+# @title Helpers: Count Boxes per Class { display-mode: "form" }
+# needs: boxes
+# The number of boxes per class, every class of CLASSES as a key (0 when a class has no box).
+_box_counts = boxes["class"].value_counts()
+boxes_per_class = {c: int(_box_counts.get(c, 0)) for c in CLASSES}
 
 # %%
 # @title 🔎 Compare Class Distributions: Photos vs. Boxes { display-mode: "form" }
@@ -1305,7 +1304,7 @@ callout("answer", "💡 Sample Answer", r"""
 """)
 
 
-# %% [markdown]
+# %% [markdown] edition="teaching"
 # #### Visualizing a Missing Annotation
 #
 # The illustration below shows a simplified example: three animals are present, but only two have bounding boxes.
@@ -1314,7 +1313,7 @@ callout("answer", "💡 Sample Answer", r"""
 #
 # Consider how this mismatch could affect an object detector trained on these annotations.
 
-# %%
+# %% edition="teaching"
 # @title 🔎 Visualize a Missing Bounding Box { display-mode: "form" }
 
 fig, ax = plt.subplots(figsize=(7, 2.5))

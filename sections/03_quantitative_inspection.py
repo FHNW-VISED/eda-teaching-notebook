@@ -666,7 +666,7 @@ callout("answer", "💡 Sample Answer", r"""
 # %% [markdown] edition="own"
 # #### 🟢 Objects per Image: How Common Are Multiple Objects?
 #
-# Each image in your dataset has one class label, but it may contain several annotated objects. This task needs boxes, so it runs only if `TASKS` includes `"detection"`.
+# Each image in your dataset has one class label, but it may contain several annotated objects. This task needs boxes, so it runs only if `TASKS` includes `"detection"` or `"segmentation"`.
 #
 # The next visualization shows the number of annotated objects per image and examples with particularly many objects.
 #
@@ -762,13 +762,12 @@ callout("theory", "📘 Labeling Strategies: One Label or Multiple Animals?", r"
 # - Why is accuracy alone insufficient for evaluating the park's dog alert?
 
 # %% [markdown] edition="own"
-# #### 🟢 Class Imbalance: Which Mistake Is Expensive in Your Task?
+# #### 🟢 Class Imbalance: Is the Expensive Class a Small One?
 #
 # A rule that always predicts the most common class can reach high accuracy without ever finding a rare class. If the rare class is the expensive one, accuracy hides exactly the mistake that matters.
 #
 # **Observe and interpret:**
-# - Which class is the expensive mistake in your task?
-# - Is it one of the small classes in Class Distribution?
+# - Take the expensive mistake you named in Your Task: Which Mistake Is Expensive? Is its class one of the small classes in Class Distribution?
 # - Which metric would show that mistake, if accuracy does not?
 #
 # ✍️ **Your answer** (double-click to edit):

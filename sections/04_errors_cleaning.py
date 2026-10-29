@@ -576,14 +576,15 @@ def find_copies(files: dict[str, Path], threshold: int, use_variants: bool) -> p
     return pd.DataFrame(rows, columns=["a", "b", "kind", "distance"])
 
 
+
+# %% edition="teaching"
+# @title 🔎 Compare Duplicate Detection Methods { display-mode: "form" }
 def score_hunt(found: pd.DataFrame, key: list[dict]) -> int:
     """How many planted copies in `key` appear as a pair (either order) in `found`."""
     pairs = {frozenset((r["a"], r["b"])) for _, r in found.iterrows()}
     return sum(frozenset((k["copy"], k["source"])) in pairs for k in key)
 
 
-# %% edition="teaching"
-# @title 🔎 Compare Duplicate Detection Methods { display-mode: "form" }
 plain = find_copies(hunt_files, threshold=PAIR_THRESHOLD, use_variants=False)
 variant = find_copies(hunt_files, threshold=PAIR_THRESHOLD, use_variants=True)
 

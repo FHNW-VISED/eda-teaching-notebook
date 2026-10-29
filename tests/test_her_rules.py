@@ -147,3 +147,85 @@ def test_capitals_only_for_settings(edition):
     limit = {name: 2 if edition == "own" else 1 for name in SET_AT_LOAD}
     again = {n: k for n, k in assigned.items() if k > limit.get(n, 1)}
     assert not again, f"settings assigned more than once (N-058): {again}"
+
+
+def code_trees(edition: str):
+    """(index, cell, ast) of every code cell, with magic and shell lines blanked so the code parses."""
+    for i, cell in enumerate(cells(edition)):
+        if cell.cell_type != "code":
+            continue
+        source = "\n".join(
+            "" if line.lstrip().startswith(("%", "!")) else line for line in cell.source.splitlines()
+        )
+        yield i, cell, ast.parse(source)
+
+
+CAPITAL_RE = re.compile(r"[A-Z][A-Z0-9_]*")
+MUTATORS = {"append", "extend", "insert", "update", "setdefault", "pop", "popitem", "remove", "clear", "add",
+            "discard", "sort", "reverse"}  # fmt: skip
+
+
+def _capital(node) -> str | None:
+    return node.id if isinstance(node, ast.Name) and CAPITAL_RE.fullmatch(node.id) else None
+
+
+@pytest.mark.parametrize("edition", EDITIONS)
+def test_capitals_never_changed_in_place(edition):
+    """N-058 (fix list row 23): a setting is never changed in place: no X.append/.update/.extend…,
+    no X[k] = …, no X.attr = …, no X |= … (or any augmented assignment)."""
+    found = []
+    for i, _, tree in code_trees(edition):
+        for node in ast.walk(tree):
+            if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                    and node.func.attr in MUTATORS and _capital(node.func.value)):
+                found.append(f"cell {i}: {_capital(node.func.value)}.{node.func.attr}(…)")
+            if isinstance(node, ast.Assign):
+                targets = node.targets
+            else:
+                targets = [node.target] if isinstance(node, (ast.AugAssign, ast.AnnAssign)) else []
+            for t in targets:
+                if isinstance(t, (ast.Subscript, ast.Attribute)) and _capital(t.value):
+                    found.append(f"cell {i}: {_capital(t.value)}[…] or .attr assigned")
+                if isinstance(node, ast.AugAssign) and _capital(t):
+                    found.append(f"cell {i}: {_capital(t)} changed by an augmented assignment")
+    assert not found, "settings changed in place (N-058): " + "; ".join(found)
+
+
+def learner_settings(edition: str) -> dict[str, str]:
+    """{name: section} of every setting a learner changes: a `# @param` line or a ✏️ YOUR TURN cell."""
+    settings = {}
+    for _, cell, tree in code_trees(edition):
+        section = cell.metadata["section"]
+        for line in cell.source.splitlines():
+            m = re.match(r"^\s*([A-Z][A-Z0-9_]*)\s*=.*#\s*@param\b", line)
+            if m:
+                settings[m[1]] = section
+        if "✏️ YOUR TURN" in cell.source:
+            for node in tree.body:
+                if isinstance(node, (ast.Assign, ast.AnnAssign)):
+                    targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+                    settings.update({t.id: section for t in targets if _capital(t)})
+    return settings
+
+
+@pytest.mark.parametrize("edition", EDITIONS)
+def test_learner_settings_are_read_only_in_their_own_section(edition):
+    """N-058 (fix list row 24): a later section that needs the same kind of value gets its own setting, so a
+    change in one section never silently changes another (the case that started it: HASH_THRESHOLD)."""
+    settings = learner_settings(edition)
+    assert settings.get("HASH_THRESHOLD") == "04_errors_cleaning", "HASH_THRESHOLD should be set in section 4"
+    found = []
+    for i, cell, tree in code_trees(edition):
+        read = {n.id for n in ast.walk(tree) if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Load)}
+        for name in sorted(read & set(settings)):
+            if settings[name] != cell.metadata["section"]:
+                found.append(f"cell {i} ({cell.metadata['section']}) reads {name} from {settings[name]}")
+    assert not found, "; ".join(found)
+
+
+def test_own_edition_has_no_coding_exercises():
+    """Her request for the Own-Data Edition, 28 Oct: "without the exercises" (fix list rows 1, 24)."""
+    for i, cell in enumerate(cells("own")):
+        assert "✍️ YOUR CODE" not in cell.source, f"own cell {i} is a ✍️ coding exercise"
+        assert "Coding Exercise" not in cell.source, f"own cell {i} still says 'Coding Exercise'"
+        assert "_ref_" not in cell.source, f"own cell {i} holds a reference solution of an exercise"
