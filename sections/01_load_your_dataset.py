@@ -960,7 +960,7 @@ images, annotations = build_tables(coco_raw, _paths)
 no_object_images = images[images["class"] == "(no objects)"].reset_index(drop=True)
 images = images[images["class"] != "(no objects)"].reset_index(drop=True)
 images_by_id = images.set_index("id")  # the same table, looked up by image id
-RESULTS["n_images"] = int(len(images))
+results["n_images"] = int(len(images))
 
 # Classes are decided once, here: the classes that label at least one image, sorted by number of images. Every
 # class gets a color, also one that only appears next to a more frequent class: it is drawn on its boxes, but has
@@ -971,7 +971,7 @@ CLASSES = sorted(set(_counts) - {"(no objects)"}, key=lambda c: (-_counts[c], -_
 _object_only = sorted(set(_object_counts) - set(CLASSES) - {"(no objects)"}, key=lambda c: (-_object_counts[c], c))
 CLASS_COLORS = class_colors(CLASSES + _object_only)
 mpl.rcParams["axes.prop_cycle"] = mpl.cycler(color=[CLASS_COLORS[c] for c in CLASSES])
-RESULTS["class_colors"] = dict(CLASS_COLORS)
+results["class_colors"] = dict(CLASS_COLORS)
 
 _tasks_run = ["classification"] + [t for t in ("detection", "segmentation") if t in TASKS]
 _objects = f" · {int(annotations['bbox'].notna().sum())} objects (boxes)" if "detection" in TASKS else ""

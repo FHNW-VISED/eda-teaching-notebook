@@ -230,8 +230,8 @@ boxes_per_class = use(count_boxes_per_class, boxes, reference=_ref_count_boxes_p
 # @title 🔎 Compare Class Distributions: Photos vs. Boxes { display-mode: "form" }
 # needs: boxes
 
-RESULTS["boxes_per_class"] = boxes_per_class
-RESULTS["n_boxes"] = int(len(boxes))
+results["boxes_per_class"] = boxes_per_class
+results["n_boxes"] = int(len(boxes))
 
 by_photos = sorted(CLASSES, key=lambda c: -images_per_class[c])
 by_boxes = sorted(CLASSES, key=lambda c: -boxes_per_class[c])
@@ -331,7 +331,7 @@ bucket_share = (
     .reindex(index=CLASSES, columns=["small", "medium", "large"], fill_value=0)
 )
 
-RESULTS["small_box_share"] = {
+results["small_box_share"] = {
     c: float(bucket_share.loc[c, "small"]) for c in CLASSES
 }
 
@@ -554,7 +554,7 @@ boxes["cy"] = (boxes["bbox"].map(lambda b: b[1] + b[3] / 2) / _img_h).clip(0, 1)
 HEAT_BINS = 6 if SMOKE else 12  # coarser cells with few boxes (N-014)
 _edge_share = float(((boxes["cx"] < 0.2) | (boxes["cx"] > 0.8) | (boxes["cy"] < 0.2) | (boxes["cy"] > 0.8))
                     .mean())
-RESULTS["edge_box_share"] = _edge_share
+results["edge_box_share"] = _edge_share
 
 _ncols = min(6, len(CLASSES))  # at most six classes per row
 _nrows = -(-len(CLASSES) // _ncols)
@@ -625,7 +625,7 @@ However, the heatmaps alone do not establish how well the detector performs.
 # Annotated objects per image (the images table already counts them)
 crowding = images[["id", "class", "n_objects"]]
 
-RESULTS["max_objects_per_image"] = int(crowding["n_objects"].max())
+results["max_objects_per_image"] = int(crowding["n_objects"].max())
 
 fig, axes = plt.subplots(1, 2, figsize=(10, 3.5))
 

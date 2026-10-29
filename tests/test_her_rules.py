@@ -49,9 +49,9 @@ NO_ANSWER_BY_DESIGN = (
     "Splitting for Object Detection and Segmentation",  # the multiple-choice question checks itself
     "Exploring Bounding Boxes: What Do You Notice?",
 )
-# CAPITALS name settings decided once (SN-008, N-058). RESULTS is the hook the tests read; CLASSES and
+# CAPITALS name settings decided once (SN-008, N-058). CLASSES and
 # CLASS_COLORS are decided once at load, in setup or by the Own-Data loader (Simone, 2026-10-28, P9).
-CAPS_EXCEPTIONS = {"RESULTS"}
+CAPS_EXCEPTIONS: set[str] = set()  # none: results is lowercase too (Simone, 2026-10-29)
 SET_AT_LOAD = {"CLASSES", "CLASS_COLORS"}
 
 

@@ -94,8 +94,8 @@ _rel = shares.sub(shares["whole table"], axis=0).abs().div(_whole, axis=0) * 100
 print("largest drift relative to the class's own share, in %:")
 print(f"  random split: {_rel['random · test'].max():.0f} ({_rel['random · test'].idxmax()})   "
       f"stratified split: {_rel['stratified · test'].max():.0f} ({_rel['stratified · test'].idxmax()})")
-RESULTS["split_drift_random_pp"] = float(_drift["random · test"].max())
-RESULTS["split_drift_stratified_pp"] = float(_drift["stratified · test"].max())
+results["split_drift_random_pp"] = float(_drift["random · test"].max())
+results["split_drift_stratified_pp"] = float(_drift["stratified · test"].max())
 
 # %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }

@@ -164,8 +164,8 @@ report_card = [
 ]
 for mark, line in report_card:
     print(mark, line)
-RESULTS["swap_in_ok"] = bool(len(images) > 0 and len(image_stats) == len(split_suggestion) == len(images))
-RESULTS["swap_in"] = {"source": dataset_source, "n_images": int(len(images)), "n_classes": len(CLASSES),
+results["swap_in_ok"] = bool(len(images) > 0 and len(image_stats) == len(split_suggestion) == len(images))
+results["swap_in"] = {"source": dataset_source, "n_images": int(len(images)), "n_classes": len(CLASSES),
                       "copies": int(len(copy_pairs)), "not_rgb": _n_not_rgb}
 
 # %% [markdown] edition="own"

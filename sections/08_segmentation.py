@@ -375,7 +375,7 @@ pixels_per_class["background"] = (
     total_px - sum(animal_px.values())
 ) / total_px
 
-RESULTS["pixels_per_class"] = pixels_per_class
+results["pixels_per_class"] = pixels_per_class
 
 BACKGROUND_COLOR = "#D9DEDF"
 
@@ -582,7 +582,7 @@ animals["photo_share"] = animals["mask_area"] / _photo_px
 # The masks the quality checks run on, with park_masks' columns (the Teaching Edition plants five errors first).
 masks_to_check = animals[["id", "image_id", "class", "bbox", "iscrowd", "rle", "mask_area"]]
 _fill = animals.groupby("class")["fill"].median().reindex(CLASSES)
-RESULTS["median_fill"] = {c: float(_fill[c]) for c in CLASSES}
+results["median_fill"] = {c: float(_fill[c]) for c in CLASSES}
 print(f"{len(animals)} animal masks measured · median fill ratio " + " · ".join(
     f"{c} {_fill[c]:.0%}" for c in CLASSES))
 
@@ -712,7 +712,7 @@ thin_by_class = pd.DataFrame({
     "all masks": _has_thin.groupby(animals["class"]).mean(),
     f"masks ≥ {int(MIN_JUDGED_AREA**0.5)}² px": _has_thin[_big].groupby(animals.loc[_big, "class"]).mean(),
 }).reindex(CLASSES).fillna(0)
-RESULTS["thin_mask_share"] = {c: float(thin_by_class.loc[c, "all masks"]) for c in CLASSES}
+results["thin_mask_share"] = {c: float(thin_by_class.loc[c, "all masks"]) for c in CLASSES}
 display((thin_by_class * 100).round(0).astype(int).astype(str).add(" %").T)
 
 fig, ax = plt.subplots(figsize=(8, 3.2))
@@ -1335,11 +1335,11 @@ mask_error_key["found"] = mask_error_key["checks"] != ""
 
 n_errors_found = int(mask_error_key["found"].sum())
 
-RESULTS["hunt9"] = {
+results["hunt9"] = {
     "planted": len(mask_error_key),
     "found": n_errors_found,
 }
-RESULTS["mask_suspects_real"] = int(
+results["mask_suspects_real"] = int(
     (~mask_suspects["id"].isin(mask_error_key["ann_id"])).sum()
 )
 
@@ -1352,7 +1352,7 @@ _lines = [
 
 _lines.append(
     f"Detected {n_errors_found} of {len(mask_error_key)} planted errors; "
-    f"{RESULTS['mask_suspects_real']} original COCO annotations "
+    f"{results['mask_suspects_real']} original COCO annotations "
     "were also flagged."
 )
 

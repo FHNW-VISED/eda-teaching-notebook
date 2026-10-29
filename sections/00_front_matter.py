@@ -217,8 +217,8 @@ mpl.rcParams.update(
 )
 
 # --- Results every section writes into (SPEC §9) ---
-RESULTS = {}
-RESULTS["class_colors"] = dict(CLASS_COLORS)
+results = {}
+results["class_colors"] = dict(CLASS_COLORS)
 
 
 # --- use(): run a learner's function next to the reference solution (N-029) ---
@@ -494,7 +494,7 @@ def load_play_dataset(per_class: int | None = None) -> tuple[pd.DataFrame, pd.Da
 # @title Load the manifest, download the images, build the tables { display-mode: "form" }
 images, annotations = load_play_dataset(SMOKE_IMAGES_PER_CLASS if SMOKE else None)  # fewer in smoke (N-014)
 images_by_id = images.set_index("id")  # the same table, looked up by image id
-RESULTS["n_images"] = int(len(images))
+results["n_images"] = int(len(images))
 
 _counts = Counter(images["class"])
 print(f"images: {len(images)} · animals (annotations): {len(annotations)}")

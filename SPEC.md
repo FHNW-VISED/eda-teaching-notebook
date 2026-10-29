@@ -115,7 +115,7 @@ Status: todo · in-progress · done · blocked.
 - **00 Setup & the park**
   - A **title banner** (Theme, §8 L-003) with the title, the three outcomes and "Questions are marked 🟢 beginner · 🟡 intermediate · 🔴 advanced (optional)".
   - The park story as a short illustrated paragraph.
-  - Setup cell (`# @title`): IN_COLAB, SMOKE, SEED, `%pip install -q imagehash` in Colab, the matplotlib Theme style, **`CLASS_COLORS`** (one colour per class, used everywhere: N-027), `RESULTS = {}` (§9), `use()` (N-029), and the data download with caching.
+  - Setup cell (`# @title`): IN_COLAB, SMOKE, SEED, `%pip install -q imagehash` in Colab, the matplotlib Theme style, **`CLASS_COLORS`** (one colour per class, used everywhere: N-027), `results = {}` (§9), `use()` (N-029), and the data download with caching.
   - The data is loaded into a tidy table: `images` (id, file, width, height, class, n_animals, license) and `annotations` (image_id, class, bbox, area, segmentation).
 - **01 Image datasets**
   - Susanne's dataset sources and labelling-tool links (vault page §2b).
@@ -265,9 +265,9 @@ Status: todo · in-progress · done · blocked.
 ## 9. Acceptance (definition of done for the whole notebook)
 - `just check` passes, including `tests/test_content.py` (written from G-28; **the night agent never edits it**).
 - **Results contract for the tests:**
-  - `00_setup.py` creates `RESULTS = {}`.
+  - `00_setup.py` creates `results = {}`.
   - Sections write named results into it (the keys are listed in `tests/test_content.py`).
-  - The smoke test dumps `RESULTS` to `build/smoke-results.json` itself (no cell in the notebook).
+  - The smoke test dumps `results` to `build/smoke-results.json` itself (no cell in the notebook).
   - **Progressive gate:** a content test runs once every section it needs has a status other than `todo`. When you finish a section, set its status to `done`. The night runner checks that you did.
 - Runs top to bottom on a fresh kernel. No hidden state. Re-running a section from its first cell gives the same result (N-013).
 - Every section: markdown → small code cell → one sentence interpreting the output.

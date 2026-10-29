@@ -220,7 +220,7 @@ for _, _row in images.iterrows():
     _hists.append(_hist)
 image_stats = pd.DataFrame(_records)
 channel_hists = np.stack(_hists)  # (n_images, 3, HIST_BINS)
-RESULTS["image_stats_n"] = int(len(image_stats))
+results["image_stats_n"] = int(len(image_stats))
 
 _same_size = image_stats[["width", "height"]].to_numpy() == images[["width", "height"]].to_numpy()
 _agree = int(_same_size.all(axis=1).sum())
@@ -608,7 +608,7 @@ callout("recipe", "🧾 Recipe · Step 1, continued: Imbalances and Biases", r""
 # %%
 # @title 🔎 Explore Class Distribution { display-mode: "form" }
 images_per_class = {c: int((images["class"] == c).sum()) for c in CLASSES}
-RESULTS["images_per_class"] = images_per_class
+results["images_per_class"] = images_per_class
 
 _total = sum(images_per_class.values())
 _largest = max(images_per_class, key=images_per_class.get)
