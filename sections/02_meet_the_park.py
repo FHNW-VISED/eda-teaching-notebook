@@ -180,7 +180,7 @@ _gallery = {
     for c in CLASSES
 }
 
-def show_gallery(animal_class, page, show_boxes):
+def gallery_show_page(animal_class, page, show_boxes):
     rows = _gallery[animal_class]
     picked = rows.iloc[page * 6 : (page + 1) * 6]
 
@@ -219,12 +219,12 @@ def show_gallery(animal_class, page, show_boxes):
     plt.close(fig)
 
 
-class_dropdown = widgets.Dropdown(
+gallery_class_dropdown = widgets.Dropdown(
     options=CLASSES,
     description="Class:"
 )
 
-page_slider = widgets.IntSlider(
+gallery_page_slider = widgets.IntSlider(
     value=0,
     min=0,
     max=0,
@@ -232,33 +232,33 @@ page_slider = widgets.IntSlider(
     continuous_update=False
 )
 
-box_checkbox = widgets.Checkbox(
+gallery_box_checkbox = widgets.Checkbox(
     value=False,
     description="Show bounding boxes",
     indent=False
 )
 
-def update_pages(change):
-    n = len(_gallery[class_dropdown.value])
-    page_slider.max = max(0, (n - 1) // 6)
-    page_slider.value = 0
+def gallery_update_pages(change):
+    n = len(_gallery[gallery_class_dropdown.value])
+    gallery_page_slider.max = max(0, (n - 1) // 6)
+    gallery_page_slider.value = 0
 
-class_dropdown.observe(update_pages, names="value")
-update_pages(None)
+gallery_class_dropdown.observe(gallery_update_pages, names="value")
+gallery_update_pages(None)
 
-out = widgets.interactive_output(
-    show_gallery,
+gallery_output = widgets.interactive_output(
+    gallery_show_page,
     {
-        "animal_class": class_dropdown,
-        "page": page_slider,
-        "show_boxes": box_checkbox
+        "animal_class": gallery_class_dropdown,
+        "page": gallery_page_slider,
+        "show_boxes": gallery_box_checkbox
     }
 )
 
-_has_boxes = bool(annotations["bbox"].notna().any())  # no boxes in the labels: no box checkbox
+gallery_has_boxes = bool(annotations["bbox"].notna().any())  # no boxes in the labels: no box checkbox
 display(
-    widgets.HBox([class_dropdown, page_slider] + ([box_checkbox] if _has_boxes else [])),
-    out
+    widgets.HBox([gallery_class_dropdown, gallery_page_slider] + ([gallery_box_checkbox] if gallery_has_boxes else [])),
+    gallery_output
 )
 
 
@@ -430,7 +430,7 @@ ann_output = widgets.Output()
 ann_state = {"index": 0}
 
 
-def ann_show_image(index):
+def ann_show_page(index):
     row = ann_images.iloc[index]
     photo = np.array(Image.open(row["path"]).convert("RGB"))
     shown = photo.copy()
@@ -511,12 +511,12 @@ def ann_show_image(index):
 
 def ann_navigate(change):
     ann_state["index"] += change
-    ann_show_image(ann_state["index"])
+    ann_show_page(ann_state["index"])
 
 
 def ann_go_to_image(_):
     ann_state["index"] = ann_number_input.value - 1
-    ann_show_image(ann_state["index"])
+    ann_show_page(ann_state["index"])
 
 
 ann_prev_btn.on_click(lambda _: ann_navigate(-1))
@@ -525,11 +525,11 @@ ann_go_btn.on_click(ann_go_to_image)
 
 # Refresh the image immediately when a checkbox changes
 ann_box_toggle.observe(
-    lambda change: ann_show_image(ann_state["index"]),
+    lambda change: ann_show_page(ann_state["index"]),
     names="value"
 )
 ann_mask_toggle.observe(
-    lambda change: ann_show_image(ann_state["index"]),
+    lambda change: ann_show_page(ann_state["index"]),
     names="value"
 )
 
@@ -541,7 +541,7 @@ display(
     ann_output
 )
 
-ann_show_image(0)
+ann_show_page(0)
 
 
 # %% edition="teaching"

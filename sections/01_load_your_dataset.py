@@ -857,6 +857,7 @@ def stored_label(fmt: str, root: Path, path: Path) -> str:
 # @title Helpers: Park Sample, Class Colors and Skipped Cells { display-mode: "form" }
 # With DATASET_PATH = None the notebook writes a small park sample in the format you chose and reads it back
 # with the same reader your data would use, so you can see what your files should look like.
+PARK_SAMPLE_PER_CLASS = 4 if SMOKE else 20  # park images per class in that sample (fewer in smoke mode, N-014)
 
 
 def write_sample(fmt: str, dest: Path, imgs: pd.DataFrame, anns: pd.DataFrame, polygons: bool = False) -> Path:
@@ -890,29 +891,29 @@ def write_sample(fmt: str, dest: Path, imgs: pd.DataFrame, anns: pd.DataFrame, p
         labels.mkdir(parents=True, exist_ok=True)
         for _, im in imgs.iterrows():
             w, h, stem = im["width"], im["height"], Path(im["path"]).stem
-            own = by_image.get(im["id"], anns.iloc[:0])
+            image_anns = by_image.get(im["id"], anns.iloc[:0])
             if fmt == "yolo" and polygons:  # one line per outline: class x1 y1 x2 y2 …, fractions of the photo
                 lines = [f"{index[a['class']]} " + " ".join(
                     f"{v / (w if i % 2 == 0 else h):.6f}" for i, v in enumerate(outline))
-                    for _, a in own.iterrows() if isinstance(a["segmentation"], list)
+                    for _, a in image_anns.iterrows() if isinstance(a["segmentation"], list)
                     for outline in a["segmentation"]]  # an object in two parts becomes two lines
                 (labels / f"{stem}.txt").write_text("\n".join(lines) + "\n")
             elif fmt == "yolo":  # one line per object: class cx cy w h, as fractions of the photo
                 lines = [f"{index[a['class']]} {(a['bbox'][0] + a['bbox'][2] / 2) / w:.6f} "
                          f"{(a['bbox'][1] + a['bbox'][3] / 2) / h:.6f} {a['bbox'][2] / w:.6f} {a['bbox'][3] / h:.6f}"
-                         for _, a in own.iterrows()]
+                         for _, a in image_anns.iterrows()]
                 (labels / f"{stem}.txt").write_text("\n".join(lines) + "\n")
             elif fmt == "voc":
                 objects = "".join(
                     f"<object><name>{a['class']}</name><bndbox><xmin>{a['bbox'][0]:.1f}</xmin><ymin>"
                     f"{a['bbox'][1]:.1f}</ymin><xmax>{a['bbox'][0] + a['bbox'][2]:.1f}</xmax><ymax>"
-                    f"{a['bbox'][1] + a['bbox'][3]:.1f}</ymax></bndbox></object>" for _, a in own.iterrows())
+                    f"{a['bbox'][1] + a['bbox'][3]:.1f}</ymax></bndbox></object>" for _, a in image_anns.iterrows())
                 (labels / f"{stem}.xml").write_text(
                     f"<annotation><filename>{Path(im['path']).name}</filename><size><width>{w}</width>"
                     f"<height>{h}</height></size>{objects}</annotation>")
             else:  # one class index per pixel, 0 = background; class names in classes.txt
                 canvas = np.zeros((h, w), dtype=np.uint8)
-                for _, a in own.iterrows():
+                for _, a in image_anns.iterrows():
                     canvas[decode(to_rle(a["segmentation"], h, w)) > 0] = index[a["class"]] + 1
                 Image.fromarray(canvas).save(labels / f"{stem}.png")
         if fmt == "yolo":
@@ -981,12 +982,12 @@ _ip.input_transformers_cleanup.append(_skip_without_labels)
 tasks_to_run = ["classification"] + [t for t in ("detection", "segmentation")
                                      if t in TASKS or (t == "detection" and "segmentation" in TASKS)]
 if DATASET_PATH is None:  # the park sample, written in your format and read back the way your files would be
-    _fmt = LABEL_FORMAT if LABEL_FORMAT != "auto" else ("coco" if "detection" in tasks_to_run else "folders")
-    _play_images, _play_annotations = load_play_dataset(per_class=4 if SMOKE else 20)  # fewer in smoke (N-014)
-    _sample = write_sample(_fmt, DATA_DIR / "cache" / "my_sample" / _fmt, _play_images, _play_annotations,
-                           polygons=_fmt == "yolo" and "segmentation" in tasks_to_run)
+    _sample_format = LABEL_FORMAT if LABEL_FORMAT != "auto" else ("coco" if "detection" in tasks_to_run else "folders")
+    _play_images, _play_annotations = load_play_dataset(per_class=PARK_SAMPLE_PER_CLASS)
+    _sample = write_sample(_sample_format, DATA_DIR / "cache" / "my_sample" / _sample_format, _play_images, _play_annotations,
+                           polygons=_sample_format == "yolo" and "segmentation" in tasks_to_run)
     coco_raw, _paths, label_format_used, dataset_root = read_dataset(_sample, LABEL_FORMAT, tasks_to_run)
-    dataset_source = f"the park sample, written as {_fmt} (DATASET_PATH is None)"
+    dataset_source = f"the park sample, written as {_sample_format} (DATASET_PATH is None)"
 else:
     coco_raw, _paths, label_format_used, dataset_root = read_dataset(DATASET_PATH, LABEL_FORMAT, tasks_to_run)
     dataset_source = str(dataset_root)

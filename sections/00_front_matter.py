@@ -126,9 +126,9 @@ HTML(r"""
 
 # %% [markdown] edition="teaching"
 #
-# > ▶️ **Run the next three cells, in order.**
+# > ▶️ **Run the next four cells, in order.**
 # >
-# > Continue reading while they execute. The last cell downloads the Play Dataset (~115 MB), which may take 1–2 minutes on the first run. Subsequent runs use the cache.
+# > Continue reading while they execute. The third cell downloads the Play Dataset (~115 MB), which may take 1–2 minutes on the first run. Subsequent runs use the cache.
 #
 
 # %% [markdown] edition="own"
@@ -138,7 +138,8 @@ HTML(r"""
 
 # %%
 # @title Setup (run me first) { display-mode: "form" }
-# Every import the later sections need is made here, once (later cells use these names; noqa: F401).
+# The common imports are made here, once (later cells use these names; noqa: F401). A few heavy or
+# chapter-specific ones are imported where they are first used.
 import ast
 import base64  # noqa: F401
 import hashlib  # noqa: F401
@@ -151,14 +152,17 @@ import shutil  # noqa: F401
 import sys
 import textwrap
 import warnings  # noqa: F401
+from collections import Counter  # noqa: F401
 from io import BytesIO  # noqa: F401
 from itertools import combinations  # noqa: F401
+from pathlib import Path  # noqa: F401
 
 import cv2  # noqa: F401
 import ipywidgets as widgets  # noqa: F401
 import matplotlib as mpl
 import matplotlib.pyplot as plt  # noqa: F401  (every later section plots with plt)
 import numpy as np
+import pandas as pd  # noqa: F401
 from IPython.display import HTML, clear_output, display  # noqa: F401
 from PIL import Image, ImageOps  # noqa: F401
 from pycocotools import mask as mask_utils  # noqa: F401
@@ -347,18 +351,13 @@ except ImportError:
 import json
 import urllib.error
 import urllib.request
-from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
-
-import pandas as pd
 
 # Where the committed manifests live. In Colab they are fetched from the repository; locally they are read
 # from ./data. ⬇️ DATA_BASE_URL: change this if the repository moves or you work on a fork.
 DATA_BASE_URL = "https://raw.githubusercontent.com/FHNW-VISED/eda-teaching-notebook/main/data/"
 DATA_DIR = Path("data")
 IMAGE_CACHE = DATA_DIR / "cache" / "coco"
-SMOKE_IMAGES_PER_CLASS = 6
 
 
 def _github_headers() -> dict:
@@ -492,6 +491,7 @@ def load_play_dataset(per_class: int | None = None) -> tuple[pd.DataFrame, pd.Da
 
 # %% edition="teaching"
 # @title Load the manifest, download the images, build the tables { display-mode: "form" }
+SMOKE_IMAGES_PER_CLASS = 6
 images, annotations = load_play_dataset(SMOKE_IMAGES_PER_CLASS if SMOKE else None)  # fewer in smoke (N-014)
 images_by_id = images.set_index("id")  # the same table, looked up by image id
 results["n_images"] = int(len(images))

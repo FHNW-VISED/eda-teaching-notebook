@@ -16,7 +16,7 @@
 # This chapter explores how object size, position, crowding, and class imbalance affect your dataset. It runs only if `TASKS` includes `"detection"` or `"segmentation"`; otherwise its cells skip themselves.
 
 # %% [markdown] edition="teaching"
-# **From Labels to Bounding Boxes**
+# ### From Labels to Bounding Boxes
 #
 # Object detection datasets contain one annotation per object rather than one label per image. Each annotation specifies the object's class and bounding box.
 #
@@ -32,7 +32,7 @@
 # - **Crowding:** How many objects appear together, and how much do they overlap?
 
 # %% [markdown] edition="own"
-# **From Labels to Bounding Boxes**
+# ### From Labels to Bounding Boxes
 #
 # Object detection datasets contain one annotation per object, not one label per image. Each annotation specifies the object's class and bounding box.
 #
@@ -92,13 +92,13 @@ def show_boxes(rows_df: pd.DataFrame, boxes_df: pd.DataFrame, title: str, captio
         scale = thumb.width / row["width"]
         ax.axis("on")
         ax.imshow(thumb)
-        own = boxes_df[boxes_df["image_id"] == row["id"]]
-        for _, b in own.iterrows():
+        image_boxes = boxes_df[boxes_df["image_id"] == row["id"]]
+        for _, b in image_boxes.iterrows():
             x, y, w, h = b["bbox"]
             ax.add_patch(mpl.patches.Rectangle((x * scale, y * scale), w * scale, h * scale, fill=False,
                                                lw=2, edgecolor=CLASS_COLORS[b["class"]]))
         frame(ax, CLASS_COLORS[row["class"]])
-        text = caption(row) if caption else f"{row['class']} · {len(own)} boxes"
+        text = caption(row) if caption else f"{row['class']} · {len(image_boxes)} boxes"
         ax.set_title(text, fontsize=9)
     fig.suptitle(title, color=INK)
     fig.tight_layout()
@@ -116,8 +116,8 @@ boxes = annotations.copy()  # one row per box; a copy, because later cells add c
 boxview_page = 0
 boxview_output = widgets.Output()
 
-boxview_previous = widgets.Button(description="← Previous")
-boxview_next_button = widgets.Button(description="Next →")
+boxview_prev_btn = widgets.Button(description="← Previous")
+boxview_next_btn = widgets.Button(description="Next →")
 boxview_counter = widgets.HTML()
 
 
@@ -137,20 +137,20 @@ def boxview_show_page():
 
         total_pages = (len(images) + PAGE_SIZE - 1) // PAGE_SIZE
         boxview_counter.value = f"Page {boxview_page + 1} of {total_pages}"
-        boxview_previous.disabled = boxview_page == 0
-        boxview_next_button.disabled = boxview_page >= total_pages - 1
+        boxview_prev_btn.disabled = boxview_page == 0
+        boxview_next_btn.disabled = boxview_page >= total_pages - 1
 
 
-def boxview_change_page(step):
+def boxview_navigate(step):
     global boxview_page
     boxview_page += step
     boxview_show_page()
 
 
-boxview_previous.on_click(lambda b: boxview_change_page(-1))
-boxview_next_button.on_click(lambda b: boxview_change_page(1))
+boxview_prev_btn.on_click(lambda b: boxview_navigate(-1))
+boxview_next_btn.on_click(lambda b: boxview_navigate(1))
 
-display(widgets.HBox([boxview_previous, boxview_next_button, boxview_counter]), boxview_output)
+display(widgets.HBox([boxview_prev_btn, boxview_next_btn, boxview_counter]), boxview_output)
 boxview_show_page()
 
 # %% [markdown] edition="teaching"
@@ -232,18 +232,18 @@ boxes_per_class = {c: int(_box_counts.get(c, 0)) for c in CLASSES}
 results["boxes_per_class"] = boxes_per_class
 results["n_boxes"] = int(len(boxes))
 
-by_photos = sorted(CLASSES, key=lambda c: -images_per_class[c])
+by_images = sorted(CLASSES, key=lambda c: -images_per_class[c])
 by_boxes = sorted(CLASSES, key=lambda c: -boxes_per_class[c])
 
 print(f"{len(images)} images · {len(boxes)} boxes")
-print("Ranked by images: " + " > ".join(f"{c} {images_per_class[c]}" for c in by_photos))
+print("Ranked by images: " + " > ".join(f"{c} {images_per_class[c]}" for c in by_images))
 print("Ranked by boxes:  " + " > ".join(f"{c} {boxes_per_class[c]}" for c in by_boxes))
 
 for c in CLASSES:
-    move = by_photos.index(c) - by_boxes.index(c)
+    move = by_images.index(c) - by_boxes.index(c)
     if move:
         print(
-            f"  {c}: rank {by_photos.index(c) + 1} by images → "
+            f"  {c}: rank {by_images.index(c) + 1} by images → "
             f"rank {by_boxes.index(c) + 1} by boxes "
             f"({'↑' if move > 0 else '↓'}{abs(move)})"
         )
@@ -253,7 +253,7 @@ fig, axes = plt.subplots(1, 2, figsize=(10, 3.6))
 for ax, counts, order, what in zip(
     axes,
     [images_per_class, boxes_per_class],
-    [by_photos, by_boxes],
+    [by_images, by_boxes],
     ["Images", "Boxes"],
     strict=True
 ):
@@ -422,8 +422,8 @@ size_pages = [
 ]
 
 size_page = 0
-size_previous = widgets.Button(description="← Previous")
-size_next_button = widgets.Button(description="Next →")
+size_prev_btn = widgets.Button(description="← Previous")
+size_next_btn = widgets.Button(description="Next →")
 size_counter = widgets.HTML()
 size_output = widgets.Output()
 
@@ -489,20 +489,20 @@ def size_show_page():
         plt.show()
 
         size_counter.value = f"Page {size_page + 1} of {len(size_pages)}"
-        size_previous.disabled = size_page == 0
-        size_next_button.disabled = size_page == len(size_pages) - 1
+        size_prev_btn.disabled = size_page == 0
+        size_next_btn.disabled = size_page == len(size_pages) - 1
 
 
-def size_change_page(step):
+def size_navigate(step):
     global size_page
     size_page += step
     size_show_page()
 
 
-size_previous.on_click(lambda b: size_change_page(-1))
-size_next_button.on_click(lambda b: size_change_page(1))
+size_prev_btn.on_click(lambda b: size_navigate(-1))
+size_next_btn.on_click(lambda b: size_navigate(1))
 
-display(widgets.HBox([size_previous, size_next_button, size_counter]), size_output)
+display(widgets.HBox([size_prev_btn, size_next_btn, size_counter]), size_output)
 size_show_page()
 
 # %% edition="teaching"
@@ -561,11 +561,11 @@ fig, axes = plt.subplots(_nrows, _ncols, figsize=(2.3 * _ncols, 2.8 * _nrows), s
 for ax in axes.ravel()[len(CLASSES):]:
     ax.axis("off")
 for ax, c in zip(axes.ravel(), CLASSES, strict=False):
-    own = boxes[boxes["class"] == c]
+    class_boxes = boxes[boxes["class"] == c]
     cmap = mpl.colors.LinearSegmentedColormap.from_list(c, ["white", CLASS_COLORS[c]])
-    heat, _, _ = np.histogram2d(own["cy"], own["cx"], bins=HEAT_BINS, range=[[0, 1], [0, 1]])
+    heat, _, _ = np.histogram2d(class_boxes["cy"], class_boxes["cx"], bins=HEAT_BINS, range=[[0, 1], [0, 1]])
     ax.imshow(heat, cmap=cmap, extent=[0, 1, 1, 0], vmin=0)
-    ax.set_title(f"{c} · {len(own)} boxes", fontsize=9, color=CLASS_COLORS[c])
+    ax.set_title(f"{c} · {len(class_boxes)} boxes", fontsize=9, color=CLASS_COLORS[c])
     ax.set_xticks([0, 0.5, 1])
     ax.set_yticks([0, 0.5, 1])
     ax.tick_params(labelsize=7)
@@ -697,10 +697,10 @@ crowd_count_selector = widgets.Dropdown(
 
 crowd_page = 0
 
-crowd_first = widgets.Button(description="⇤ First")
-crowd_previous = widgets.Button(description="← Previous")
-crowd_next_button = widgets.Button(description="Next →")
-crowd_last = widgets.Button(description="Last ⇥")
+crowd_first_btn = widgets.Button(description="⇤ First")
+crowd_prev_btn = widgets.Button(description="← Previous")
+crowd_next_btn = widgets.Button(description="Next →")
+crowd_last_btn = widgets.Button(description="Last ⇥")
 crowd_counter = widgets.HTML()
 crowd_output = widgets.Output()
 
@@ -749,8 +749,8 @@ def crowd_show_page():
         f"Page {crowd_page + 1} of {total_pages}"
     )
 
-    crowd_first.disabled = crowd_previous.disabled = crowd_page == 0
-    crowd_next_button.disabled = crowd_last.disabled = crowd_page >= total_pages - 1
+    crowd_first_btn.disabled = crowd_prev_btn.disabled = crowd_page == 0
+    crowd_next_btn.disabled = crowd_last_btn.disabled = crowd_page >= total_pages - 1
 
 
 def crowd_go_to_page(new_page):
@@ -762,6 +762,10 @@ def crowd_go_to_page(new_page):
     crowd_show_page()
 
 
+def crowd_navigate(step):
+    crowd_go_to_page(crowd_page + step)
+
+
 def crowd_change_count(change):
     if change["name"] == "value":
         crowd_go_to_page(0)
@@ -769,15 +773,15 @@ def crowd_change_count(change):
 
 crowd_count_selector.observe(crowd_change_count, names="value")
 
-crowd_first.on_click(lambda b: crowd_go_to_page(0))
-crowd_previous.on_click(lambda b: crowd_go_to_page(crowd_page - 1))
-crowd_next_button.on_click(lambda b: crowd_go_to_page(crowd_page + 1))
-crowd_last.on_click(lambda b: crowd_go_to_page(10**9))
+crowd_first_btn.on_click(lambda b: crowd_go_to_page(0))
+crowd_prev_btn.on_click(lambda b: crowd_navigate(-1))
+crowd_next_btn.on_click(lambda b: crowd_navigate(1))
+crowd_last_btn.on_click(lambda b: crowd_go_to_page(10**9))
 
 display(
     widgets.VBox([
         crowd_count_selector,
-        widgets.HBox([crowd_first, crowd_previous, crowd_next_button, crowd_last, crowd_counter])
+        widgets.HBox([crowd_first_btn, crowd_prev_btn, crowd_next_btn, crowd_last_btn, crowd_counter])
     ]),
     crowd_output
 )
@@ -887,13 +891,13 @@ def show_overlap(x_shift, y_shift):
     plt.close(fig)
 
 
-x_slider = widgets.IntSlider(
+overlap_x_slider = widgets.IntSlider(
     value=25, min=0, max=90, step=5,
     description="X shift:",
     continuous_update=False
 )
 
-y_slider = widgets.IntSlider(
+overlap_y_slider = widgets.IntSlider(
     value=10, min=0, max=70, step=5,
     description="Y shift:",
     continuous_update=False
@@ -901,10 +905,10 @@ y_slider = widgets.IntSlider(
 
 overlap_output = widgets.interactive_output(
     show_overlap,
-    {"x_shift": x_slider, "y_shift": y_slider}
+    {"x_shift": overlap_x_slider, "y_shift": overlap_y_slider}
 )
 
-display(widgets.VBox([x_slider, y_slider]), overlap_output)
+display(widgets.VBox([overlap_x_slider, overlap_y_slider]), overlap_output)
 
 # %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
@@ -1070,16 +1074,16 @@ quality_class_selector = widgets.Dropdown(
 
 quality_page = 0
 
-quality_previous = widgets.Button(description="← Previous")
-quality_next_button = widgets.Button(description="Next →")
-quality_shuffle = widgets.Button(description="Shuffle")
+quality_prev_btn = widgets.Button(description="← Previous")
+quality_next_btn = widgets.Button(description="Next →")
+quality_shuffle_btn = widgets.Button(description="Shuffle")
 quality_counter = widgets.HTML()
 quality_output = widgets.Output()
 
 quality_rng = np.random.default_rng(SEED)
 
 
-def show_quality_page():
+def quality_show_page():
     with quality_output:
         clear_output(wait=True)
 
@@ -1096,17 +1100,17 @@ def show_quality_page():
 
     total_pages = max(1, (len(quality_images) + PAGE_SIZE - 1) // PAGE_SIZE)
     quality_counter.value = f"Page {quality_page + 1} of {total_pages}"
-    quality_previous.disabled = quality_page == 0
-    quality_next_button.disabled = quality_page >= total_pages - 1
+    quality_prev_btn.disabled = quality_page == 0
+    quality_next_btn.disabled = quality_page >= total_pages - 1
 
 
-def change_quality_page(step):
+def quality_navigate(step):
     global quality_page
     quality_page += step
-    show_quality_page()
+    quality_show_page()
 
 
-def update_quality_images(change=None):
+def quality_update_images(change=None):
     global quality_page, quality_images
     quality_page = 0
 
@@ -1114,10 +1118,10 @@ def update_quality_images(change=None):
         images["class"] == quality_class_selector.value
     ].sample(frac=1, random_state=SEED).reset_index(drop=True)
 
-    show_quality_page()
+    quality_show_page()
 
 
-def shuffle_quality_images(button):
+def quality_shuffle_images(button):
     global quality_page, quality_images
     quality_page = 0
 
@@ -1126,23 +1130,23 @@ def shuffle_quality_images(button):
         random_state=int(quality_rng.integers(0, 2**31 - 1))
     ).reset_index(drop=True)
 
-    show_quality_page()
+    quality_show_page()
 
 
-quality_class_selector.observe(update_quality_images, names="value")
-quality_previous.on_click(lambda b: change_quality_page(-1))
-quality_next_button.on_click(lambda b: change_quality_page(1))
-quality_shuffle.on_click(shuffle_quality_images)
+quality_class_selector.observe(quality_update_images, names="value")
+quality_prev_btn.on_click(lambda b: quality_navigate(-1))
+quality_next_btn.on_click(lambda b: quality_navigate(1))
+quality_shuffle_btn.on_click(quality_shuffle_images)
 
 display(
     widgets.VBox([
         quality_class_selector,
-        widgets.HBox([quality_previous, quality_next_button, quality_shuffle, quality_counter])
+        widgets.HBox([quality_prev_btn, quality_next_btn, quality_shuffle_btn, quality_counter])
     ]),
     quality_output
 )
 
-update_quality_images()
+quality_update_images()
 
 # %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }

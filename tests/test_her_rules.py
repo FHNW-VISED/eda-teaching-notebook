@@ -229,3 +229,51 @@ def test_own_edition_has_no_coding_exercises():
         assert "✍️ YOUR CODE" not in cell.source, f"own cell {i} is a ✍️ coding exercise"
         assert "Coding Exercise" not in cell.source, f"own cell {i} still says 'Coding Exercise'"
         assert "_ref_" not in cell.source, f"own cell {i} holds a reference solution of an exercise"
+
+
+@pytest.mark.parametrize("edition", EDITIONS)
+def test_no_capitals_inside_functions_or_as_parameters(edition):
+    """N-058 / PEP 8 (fix list row 23): a CAPITAL name is a module-level setting, so a function never assigns
+    one (locals are lowercase) and never takes one as a parameter (not even scikit-learn's X)."""
+    found = []
+    for i, _, tree in code_trees(edition):
+        kinds = (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)
+        for fn in (n for n in ast.walk(tree) if isinstance(n, kinds)):
+            args = fn.args
+            for arg in [*args.posonlyargs, *args.args, *args.kwonlyargs, args.vararg, args.kwarg]:
+                if arg is not None and CAPITAL_RE.fullmatch(arg.arg):
+                    found.append(f"cell {i}: parameter {arg.arg}")
+            body = fn.body if isinstance(fn.body, list) else [fn.body]
+            for node in (n for stmt in body for n in ast.walk(stmt)):
+                if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store) and _capital(node):
+                    found.append(f"cell {i}: {node.id} assigned inside {getattr(fn, 'name', 'a lambda')}()")
+    assert not found, "; ".join(found)
+
+
+def _shows_box(cell) -> bool:
+    """True if the cell's last line shows one box drawn from literals only: callout("kind", "title", body)
+    or HTML(body) with literal strings. Boxes with a figure (fig=) or values from the kernel can only be drawn
+    at run time."""
+    try:
+        last = ast.parse(cell.source).body[-1]
+    except (SyntaxError, IndexError):
+        return False
+    if not (isinstance(last, ast.Expr) and isinstance(last.value, ast.Call)
+            and isinstance(last.value.func, ast.Name) and last.value.func.id in {"callout", "HTML"}):
+        return False
+    if last.value.keywords:
+        return False
+    try:
+        args = [ast.literal_eval(a) for a in last.value.args]
+    except ValueError:
+        return False
+    return any(isinstance(a, str) and "<" in a for a in args)
+
+
+@pytest.mark.parametrize("edition", EDITIONS)
+def test_boxes_show_before_anything_runs(edition):
+    """N-034 (fix list rows 17, 24): every cell that shows a box has its HTML saved as output in the built
+    notebook, so Colab shows the box (Learning Objectives, How to Use, every callout) before the cell runs."""
+    missing = [f"cell {i} ({c.source.lstrip().splitlines()[0][:60]})" for i, c in enumerate(cells(edition))
+               if c.cell_type == "code" and _shows_box(c) and not c.get("outputs")]
+    assert not missing, "boxes without a saved output: " + "; ".join(missing)

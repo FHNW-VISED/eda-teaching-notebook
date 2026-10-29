@@ -14,7 +14,8 @@ same HTML saved as its output so the box shows in Colab before anything runs.
 Her boxes (2026-10-28, C-12) are code cells that call the notebook's own `callout(kind, title, body)`.
 When such a cell is a `# @title` line plus one `callout(...)` call with literal arguments (no `fig=`), the
 build runs the notebook's `callout` (taken from the sections source) and saves its HTML as the cell's
-output, for the same reason.
+output, for the same reason. A cell that only imports and shows one literal `HTML(...)` box (Learning
+Objectives, How to Use) gets that HTML saved as its output too.
 """
 
 from __future__ import annotations
@@ -222,6 +223,34 @@ def prerender_callout(cell: nbformat.NotebookNode, callout) -> None:
     ]
 
 
+def prerender_html(cell: nbformat.NotebookNode) -> None:
+    """Save the box as the output of a cell that only imports and then shows one HTML(...) of a string literal
+    (Learning Objectives, How to Use), so it shows in Colab before the cell runs (N-034), like a callout."""
+    if cell.cell_type != "code" or "HTML(" not in cell.source:
+        return
+    try:
+        *head, last = ast.parse(cell.source).body
+    except (SyntaxError, ValueError):
+        return
+    if not all(isinstance(n, (ast.Import, ast.ImportFrom)) for n in head):
+        return
+    call = last.value if isinstance(last, ast.Expr) else None
+    if not (isinstance(call, ast.Call) and isinstance(call.func, ast.Name) and call.func.id == "HTML"
+            and len(call.args) == 1 and not call.keywords):
+        return
+    try:
+        html = ast.literal_eval(call.args[0])
+    except ValueError:  # an f-string or a variable: only the kernel can draw it
+        return
+    if isinstance(html, str):
+        cell.outputs = [
+            nbformat.v4.new_output(
+                "display_data", data={"text/html": html, "text/plain": "<IPython.core.display.HTML object>"},
+                metadata={},
+            )
+        ]
+
+
 # ---- assembly ----------------------------------------------------------------------------------
 
 
@@ -247,6 +276,7 @@ def read_cells(sections: Path = SECTIONS) -> list[nbformat.NotebookNode]:
                 cell.source = cell.source.rstrip()
             cell = convert_callout(cell, where)
             prerender_callout(cell, callout)
+            prerender_html(cell)
             if edition is not None:
                 cell.metadata["edition"] = edition
             cell.id = f"{path.stem[:50]}-{k}"  # deterministic ids: same sections -> byte-identical .ipynb

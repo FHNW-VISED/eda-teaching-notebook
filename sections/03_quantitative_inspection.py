@@ -310,8 +310,8 @@ plt.close(fig)
 # photo. Right: the aspect ratio width/height, stacked by class.
 fig, (ax_sc, ax_hist) = plt.subplots(1, 2, figsize=(13, 4.8))
 for c in CLASSES:
-    s = image_stats[image_stats["class"] == c]
-    ax_sc.scatter(s["width"], s["height"], s=22, alpha=0.65, color=CLASS_COLORS[c], label=c, edgecolor="none")
+    class_stats = image_stats[image_stats["class"] == c]
+    ax_sc.scatter(class_stats["width"], class_stats["height"], s=22, alpha=0.65, color=CLASS_COLORS[c], label=c, edgecolor="none")
 _lim = float(max(image_stats["width"].max(), image_stats["height"].max())) * 1.08
 ax_sc.plot([0, _lim], [0, _lim], "--", color=INK, lw=1)
 ax_sc.set_xlim(0, _lim)

@@ -1,9 +1,16 @@
-# %% [markdown]
+# %% [markdown] edition="teaching"
 # ## Your Project Dataset
+#
+# Your project needs a dataset too, and the checks in this notebook tell you whether it is good enough to train on.
+
+# %% [markdown] edition="own"
+# ## Your Project Dataset
+#
+# You have run every check on your own dataset, so now compare it with what a good dataset needs and turn your results into a split and a report card.
 
 # %%
-# @title Checklist Dataset Mini-Project { display-mode: "form" }
-callout("theory", "📘 Theory · What makes a good dataset", r"""
+# @title 📘 What Makes a Good Dataset { display-mode: "form" }
+callout("theory", "📘 What Makes a Good Dataset", r"""
 <ul style="margin:6px 0 0 0;padding-left:22px;">
 <li style="margin:2px 0;"><strong>Does it fit the question?</strong> The images, the classes and the setting must match the job you want the
   model to do.<br><em>Park example:</em> the alert needs a dog seen from a fixed camera in the sheep paddock, not a
