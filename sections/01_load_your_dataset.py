@@ -306,11 +306,9 @@ def find_dataset(path) -> Path:
             continue
         break
     names = {d.name.lower() for d in subdirs}
-    if subdirs and names <= SPLIT_NAMES:
-        first = p / sorted(d.name for d in subdirs)[0]
-        raise SystemExit(f"❌ DATASET_PATH: {p} holds split folders ({', '.join(sorted(names))}), "
-                         f"not class folders. Point at one of them, e.g. {first}, and run the notebook "
-                         "again for the other.")
+    if subdirs and names <= SPLIT_NAMES:  # train/, val/, test/ with the class folders inside: read them together
+        print(f"ℹ️ {p.name}/ holds the splits {', '.join(sorted(d.name for d in subdirs))}: they are read together, "
+              "so the checks also find copies across your splits.")
     if not subdirs and loose:
         raise SystemExit(f"❌ DATASET_PATH: {p} holds {len(loose)} images but no class folders. If this "
                          f"is one class folder, point one level up, at {p.parent}. If your project has no "
@@ -323,13 +321,22 @@ def find_dataset(path) -> Path:
     return p
 
 
+def class_folders(root) -> list[Path]:
+    """The class folders under `root`: its sub-folders, or those inside train/, val/, test/ split folders."""
+    subdirs = [d for d in _visible(Path(root)) if d.is_dir()]
+    if subdirs and {d.name.lower() for d in subdirs} <= SPLIT_NAMES:
+        return [c for split in subdirs for c in _visible(split) if c.is_dir()]
+    return subdirs
+
+
 def list_folder_per_class(root) -> pd.DataFrame:
-    """One row per image file under `root`: columns path, file, class (the top-level folder it sits in).
+    """One row per image file under `root`: columns path, file, class (the folder it sits in, inside the split
+    folder if there is one).
 
     e.g. a row: {"path": "/content/flowers/rose/img_7.jpg", "file": "rose/img_7.jpg", "class": "rose"}
     """
     rows = []
-    for class_dir in (d for d in _visible(Path(root)) if d.is_dir()):
+    for class_dir in class_folders(root):
         for f in sorted(class_dir.rglob("*")):
             if _is_image(f) and not f.name.startswith("."):
                 rows.append({"path": str(f), "file": str(f.relative_to(root)), "class": class_dir.name})
@@ -344,13 +351,13 @@ def folder_notes(root: Path, files: pd.DataFrame) -> list[str]:
     if loose:
         notes.append(f"⚠️ {len(loose)} images sit directly in {root.name}/, outside any class folder: "
                      "skipped.")
-    others = [f for d in _visible(root) if d.is_dir() for f in d.rglob("*")
+    others = [f for d in class_folders(root) for f in d.rglob("*")
               if f.is_file() and not _is_image(f) and not f.name.startswith(".")]
     skipped = Counter(f.suffix.lower() or "(no extension)" for f in others)
     if skipped:
         notes.append("⚠️ skipped files that are not images: "
                      + ", ".join(f"{n} × {ext}" for ext, n in skipped.most_common()))
-    empty = [d.name for d in _visible(root) if d.is_dir() and d.name not in set(files["class"])]
+    empty = sorted({d.name for d in class_folders(root)} - set(files["class"]))
     if empty:
         notes.append(f"⚠️ class folders with no images: {', '.join(empty)}.")
     if files["class"].nunique() == 1:
@@ -375,7 +382,20 @@ FORMAT_HAS = {  # what each format can carry
     "voc": {"classification", "detection"},
     "png-masks": {"classification", "detection", "segmentation"},
 }
-MASK_DIRS = ("masks", "mask", "segmentationclass", "segmentation")
+MASK_DIRS = ("masks", "mask", "segmentationclass", "segmentationobject", "segmentation")
+
+
+def is_mask_dir(name: str) -> bool:
+    """A folder of PNG masks: masks/, SegmentationClass/, or any name with "mask" in it (PedMasks/)."""
+    return name.lower() in MASK_DIRS or "mask" in name.lower()
+
+
+def is_yolo_label(path: Path) -> bool:
+    """True if the first line with content is numbers only (a YOLO line), not text like "# Annotation …"."""
+    for line in path.read_text(errors="ignore").splitlines():
+        if line.strip():
+            return all(re.fullmatch(r"-?\d+(\.\d+)?(e-?\d+)?", v) for v in line.split())
+    return True  # an empty label file is a YOLO image without objects
 
 
 class CocoBuilder:
@@ -419,12 +439,12 @@ class CocoBuilder:
                 "unreadable": self.unreadable}, self.paths
 
 
-def _images_under(root: Path, skip_dirs=()) -> list[Path]:
-    """Every image file under `root`, leaving out hidden folders and the folders named in `skip_dirs`."""
+def _images_under(root: Path, skip_dirs=lambda name: False) -> list[Path]:
+    """Every image file under `root`, leaving out hidden folders and the folders `skip_dirs(name)` picks."""
     found = []
     for f in sorted(root.rglob("*")):
         parts = [p.lower() for p in f.relative_to(root).parts[:-1]]
-        if _is_image(f) and not any(p.startswith((".", "__")) or p in skip_dirs for p in parts):
+        if _is_image(f) and not any(p.startswith((".", "__")) or skip_dirs(p) for p in parts):
             found.append(f)
     return found
 
@@ -452,12 +472,12 @@ def detect_format(root: Path) -> str:
             continue
         if isinstance(head, dict) and {"images", "annotations", "categories"} <= set(head):
             return "coco"
-    if any(d.is_dir() and d.name.lower() in MASK_DIRS for d in root.rglob("*")):
+    if any(d.is_dir() and is_mask_dir(d.name) for d in root.rglob("*")):
         return "png-masks"
     if any("<annotation" in x.read_text(errors="ignore")[:500] for x in sorted(root.rglob("*.xml"))[:5]):
         return "voc"
-    txts = [t for t in root.rglob("*.txt") if t.name not in ("classes.txt", "obj.names", "README.txt")]
-    if txts:
+    txts = [t for t in root.rglob("*.txt") if t.name.lower() not in ("classes.txt", "obj.names", "readme.txt")]
+    if txts and all(is_yolo_label(t) for t in txts[:20]):
         return "yolo"
     if any(root.rglob("*.csv")):
         return "csv"
@@ -618,31 +638,47 @@ def read_voc(root: Path) -> tuple[dict, dict]:
 
 
 def read_png_masks(root: Path) -> tuple[dict, dict]:
-    """PNG label masks: masks/<image name>.png, one class index per pixel (0 = background, 255 = ignore),
-    with the class names in classes.txt (line 1 = index 0). Each connected piece of a class becomes one object."""
-    masks = _by_stem(f for d in root.rglob("*") if d.is_dir() and d.name.lower() in MASK_DIRS
-                     for f in sorted(d.glob("*.png")))
-    names = next((dict(enumerate(ln.strip() for ln in t.read_text().splitlines() if ln.strip()))
-                  for t in root.rglob("classes.txt")), {})
+    """PNG label masks: a folder of masks (masks/, or any folder with "mask" in its name), one PNG per image,
+    named like the image (img_7.png or img_7_mask.png), and classes.txt with one class name per line, starting
+    with index 0 (background). Pixel values are class indices (0 = background, 255 = ignore), and each
+    connected piece of a class becomes one object. If classes.txt names only ONE class besides background, the
+    masks may instead number the objects (1, 2, 3 …, as Penn-Fudan does): every value is then its own object."""
+    masks = {}
+    for d in (d for d in root.rglob("*") if d.is_dir() and is_mask_dir(d.name)):
+        for f in sorted(d.glob("*.png")):
+            masks[f.stem.removesuffix("_mask")] = f
+    classes_txt = next(iter(sorted(root.rglob("classes.txt"))), None)
+    if classes_txt is None:
+        raise SystemExit("❌ PNG masks need a classes.txt next to them: one class name per line, the first line "
+                         "for pixel value 0 (background). Example for two classes:\n    background\n    horse\n"
+                         "    sheep\nIf your masks number the objects (1, 2, 3 …) and all objects have one class, "
+                         "write only background and that class.")
+    names = dict(enumerate(ln.strip() for ln in classes_txt.read_text().splitlines() if ln.strip()))
+    one_class = len(names) == 2  # background + one class: every non-zero value is an object of that class
+    if one_class:
+        print(f"ℹ️ classes.txt names one class ({names[1]}): every value in a mask is one {names[1]}.")
     coco = CocoBuilder()
-    for path in _images_under(root, skip_dirs=MASK_DIRS):
+    for path in _images_under(root, skip_dirs=is_mask_dir):
         image_id = coco.image(path, root)
         mask_path = masks.get(path.stem)
         if image_id is None or mask_path is None:
             continue
         with Image.open(mask_path) as m:
             if m.mode not in ("L", "P", "I", "I;16"):
-                raise SystemExit(f"❌ {mask_path.name} is a {m.mode} colour image. Masks must store one class "
-                                 "index per pixel (a grayscale or palette PNG), not a colour picture.")
+                raise SystemExit(f"❌ {mask_path.name} is a {m.mode} color image. Masks must store one class "
+                                 "index per pixel (a grayscale or palette PNG), not a color picture.")
             labels = np.array(m)
         for k in sorted(set(np.unique(labels).tolist()) - {0, 255}):
-            n, pieces = cv2.connectedComponents((labels == k).astype(np.uint8), connectivity=8)
+            if one_class:  # one object per value
+                pieces, n, name = (labels == k).astype(np.uint8), 2, names[1]
+            else:  # one object per connected piece of the class
+                n, pieces = cv2.connectedComponents((labels == k).astype(np.uint8), connectivity=8)
+                name = names.get(k, f"class_{k}")
             for piece in range(1, n):
                 rle = mask_utils.encode(np.asfortranarray((pieces == piece).astype(np.uint8)))
                 rle["counts"] = rle["counts"].decode("ascii")
-                coco.annotation(image_id, names.get(k, f"class_{k}"),
-                                bbox=[float(v) for v in mask_utils.toBbox(rle)], segmentation=rle,
-                                area=float(mask_utils.area(rle)))
+                coco.annotation(image_id, name, bbox=[float(v) for v in mask_utils.toBbox(rle)],
+                                segmentation=rle, area=float(mask_utils.area(rle)))
     return coco.result()
 
 
@@ -920,13 +956,20 @@ if len(_paths) > MY_MAX_IMAGES:
     _paths = {i: _paths[i] for i in sorted(_keep)}
 
 images, annotations = build_tables(coco_raw, _paths)
+# Every later cell expects each image to have a class (as in the park), so images without objects are set aside.
+no_object_images = images[images["class"] == "(no objects)"].reset_index(drop=True)
+images = images[images["class"] != "(no objects)"].reset_index(drop=True)
 images_by_id = images.set_index("id")  # the same table, looked up by image id
 RESULTS["n_images"] = int(len(images))
 
-# Classes are decided once, here: sorted by number of images, "(no objects)" last; one color each.
+# Classes are decided once, here: the classes that label at least one image, sorted by number of images. Every
+# class gets a color, also one that only appears next to a more frequent class: it is drawn on its boxes, but has
+# no panel of its own in the per-class figures.
 _counts = Counter(images["class"])
-CLASSES = sorted(_counts, key=lambda c: (c == "(no objects)", -_counts[c], c))
-CLASS_COLORS = class_colors(CLASSES)
+_object_counts = Counter(annotations["class"])
+CLASSES = sorted(set(_counts) - {"(no objects)"}, key=lambda c: (-_counts[c], -_object_counts[c], c))
+_object_only = sorted(set(_object_counts) - set(CLASSES) - {"(no objects)"}, key=lambda c: (-_object_counts[c], c))
+CLASS_COLORS = class_colors(CLASSES + _object_only)
 mpl.rcParams["axes.prop_cycle"] = mpl.cycler(color=[CLASS_COLORS[c] for c in CLASSES])
 RESULTS["class_colors"] = dict(CLASS_COLORS)
 
@@ -934,6 +977,13 @@ _tasks_run = ["classification"] + [t for t in ("detection", "segmentation") if t
 _objects = f" · {int(annotations['bbox'].notna().sum())} objects (boxes)" if "detection" in TASKS else ""
 print(f"✅ source: {dataset_source} · format: {label_format_used} · {len(images)} images{_objects}")
 print(f"{len(CLASSES)} classes: " + " · ".join(f"{c} {_counts[c]}" for c in CLASSES))
+if len(no_object_images):
+    print(f"ℹ️ {len(no_object_images)} images have no objects (no box or mask): they are set aside in the table "
+          "no_object_images, and the rest of the notebook runs on the images with objects.")
+if _object_only:
+    print(f"ℹ️ {len(_object_only)} classes appear only next to a more frequent class in their images "
+          f"({', '.join(_object_only[:6])}{' …' if len(_object_only) > 6 else ''}): their boxes are drawn, but they "
+          "have no images of their own and no panel in the per-class figures.")
 print(f"tasks that will run: {', '.join(_tasks_run)}")
 
 # %% edition="own"
