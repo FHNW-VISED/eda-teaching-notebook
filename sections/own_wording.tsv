@@ -1,0 +1,50 @@
+section	old	new
+02_meet_the_park.py	Each image has an assigned animal class, indicated by its frame color.	Each image has an assigned class, indicated by its frame color.
+02_meet_the_park.py	- Viewpoints, distances, and animal sizes	- Viewpoints, distances, and object sizes
+02_meet_the_park.py	even if it contains multiple animals or different classes	even if it contains multiple objects or different classes
+03_quantitative_inspection.py	RGB pixel-intensity distributions for each animal class	RGB pixel-intensity distributions for each class
+03_quantitative_inspection.py	between the RGB distributions of animal classes?	between the RGB distributions of classes?
+03_quantitative_inspection.py	- Which animal classes have the highest and lowest median brightness?	- Which classes have the highest and lowest median brightness?
+03_quantitative_inspection.py	Class Distribution: Are All Animal Classes Equally Represented?	Class Distribution: Are All Classes Equally Represented?
+03_quantitative_inspection.py	how many images belong to each animal class	how many images belong to each class
+04_errors_cleaning.py	similarities across animal classes	similarities across classes
+07_object_detection.py	(one row per animal, with a	(one row per object, with a
+07_object_detection.py	one row per animal and a	one row per object and a
+07_object_detection.py	e.g. {"cat": 12, "dog": 9, "bird": 30, "horse": 7, "sheep": 25, "zebra": 14}	e.g. {"class_a": 12, "class_b": 9, "class_c": 30}
+07_object_detection.py	"Bounding boxes: one annotation per animal"	"Bounding boxes: one annotation per object"
+07_object_detection.py	Object Sizes: How Small Are the Animals?	Object Sizes: How Small Are the Objects?
+07_object_detection.py	- Which animal class do you expect to have the smallest bounding boxes?	- Which class do you expect to have the smallest bounding boxes?
+07_object_detection.py	Object Positions: Where Are the Animals?	Object Positions: Where Are the Objects?
+07_object_detection.py	- Do you expect animals to appear equally often	- Do you expect objects to appear equally often
+07_object_detection.py	- Where are most animals located within the images?	- Where are most objects located within the images?
+07_object_detection.py	struggle with animals near the image edges?	struggle with objects near the image edges?
+07_object_detection.py	Crowding: How Many Animals Appear Together?	Crowding: How Many Objects Appear Together?
+07_object_detection.py	Some images contain a single animal, while others show several animals close together. Crowded scenes can be challenging for object detection, particularly when animals partially hide one another.	Some images contain a single object, while others show several objects close together. Crowded scenes can be challenging for object detection, particularly when objects partially hide one another.
+07_object_detection.py	- Which animal classes do you expect to appear most often in images with many animals?	- Which classes do you expect to appear most often in images with many objects?
+07_object_detection.py	how many animals are annotated	how many objects are annotated
+07_object_detection.py	Images with many animals do not necessarily	Images with many objects do not necessarily
+07_object_detection.py	- Which animal classes do you expect to have the most overlapping bounding boxes?	- Which classes do you expect to have the most overlapping bounding boxes?
+07_object_detection.py	Bounding boxes should enclose the annotated animal as closely as possible.	Bounding boxes should enclose the annotated object as closely as possible.
+07_object_detection.py	- Browse images from different animal classes and inspect their bounding boxes.	- Browse images from different classes and inspect their bounding boxes.
+07_object_detection.py	- Check whether each box tightly encloses the animal, covers its visible parts, and corresponds to the correct animal.	- Check whether each box tightly encloses the object, covers its visible parts, and corresponds to the correct object.
+07_object_detection.py	- How well do the bounding boxes fit the visible animals?	- How well do the bounding boxes fit the visible objects?
+07_object_detection.py	- Which images or animal characteristics make accurate annotation difficult?	- Which images or object characteristics make accurate annotation difficult?
+08_segmentation.py	Segmentation masks show which pixels belong to animals, rather than just	Segmentation masks show which pixels belong to objects, rather than just
+08_segmentation.py	- How much of an image do you expect to be covered by animals compared with the background?	- How much of an image do you expect to be covered by objects compared with the background?
+08_segmentation.py	- Compare the masks across different animals and images.	- Compare the masks across different objects and images.
+08_segmentation.py	- How much of each image is covered by animals, and how much is background?	- How much of each image is covered by objects, and how much is background?
+08_segmentation.py	- Which animal characteristics might make accurate segmentation difficult?	- Which object characteristics might make accurate segmentation difficult?
+08_segmentation.py	no animals, resulting in many background pixels.	no objects, resulting in many background pixels.
+08_segmentation.py	Large animals contribute more labeled pixels	Large objects contribute more labeled pixels
+08_segmentation.py	than small animals, even when both count as one object.	than small objects, even when both count as one object.
+02_meet_the_park.py	- Specific: "Many dog images	- Specific (in the park): "Many dog images
+02_meet_the_park.py	f"Annotated animals: {len(anns)}"	f"Annotated objects: {len(anns)}"
+03_quantitative_inspection.py	print("mean animals per image: "	print("mean objects per image: "
+03_quantitative_inspection.py	ax.set_xlabel("animals in the image")	ax.set_xlabel("objects in the image")
+03_quantitative_inspection.py	ax.set_title("Animals per image")	ax.set_title("Objects per image")
+03_quantitative_inspection.py	one animal; the most crowded image	one object; the most crowded image
+08_segmentation.py	- How do masks represent animal shapes differently	- How do masks represent object shapes differently
+08_segmentation.py	"Class distribution among animals: images vs. boxes vs. pixels"	"Class distribution among objects: images vs. boxes vs. pixels"
+08_segmentation.py	animal masks measured	object masks measured
+08_segmentation.py	"Where the animal pixels are (same scale	"Where the object pixels are (same scale
+08_segmentation.py	faint = other animals	faint = other objects

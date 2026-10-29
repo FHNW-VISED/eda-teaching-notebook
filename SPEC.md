@@ -1,6 +1,14 @@
-# SPEC — Know Your Data: Exploring and Preparing Image Datasets at the Wildwood Farm Park
+# SPEC — Know Your Images: Exploring and Preparing the Wildwood Farm Park Image Dataset
 
 **With:** Susanne Suter
+
+> **2026-10-28: her edited copy is the base.** She rewrote v05 (title, structure, tasks, boxes); the repo now
+> builds **two Editions** from one ordered list of cells: the **Teaching Edition** (`eda-teaching-notebook.ipynb`,
+> her notebook) and the **Own-Data Edition** (`eda-own-dataset-notebook.ipynb`: the student's dataset is loaded at
+> the top, then the same analysis cells run on it; guiding questions with blank answers, short *In the park* hints,
+> no Sample Answers). Decisions: PRD `docs/work/prd/2026-10-28-eda-susanne-copy-and-own-data-edition.md` (vault)
+> and `reviews/2026-10-28-susanne-copy.md` (repo). Where this SPEC still describes v05 (§2–§4, §6 contents,
+> §8–§10), her copy wins.
 
 The single source of truth for **what** this notebook is. `AGENTS.md` says how to work,
 `RULES.md` says what every notebook must respect, and this file says what *this* one must do.
@@ -74,35 +82,36 @@ chosen in section 4.)
 
 | Item | Value |
 |---|---|
-| Runs on | Google Colab (web), **CPU runtime is enough** (no training) |
-| Python | 3.12 |
-| Preinstalled in Colab (checked 2026-10-19) | numpy, pandas 2.2.3, matplotlib 3.10.0, pillow 11.3.0, pycocotools 2.0.11, opencv 5.0.0.93, scikit-image 0.25.2, scikit-learn 1.6.1, seaborn 0.13.2 |
+| Runs on | Google Colab (web), **CPU runtime is the classroom target** (no training) |
+| Python | 3.12 in this repo; ⚠️ Colab moved to 3.13 (pip freeze, 2026-10-28): re-check the pins |
+| Preinstalled in Colab (checked 2026-10-28) | numpy, pandas, matplotlib, pillow, pycocotools, opencv, scikit-image, scikit-learn, umap-learn 0.5.12, bokeh 3.8.2, transformers, torch (CPU and GPU runtimes) |
 | `%pip install` needed | `imagehash` only |
-| 🔴 optional model-based search | precomputed embeddings downloaded in one cell **[PROPOSAL]**, so no model runs on CPU |
+| 🔴 image embeddings (DINOv2-small) | park vectors precomputed in `data/coco_animals_dinov2.npz` (`scripts/precompute_dinov2.py`); computed live only on a GPU or with `COMPUTE_EMBEDDINGS = True` |
 | Data download | ~115 MB COCO images + CCT20 slice, cached in `data/` |
-| Smoke run | `NB_SMOKE=1`, CPU, budget 900 s |
+| Own-Data Edition input | folder per class · CSV `file,label` · COCO JSON (boxes, polygon/RLE masks) · YOLO (boxes or polygons) · Pascal VOC XML · PNG label masks; converted to the same `images` / `annotations` tables; `TASKS` says which chapters run |
+| Smoke run | `NB_SMOKE=1`, CPU: Teaching once, Own-Data once per input format plus a broken file |
 | Dev access in Colab | GitHub token in Colab Secrets, or the repo temporarily public (G-29) |
 
 ## 6. Sections
-Time = participant minutes at lab pace. **Estimate, not re-timed:** ≈ 108 after the cuts of 2026-10-22 (C1–C4, R1–R6; was ≈ 144 after the cut pass), time keeper ±15 %, slot 90. The 🔴 parts and section 10's "After the lab" block are not included; Susanne may cut section 1 and the 🔴 parts first. Status: todo · in-progress · done · blocked.
-🧾 = opens with a Karpathy Recipe Callout (2–3 verbatim sentences + link). ✏️ = change a value. ✍️ = write a function via `use()`.
+**Since 2026-10-28 the sections are Susanne's chapters** (her edited copy is the base; PRD
+`docs/work/prd/2026-10-28-eda-susanne-copy-and-own-data-edition.md` in the vault). Timing is hers to decide and was not
+re-estimated. Edition: T = Teaching Edition, O = Own-Data Edition (cells tagged inside a file may differ).
+Status: todo · in-progress · done · blocked.
 
-| # | File | Title | Objective (one line) | Level | Time | Status |
-|---|---|---|---|---|---|---|
-| 0 | sections/00_setup.py | Setup & the park | Run setup, meet the park, see the three outcomes | 🟢 | 5 | done |
-| 1 | sections/01_image_datasets.py | Image datasets | Know where datasets come from and what makes a good one | 🟢 | 6 | done |
-| 2 | sections/02_become_one.py | Become one with the data 🧾 | Look at many images before computing anything | 🟢 | 8 | done |
-| 3 | sections/03_image_inspection.py | Image inspection 🧾 | Measure sizes, aspect ratios, colour modes and colour statistics | 🟢🟡 | 11 | done |
-| 4 | sections/04_labels_distribution.py | Labels & class distribution 🧾 | Count classes, see why imbalance matters for the dog alert, and pick its metric | 🟢🟡 | 12 | done |
-| 5 | sections/05_errors_cleaning.py | Common dataset errors & cleaning 🧾 | Find duplicates, flipped/rotated copies and suspicious labels; produce a cleaned dataset | 🟡 | 15 | done |
-| 6 | sections/06_splits_leakage.py | Splits & leakage | Choose a split that does not leak, and understand cross-validation | 🟡 | 10 | done |
-| 7 | sections/07_boxes.py | Same data, boxes | See what imbalance, size, position and label quality mean for detection | 🟡 | 14 | done |
-| 8 | sections/08_masks.py | Same data, masks | See what they mean for segmentation; find ugly masks | 🟡 | 12 | done |
-| 9 | sections/09_challenge.py | Data-centric AI in practice: the Challenge | Watch the planted problems in a new batch get found; the hunt itself is optional | 🟡🔴 | 7 | done |
-| 10 | sections/10_your_dataset.py | Your project dataset | Run the checklist on your own folder-per-class dataset | 🟢 | 5 | done |
-| 11 | sections/11_wrap_up.py | Wrap-up & next week | Takeaways and where to go next | 🟢 | 3 | done |
+| # | File | Title (hers) | Edition | Status |
+|---|---|---|---|---|
+| 0 | sections/00_front_matter.py | Know Your Images · Setup · Optional Coding Exercises | T O | done |
+| 1 | sections/01_load_your_dataset.py | Load Your Dataset | O | in-progress |
+| 2 | sections/02_meet_the_park.py | Meet the Park: Explore Your Dataset · Qualitative Inspection | T O | done |
+| 3 | sections/03_quantitative_inspection.py | Quantitative Inspection | T O | done |
+| 4 | sections/04_errors_cleaning.py | Common Dataset Errors & Cleaning | T O | done |
+| 5 | sections/05_exploration_to_cleaning.py | From Data Exploration to Cleaning | T O | done |
+| 6 | sections/06_splits_leakage.py | Dataset Splitting & Data Leakage | T O | done |
+| 7 | sections/07_object_detection.py | Object Detection | T O | done |
+| 8 | sections/08_segmentation.py | Semantic Segmentation: Which Pixels Belong to the Animals? | T O | done |
+| 9 | sections/09_your_dataset.py | Your Project Dataset | T O | in-progress |
 
-### Section contents
+### Section contents (v05, kept for history; her copy superseded them on 2026-10-28)
 - **00 Setup & the park**
   - A **title banner** (Theme, §8 L-003) with the title, the three outcomes and "Questions are marked 🟢 beginner · 🟡 intermediate · 🔴 advanced (optional)".
   - The park story as a short illustrated paragraph.

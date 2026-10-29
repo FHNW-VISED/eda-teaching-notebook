@@ -1,15 +1,27 @@
 """Assemble sections/*.py (Jupytext percent format) into the single student notebook.
 
-Agents and humans edit only the small section files; the .ipynb is a build artifact.
-Usage: uv run python scripts/build.py            -> writes eda-teaching-notebook.ipynb (outputs stripped)
+Agents and humans edit only the small section files; the .ipynb files are build artifacts.
+Usage: uv run python scripts/build.py            -> writes both Editions (outputs stripped)
+
+Editions (PRD 2026-10-28, Q4): one ordered list of cells, two notebooks. A cell without `edition` metadata is
+in
+both; `# %% edition="teaching"` or `# %% edition="own"` keeps it in one. Never edit an Edition on its own.
 
 Callouts (SPEC L-001, RULES N-034): a markdown cell whose first line is
 `<!-- callout: KIND | TITLE -->` becomes a collapsed code cell that redraws a coloured HTML box, with the
 same HTML saved as its output so the box shows in Colab before anything runs.
+
+Her boxes (2026-10-28, C-12) are code cells that call the notebook's own `callout(kind, title, body)`.
+When such a cell is a `# @title` line plus one `callout(...)` call with literal arguments (no `fig=`), the
+build runs the notebook's `callout` (taken from the sections source) and saves its HTML as the cell's
+output, for the same reason.
 """
 
 from __future__ import annotations
 
+import ast
+import base64
+import io
 import re
 import sys
 from pathlib import Path
@@ -22,6 +34,11 @@ ROOT = Path(__file__).resolve().parent.parent
 SECTIONS = ROOT / "sections"
 NAME = "eda-teaching-notebook"
 OUT = ROOT / f"{NAME}.ipynb"
+# Edition id -> notebook file at the repo root. The Teaching Edition keeps the repo's original file name.
+EDITIONS: dict[str, str] = {
+    "teaching": f"{NAME}.ipynb",
+    "own": "eda-own-dataset-notebook.ipynb",
+}
 
 # ---- callouts (SPEC L-001) ---------------------------------------------------------------------
 # kind id -> (emoji, default title, background, text and left-bar colour)
@@ -157,22 +174,81 @@ def convert_callout(cell: nbformat.NotebookNode, where: str) -> nbformat.Noteboo
     return callout_cell(kind, title, body)
 
 
+# ---- her callout() cells: saved output (N-034) ---------------------------------------------------
+
+
+class _Html:
+    """Stands in for IPython.display.HTML while the build runs the notebook's callout()."""
+
+    def __init__(self, data: str):
+        self.data = data
+
+
+def notebook_callout(sections: Path = SECTIONS):
+    """The `callout` function defined in the sections (top level of a section file), or None."""
+    for path in section_files(sections):
+        for node in ast.parse(path.read_text()).body:
+            if isinstance(node, ast.FunctionDef) and node.name == "callout":
+                ns = {"HTML": _Html, "BytesIO": io.BytesIO, "base64": base64}
+                exec(compile(ast.Module(body=[node], type_ignores=[]), str(path), "exec"), ns)
+                return ns["callout"]
+    return None
+
+
+def prerender_callout(cell: nbformat.NotebookNode, callout) -> None:
+    """Save the box as the output of a cell that is only `# @title …` + one literal `callout(...)` call."""
+    if callout is None or cell.cell_type != "code" or "callout(" not in cell.source:
+        return
+    try:
+        tree = ast.parse(cell.source)
+    except SyntaxError:
+        return
+    if len(tree.body) != 1 or not isinstance(tree.body[0], ast.Expr):
+        return
+    call = tree.body[0].value
+    if not (isinstance(call, ast.Call) and isinstance(call.func, ast.Name) and call.func.id == "callout"):
+        return
+    if call.keywords:  # fig=… is drawn at run time
+        return
+    try:
+        args = [ast.literal_eval(a) for a in call.args]
+    except ValueError:  # an f-string or a variable: only the kernel can draw it
+        return
+    html = callout(*args).data
+    cell.outputs = [
+        nbformat.v4.new_output(
+            "display_data", data={"text/html": html, "text/plain": f"<callout: {args[0]}>"}, metadata={}
+        )
+    ]
+
+
 # ---- assembly ----------------------------------------------------------------------------------
 
 
-def section_files() -> list[Path]:
-    files = sorted(p for p in SECTIONS.glob("[0-9][0-9]_*.py"))
+def section_files(sections: Path = SECTIONS) -> list[Path]:
+    files = sorted(p for p in sections.glob("[0-9][0-9]_*.py"))
     if not files:
         sys.exit("no sections/NN_*.py files found")
     return files
 
 
-def build() -> Path:
+def read_cells(sections: Path = SECTIONS) -> list[nbformat.NotebookNode]:
+    """Every cell of every section, in order, with its section stamped and its callout converted."""
     cells = []
-    for path in section_files():
+    callout = notebook_callout(sections)
+    for path in section_files(sections):
         nb = jupytext.read(path, fmt="py:percent")
         for k, cell in enumerate(nb.cells):
-            cell = convert_callout(cell, f"sections/{path.name} cell {k}")
+            where = f"sections/{path.name} cell {k}"
+            edition = cell.metadata.get("edition")
+            if edition is not None and edition not in EDITIONS:
+                sys.exit(f"{where}: unknown edition '{edition}' (known: {', '.join(EDITIONS)}; none = both)")
+            if cell.cell_type == "code":  # inserting a cell after a code cell can leave a trailing blank line
+                cell.source = cell.source.rstrip()
+            cell = convert_callout(cell, where)
+            prerender_callout(cell, callout)
+            if edition is not None:
+                cell.metadata["edition"] = edition
             cell.id = f"{path.stem[:50]}-{k}"  # deterministic ids: same sections -> byte-identical .ipynb
             cell.metadata.pop("lines_to_next_cell", None)
             cell.metadata["section"] = path.stem
@@ -180,15 +256,67 @@ def build() -> Path:
             if cell.cell_type == "code" and cell.source.lstrip().startswith("# @title"):
                 cell.metadata["cellView"] = "form"
             cells.append(cell)
-    nb = nbformat.v4.new_notebook(cells=cells)
+    return cells
+
+
+def own_wording(sections: Path) -> list[tuple[str, str, str]]:
+    """(section file, old, new) rows of sections/own_wording.tsv: words of shared cells that the Own-Data
+    Edition says differently ("animal" → "object"). Kept as swaps, not copied cells, so her text stays one
+    source."""
+    path = sections / "own_wording.tsv"
+    if not path.exists():
+        return []
+    rows = [line.split("\t") for line in path.read_text().splitlines()[1:] if line.strip()]
+    if any(len(r) != 3 for r in rows):
+        sys.exit("sections/own_wording.tsv: every row needs three tab-separated columns: section, old, new")
+    return [(r[0], r[1], r[2]) for r in rows]
+
+
+def apply_own_wording(cells: list[nbformat.NotebookNode], sections: Path) -> list[nbformat.NotebookNode]:
+    """Copies of the Own-Data cells with the swaps applied; a swap must match once in its section."""
+    swaps = own_wording(sections)
+    out = [c if c.metadata.get("edition") == "teaching" else nbformat.from_dict(c) for c in cells]
+    for section, old, new in swaps:
+        stem = section.removesuffix(".py")
+        hits = [
+            c
+            for c in out
+            if c.metadata.get("section") == stem
+            and c.metadata.get("edition") != "teaching"
+            and old in c.source
+        ]
+        count = sum(c.source.count(old) for c in hits)
+        if count != 1:
+            sys.exit(
+                f"sections/own_wording.tsv: '{old}' occurs {count} times in the Own-Data cells of {section} "
+                "(must be once). Her text changed? Update or delete the row."
+            )
+        hits[0].source = hits[0].source.replace(old, new)
+    return out
+
+
+def write_edition(cells: list[nbformat.NotebookNode], edition: str, out: Path) -> Path:
+    keep = [c for c in cells if c.metadata.get("edition", edition) == edition]
+    nb = nbformat.v4.new_notebook(cells=keep)
     nb.metadata["kernelspec"] = {"name": "python3", "display_name": "Python 3", "language": "python"}
     nb.metadata["language_info"] = {"name": "python"}
     nb.metadata["colab"] = {"provenance": [], "toc_visible": True}
     nbformat.validate(nb)
-    nbformat.write(nb, OUT)
-    return OUT
+    nbformat.write(nb, out)
+    return out
+
+
+def build_all(sections: Path = SECTIONS, out_dir: Path = ROOT) -> dict[str, Path]:
+    cells = read_cells(sections)
+    per_edition = {"teaching": cells, "own": apply_own_wording(cells, sections)}
+    return {ed: write_edition(per_edition[ed], ed, out_dir / name) for ed, name in EDITIONS.items()}
+
+
+def build() -> Path:
+    """Both Editions; returns the Teaching Edition's path (what older callers expect)."""
+    return build_all()["teaching"]
 
 
 if __name__ == "__main__":
-    out = build()
-    print(f"built {out.name}: {len(section_files())} sections")
+    outs = build_all()
+    print(f"built {', '.join(p.name for p in outs.values())}: {len(section_files())} sections")

@@ -155,6 +155,11 @@ def spec_rows() -> dict[str, str]:
     return rows
 
 
+# Notebooks made with Susanne (SPEC "**With:** Susanne Suter"): her overlay and her own edit (2026-10-28) win.
+# She removed the objective lines (SN-003) and chose a box plot herself: N-003's objective and N-040 are off.
+WITH_SUSANNE = "**With:** Susanne Suter" in (ROOT / "SPEC.md").read_text()
+
+
 def main() -> int:
     files = sorted(SECTIONS.glob("[0-9][0-9]_*.py"))
     on_disk = {f"sections/{p.name}" for p in files}
@@ -175,10 +180,14 @@ def main() -> int:
         check_word_budget(int(path.name[:2]), cells)
         if not cells or cells[0].cell_type != "markdown" or not cells[0].source.lstrip().startswith("#"):
             fail(rel, "first cell must be a markdown heading (N-003)")
-        elif "**Objective:**" not in cells[0].source and not (
-            len(cells) > 1
-            and cells[1].cell_type == "markdown"
-            and callout_kind(cells[1].source) == "objective"
+        elif (
+            not WITH_SUSANNE
+            and "**Objective:**" not in cells[0].source
+            and not (
+                len(cells) > 1
+                and cells[1].cell_type == "markdown"
+                and callout_kind(cells[1].source) == "objective"
+            )
         ):  # the Objective may also be a 🎯 objective callout right under the heading (N-044)
             fail(rel, "first markdown cell needs an '**Objective:**' line or an objective callout (N-003)")
 
@@ -192,7 +201,7 @@ def main() -> int:
                     fail(where, "use %pip, not !pip (N-021)")
                 if not CODE_START_RE.match(src.lstrip()):
                     fail(where, "run-only cell must be collapsed with '# @title <what it does>' (N-035)")
-                if BOXPLOT_RE.search(src):
+                if BOXPLOT_RE.search(src) and not WITH_SUSANNE:
                     fail(where, "box plot: draw distributions as violin plots (N-040)")
                 n_lines = len(src.strip().splitlines())
                 if (

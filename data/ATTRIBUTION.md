@@ -30,3 +30,8 @@ The notebook itself carries no licence text (rule N-045); the credits live here 
 
 - Andrej Karpathy, [*A Recipe for Training Neural Networks*](https://karpathy.github.io/2019/04/25/recipe/)
   (2019): 2–3 sentence verbatim quotes in sections 2–5, linked.
+
+## coco_animals_dinov2.npz
+
+DINOv2-small (facebook/dinov2-small, Apache 2.0) CLS embeddings of the Play Dataset photos, one 384-d vector per
+image id, made by `scripts/precompute_dinov2.py`. Derived features only: no image is stored.

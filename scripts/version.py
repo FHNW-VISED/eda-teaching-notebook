@@ -27,11 +27,12 @@ Never edit a version folder.
 """
 
 
-def notebook(root: Path) -> Path:
+def notebooks(root: Path) -> list[Path]:
+    """Every built notebook at the repo root (one per Edition)."""
     found = sorted(root.glob("*.ipynb"))
-    if len(found) != 1:
-        sys.exit(f"expected exactly one notebook at the repo root, found {len(found)}")
-    return found[0]
+    if not found:
+        sys.exit("expected at least one notebook at the repo root, found none")
+    return found
 
 
 def versions(root: Path) -> list[Path]:
@@ -43,8 +44,7 @@ def same(a: Path, b: Path) -> bool:
 
 
 def current_matches(root: Path, v: Path) -> bool:
-    nb = notebook(root)
-    return same(root / "SPEC.md", v / "SPEC.md") and same(nb, v / nb.name)
+    return same(root / "SPEC.md", v / "SPEC.md") and all(same(nb, v / nb.name) for nb in notebooks(root))
 
 
 def commit(root: Path) -> str:
@@ -67,8 +67,8 @@ def new(root: Path, label: str, date: str | None) -> int:
     dest = root / "versions" / f"v{n:02d}-{date}-{slug}"
     dest.mkdir(parents=True)
     shutil.copy2(root / "SPEC.md", dest / "SPEC.md")
-    nb = notebook(root)
-    shutil.copy2(nb, dest / nb.name)
+    for nb in notebooks(root):
+        shutil.copy2(nb, dest / nb.name)
     index = root / "versions" / "README.md"
     if not index.exists():
         index.write_text(INDEX_HEAD)
