@@ -126,9 +126,9 @@ HTML(r"""
 
 # %% [markdown] edition="teaching"
 #
-# > ▶️ **Run the next three cells, in order.**
+# > ▶️ **Run the next four cells, in order.**
 # >
-# > Continue reading while they execute. The last cell downloads the Play Dataset (~115 MB), which may take 1–2 minutes on the first run. Subsequent runs use the cache.
+# > Continue reading while they execute. The third cell downloads the Play Dataset (~115 MB), which may take 1–2 minutes on the first run. Subsequent runs use the cache.
 #
 
 # %% [markdown] edition="own"
@@ -138,7 +138,8 @@ HTML(r"""
 
 # %%
 # @title Setup (run me first) { display-mode: "form" }
-# Every import the later sections need is made here, once (later cells use these names; noqa: F401).
+# The common imports are made here, once (later cells use these names; noqa: F401). A few heavy or
+# chapter-specific ones are imported where they are first used.
 import ast
 import base64  # noqa: F401
 import hashlib  # noqa: F401
@@ -151,14 +152,17 @@ import shutil  # noqa: F401
 import sys
 import textwrap
 import warnings  # noqa: F401
+from collections import Counter  # noqa: F401
 from io import BytesIO  # noqa: F401
 from itertools import combinations  # noqa: F401
+from pathlib import Path  # noqa: F401
 
 import cv2  # noqa: F401
 import ipywidgets as widgets  # noqa: F401
 import matplotlib as mpl
 import matplotlib.pyplot as plt  # noqa: F401  (every later section plots with plt)
 import numpy as np
+import pandas as pd  # noqa: F401
 from IPython.display import HTML, clear_output, display  # noqa: F401
 from PIL import Image, ImageOps  # noqa: F401
 from pycocotools import mask as mask_utils  # noqa: F401
@@ -217,8 +221,8 @@ mpl.rcParams.update(
 )
 
 # --- Results every section writes into (SPEC §9) ---
-RESULTS = {}
-RESULTS["class_colors"] = dict(CLASS_COLORS)
+results = {}
+results["class_colors"] = dict(CLASS_COLORS)
 
 
 # --- use(): run a learner's function next to the reference solution (N-029) ---
@@ -347,18 +351,13 @@ except ImportError:
 import json
 import urllib.error
 import urllib.request
-from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
-
-import pandas as pd
 
 # Where the committed manifests live. In Colab they are fetched from the repository; locally they are read
 # from ./data. ⬇️ DATA_BASE_URL: change this if the repository moves or you work on a fork.
 DATA_BASE_URL = "https://raw.githubusercontent.com/FHNW-VISED/eda-teaching-notebook/main/data/"
 DATA_DIR = Path("data")
 IMAGE_CACHE = DATA_DIR / "cache" / "coco"
-SMOKE_IMAGES_PER_CLASS = 6
 
 
 def _github_headers() -> dict:
@@ -492,9 +491,10 @@ def load_play_dataset(per_class: int | None = None) -> tuple[pd.DataFrame, pd.Da
 
 # %% edition="teaching"
 # @title Load the manifest, download the images, build the tables { display-mode: "form" }
+SMOKE_IMAGES_PER_CLASS = 6
 images, annotations = load_play_dataset(SMOKE_IMAGES_PER_CLASS if SMOKE else None)  # fewer in smoke (N-014)
 images_by_id = images.set_index("id")  # the same table, looked up by image id
-RESULTS["n_images"] = int(len(images))
+results["n_images"] = int(len(images))
 
 _counts = Counter(images["class"])
 print(f"images: {len(images)} · animals (annotations): {len(annotations)}")
@@ -539,7 +539,7 @@ def encode(mask: np.ndarray) -> dict:
     return mask_utils.encode(np.asfortranarray(mask.astype(np.uint8)))
 
 
-# %% [markdown]
+# %% [markdown] edition="teaching"
 # ### Optional Coding Exercises
 #
 # Some parts of this notebook let you choose how to work:
@@ -550,13 +550,13 @@ def encode(mask: np.ndarray) -> dict:
 # Both approaches let you continue through the notebook. If you choose to implement a function, run the reference cell first, then complete the ✍️ cell. An incomplete or incorrect implementation will not prevent you from continuing.
 #
 
-# %%
+# %% edition="teaching"
 # @title Reference solution — run this cell; open it only if you are stuck { display-mode: "form" }
 def _ref_double(x):
     return 2 * x
 
 
-# %%
+# %% edition="teaching"
 # ✍️ YOUR CODE
 def double(x):
     """Return twice x.

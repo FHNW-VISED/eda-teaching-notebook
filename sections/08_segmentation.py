@@ -147,11 +147,11 @@ def show_masks(rows_df: pd.DataFrame, masks_df: pd.DataFrame, title: str, captio
     for ax, (_, row) in zip(axes.ravel(), rows_df.iterrows(), strict=False):
         thumb = load_thumb(row["path"], (size, size))
         scale = thumb.width / row["width"]
-        own = masks_df[masks_df["image_id"] == row["id"]]
+        image_masks = masks_df[masks_df["image_id"] == row["id"]]
 
         flagged = (highlight or {}).get(row["id"])
         if flagged is not None:
-            own = own.assign(_top=own["id"] == flagged).sort_values("_top")
+            image_masks = image_masks.assign(_top=image_masks["id"] == flagged).sort_values("_top")
 
         ax.axis("on")
         ax.imshow(thumb)
@@ -159,7 +159,7 @@ def show_masks(rows_df: pd.DataFrame, masks_df: pd.DataFrame, title: str, captio
         if show_mask:
             overlay = np.zeros((thumb.height, thumb.width, 4))
 
-            for _, m in own.iterrows():
+            for _, m in image_masks.iterrows():
                 full = decode(m["rle"])
                 small = cv2.resize(full, thumb.size, interpolation=cv2.INTER_NEAREST) > 0
                 alpha = 0.6 if flagged is None else (0.8 if m["id"] == flagged else 0.15)
@@ -172,7 +172,7 @@ def show_masks(rows_df: pd.DataFrame, masks_df: pd.DataFrame, title: str, captio
             ax.imshow(overlay)
 
         if show_box:
-            for _, m in own.iterrows():
+            for _, m in image_masks.iterrows():
                 x, y, w, h = m["bbox"]
                 if flagged is not None and m["id"] != flagged:
                     continue
@@ -186,7 +186,7 @@ def show_masks(rows_df: pd.DataFrame, masks_df: pd.DataFrame, title: str, captio
                 ))
 
         frame(ax, CLASS_COLORS[row["class"]])
-        ax.set_title(caption(row) if caption else f"{row['class']} · {len(own)} masks", fontsize=9)
+        ax.set_title(caption(row) if caption else f"{row['class']} · {len(image_masks)} masks", fontsize=9)
 
     fig.suptitle(title, color=INK)
     fig.tight_layout()
@@ -217,14 +217,14 @@ mask_images = mask_images.sample(frac=1, random_state=SEED).reset_index(drop=Tru
 
 maskview_page = 0
 
-maskview_prev_btn = widgets.Button(description="Previous", icon="chevron-left")
-maskview_next_btn = widgets.Button(description="Next", icon="chevron-right")
+maskview_prev_btn = widgets.Button(description="← Previous")
+maskview_next_btn = widgets.Button(description="Next →")
 maskview_shuffle_btn = widgets.Button(description="Shuffle", icon="shuffle")
 
-maskview_mask_toggle = widgets.Checkbox(value=True, description="Show masks", indent=False)
-maskview_box_toggle = widgets.Checkbox(value=True, description="Show boxes", indent=False)
+maskview_mask_toggle = widgets.Checkbox(value=True, description="Show segmentation masks", indent=False)
+maskview_box_toggle = widgets.Checkbox(value=True, description="Show bounding boxes", indent=False)
 
-maskview_page_label = widgets.HTML()
+maskview_counter = widgets.HTML()
 maskview_output = widgets.Output()
 
 def maskview_show_page():
@@ -232,7 +232,7 @@ def maskview_show_page():
     start = maskview_page * PAGE_SIZE
     selected = mask_images.iloc[start:start + PAGE_SIZE]
 
-    maskview_page_label.value = f"Page {maskview_page + 1} of {total_pages}"
+    maskview_counter.value = f"Page {maskview_page + 1} of {total_pages}"
     maskview_prev_btn.disabled = (maskview_page == 0)
     maskview_next_btn.disabled = (maskview_page >= total_pages - 1)
 
@@ -270,7 +270,7 @@ maskview_mask_toggle.observe(lambda change: maskview_show_page(), names="value")
 maskview_box_toggle.observe(lambda change: maskview_show_page(), names="value")
 
 display(
-    widgets.HBox([maskview_prev_btn, maskview_next_btn, maskview_shuffle_btn, maskview_page_label]),
+    widgets.HBox([maskview_prev_btn, maskview_next_btn, maskview_shuffle_btn, maskview_counter]),
     widgets.HBox([maskview_mask_toggle, maskview_box_toggle]),
     maskview_output
 )
@@ -359,12 +359,12 @@ alternative loss functions can help address this imbalance.</li>
 # needs: masks
 
 # Calculate pixel shares
-photo_rle = {}  # One merged mask per photo, reused by the heatmaps below
+image_rle = {}  # One merged mask per photo, reused by the heatmaps below
 animal_px = dict.fromkeys(CLASSES, 0)
 
-for image_id, own in masks.groupby("image_id"):
-    photo_rle[image_id] = mask_utils.merge(list(own["rle"]), intersect=False)
-    for c, of_class in own.groupby("class"):  # a park image has one class; an image with several counts each
+for image_id, image_masks in masks.groupby("image_id"):
+    image_rle[image_id] = mask_utils.merge(list(image_masks["rle"]), intersect=False)
+    for c, of_class in image_masks.groupby("class"):  # a park image has one class; an image with several counts each
         class_rle = mask_utils.merge(list(of_class["rle"]), intersect=False)
         animal_px[c] = animal_px.get(c, 0) + int(mask_utils.area(class_rle))
 
@@ -375,7 +375,7 @@ pixels_per_class["background"] = (
     total_px - sum(animal_px.values())
 ) / total_px
 
-RESULTS["pixels_per_class"] = pixels_per_class
+results["pixels_per_class"] = pixels_per_class
 
 BACKGROUND_COLOR = "#D9DEDF"
 
@@ -402,7 +402,7 @@ fig, axes = plt.subplots(
 
 # Left: class distribution among animals only
 ax = axes[0]
-x = np.arange(len(CLASSES))
+bar_x = np.arange(len(CLASSES))
 
 for k, (unit, alpha) in enumerate([
     ("images", 0.3),
@@ -412,7 +412,7 @@ for k, (unit, alpha) in enumerate([
     values = [units[unit][c] for c in CLASSES]
 
     bars = ax.bar(
-        x + (k - 1) * 0.27,
+        bar_x + (k - 1) * 0.27,
         values,
         width=0.27,
         alpha=alpha,
@@ -430,7 +430,7 @@ for k, (unit, alpha) in enumerate([
             fontsize=7
         )
 
-ax.set_xticks(x, CLASSES)
+ax.set_xticks(bar_x, CLASSES)
 
 for label in ax.get_xticklabels():
     label.set_color(CLASS_COLORS[label.get_text()])
@@ -578,16 +578,16 @@ _shape = pd.DataFrame([mask_shape(decode(r), b)
                        for r, b in zip(animals["rle"], animals["bbox"], strict=True)])
 animals = pd.concat([animals, _shape], axis=1)
 _photo_px = animals["image_id"].map(images_by_id["width"] * images_by_id["height"])
-animals["photo_share"] = animals["mask_area"] / _photo_px
+animals["image_share"] = animals["mask_area"] / _photo_px
 # The masks the quality checks run on, with park_masks' columns (the Teaching Edition plants five errors first).
 masks_to_check = animals[["id", "image_id", "class", "bbox", "iscrowd", "rle", "mask_area"]]
 _fill = animals.groupby("class")["fill"].median().reindex(CLASSES)
-RESULTS["median_fill"] = {c: float(_fill[c]) for c in CLASSES}
+results["median_fill"] = {c: float(_fill[c]) for c in CLASSES}
 print(f"{len(animals)} animal masks measured · median fill ratio " + " · ".join(
     f"{c} {_fill[c]:.0%}" for c in CLASSES))
 
 fig, axes = plt.subplots(1, 2, figsize=(11, 3.6))
-for ax, col, label, log in [(axes[0], "photo_share", "mask area, share of the image (log)", True),
+for ax, col, label, log in [(axes[0], "image_share", "mask area, share of the image (log)", True),
                             (axes[1], "fill", "fill ratio = mask area / box area", False)]:
     data = [animals.loc[animals["class"] == c, col].clip(lower=1e-5).to_numpy() for c in CLASSES]
     if log:  # violins are drawn on log10(value) so the KDE is smooth on a log axis; ticks are relabeled
@@ -641,11 +641,11 @@ fill_category = widgets.ToggleButtons(
     options=["Low", "Typical", "High"],
     description="Fill ratio:"
 )
-fill_prev_btn = widgets.Button(description="Previous", icon="chevron-left")
-fill_next_btn = widgets.Button(description="Next", icon="chevron-right")
-fill_mask_toggle = widgets.Checkbox(value=True, description="Show masks", indent=False)
-fill_box_toggle = widgets.Checkbox(value=True, description="Show boxes", indent=False)
-fill_page_label = widgets.HTML()
+fill_prev_btn = widgets.Button(description="← Previous")
+fill_next_btn = widgets.Button(description="Next →")
+fill_mask_toggle = widgets.Checkbox(value=True, description="Show segmentation masks", indent=False)
+fill_box_toggle = widgets.Checkbox(value=True, description="Show bounding boxes", indent=False)
+fill_counter = widgets.HTML()
 fill_output = widgets.Output()
 
 fill_page = 0
@@ -656,7 +656,7 @@ def fill_show_page():
     start = fill_page * PAGE_SIZE
     current = selected.iloc[start:start + PAGE_SIZE]
 
-    fill_page_label.value = f"Page {fill_page + 1} of {total_pages}"
+    fill_counter.value = f"Page {fill_page + 1} of {total_pages}"
     fill_prev_btn.disabled = fill_page == 0
     fill_next_btn.disabled = fill_page >= total_pages - 1
 
@@ -694,7 +694,7 @@ fill_mask_toggle.observe(lambda change: fill_show_page(), names="value")
 fill_box_toggle.observe(lambda change: fill_show_page(), names="value")
 
 display(
-    widgets.HBox([fill_category, fill_prev_btn, fill_next_btn, fill_page_label]),
+    widgets.HBox([fill_category, fill_prev_btn, fill_next_btn, fill_counter]),
     widgets.HBox([fill_mask_toggle, fill_box_toggle]),
     fill_output
 )
@@ -712,7 +712,7 @@ thin_by_class = pd.DataFrame({
     "all masks": _has_thin.groupby(animals["class"]).mean(),
     f"masks ≥ {int(MIN_JUDGED_AREA**0.5)}² px": _has_thin[_big].groupby(animals.loc[_big, "class"]).mean(),
 }).reindex(CLASSES).fillna(0)
-RESULTS["thin_mask_share"] = {c: float(thin_by_class.loc[c, "all masks"]) for c in CLASSES}
+results["thin_mask_share"] = {c: float(thin_by_class.loc[c, "all masks"]) for c in CLASSES}
 display((thin_by_class * 100).round(0).astype(int).astype(str).add(" %").T)
 
 fig, ax = plt.subplots(figsize=(8, 3.2))
@@ -822,7 +822,7 @@ helps distinguish small-object effects from genuinely thin structures.</p>
 HEAT_RES = 24 if SMOKE else 48  # coarser grid with few photos (N-014)
 _class_of = images_by_id["class"]
 heat = {c: np.zeros((HEAT_RES, HEAT_RES)) for c in CLASSES}
-for image_id, rle in photo_rle.items():
+for image_id, rle in image_rle.items():
     small = cv2.resize(decode(rle).astype(np.float32), (HEAT_RES, HEAT_RES), interpolation=cv2.INTER_AREA)
     heat[_class_of[image_id]] += small
 
@@ -970,12 +970,12 @@ def plant_mask_errors(animals_df: pd.DataFrame, table: pd.DataFrame,
         """The spoiled mask as a 0/1 array (or an RLE), plus a note, or None when this mask does not suit."""
         a = pool.loc[ann_id]
         x, y, w, h = a["bbox"]
-        W, H = int(size.at[a["image_id"], "width"]), int(size.at[a["image_id"], "height"])
+        width, height = int(size.at[a["image_id"], "width"]), int(size.at[a["image_id"], "height"])
         if kind == "another animal":  # prefer a neighbor in the same photo: a duplicated mask, as in COCO
             others = pool[pool["image_id"] != a["image_id"]].index
             same = pool[(pool["image_id"] == a["image_id"]) & (pool.index != ann_id)].index
             for b in [*sorted(same), *[i for i in order if i in others]]:
-                donor = _paste(decode(pool.at[b, "rle"]), H, W)
+                donor = _paste(decode(pool.at[b, "rle"]), height, width)
                 if donor.any() and box_iou_dice(cv2.boundingRect(donor), tuple(a["bbox"]))[0] < 0.3:
                     where = "next to it" if b in same else "from another photo"
                     return donor, f"the mask of a {pool.at[b, 'class']} {where}"
@@ -991,14 +991,14 @@ def plant_mask_errors(animals_df: pd.DataFrame, table: pd.DataFrame,
             cv2.circle(out, (int(cx), int(cy)), int(0.8 * r), 0, -1)
             return out, f"a disc of radius {int(0.8 * r)} px cut out of the body"
         if kind == "shifted":
-            if x + w + SHIFT_PX > W or y + h + SHIFT_PX > H or max(w, h) > 300:
+            if x + w + SHIFT_PX > width or y + h + SHIFT_PX > height or max(w, h) > 300:
                 return None
             move = np.float32([[1, 0, SHIFT_PX], [0, 1, SHIFT_PX]])
-            moved = cv2.warpAffine(mask, move, (W, H), flags=cv2.INTER_NEAREST)
+            moved = cv2.warpAffine(mask, move, (width, height), flags=cv2.INTER_NEAREST)
             return moved, f"moved {SHIFT_PX} px right and down"
         if kind == "swollen":
             d = max(6, round(0.08 * (w * h) ** 0.5))
-            if x < d or y < d or x + w + d > W or y + h + d > H:
+            if x < d or y < d or x + w + d > width or y + h + d > height:
                 return None
             disc = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * d + 1, 2 * d + 1))
             return cv2.dilate(mask, disc), f"grown by {d} px all round"
@@ -1006,7 +1006,7 @@ def plant_mask_errors(animals_df: pd.DataFrame, table: pd.DataFrame,
             if a["solidity"] > 0.85:  # pick an animal with clear dents, so the shortcut shows
                 return None
             poly = _crude_polygon(mask)
-            return to_rle([poly], H, W), f"{len(poly) // 2} clicked points"
+            return to_rle([poly], height, width), f"{len(poly) // 2} clicked points"
         raise ValueError(kind)
 
     for kind in MASK_ERROR_KINDS:
@@ -1133,10 +1133,10 @@ plt.close(fig)
 # @title 🔎 Explore Five Mask Quality Checks { display-mode: "form" }
 
 # Compare an original toy horse with a deliberately modified version.
-H, W = 60, 84
-yy, xx = np.mgrid[0:H, 0:W]
+TOY_H, TOY_W = 60, 84
+yy, xx = np.mgrid[0:TOY_H, 0:TOY_W]
 
-original = toy_horse(H, W)
+original = toy_horse(TOY_H, TOY_W)
 hole = (xx - 40) ** 2 + (yy - 28) ** 2 <= 16
 piece = (xx >= 68) & (xx < 76) & (yy >= 30) & (yy < 38)
 modified = ((original.astype(bool) | piece) & ~hole).astype(np.uint8)
@@ -1166,7 +1166,7 @@ UNDER = {
 }
 
 def mask_layer(mask, color, alpha):
-    layer = np.zeros((H, W, 4))
+    layer = np.zeros((TOY_H, TOY_W, 4))
     layer[mask > 0] = (*mpl.colors.to_rgb(color), alpha)
     return layer
 
@@ -1181,7 +1181,7 @@ for r, (row_name, (mask, box)) in enumerate(rows.items()):
 
     n_parts, parts = cv2.connectedComponents(mask, connectivity=8)
     main = max(range(1, n_parts), key=lambda k: int((parts == k).sum()))
-    own = cv2.boundingRect(mask)
+    tight_box = cv2.boundingRect(mask)
 
     for k, (name, rule, key, is_suspect, fmt) in enumerate(CHECK_RULES):
         ax = axes[r, k]
@@ -1192,7 +1192,7 @@ for r, (row_name, (mask, box)) in enumerate(rows.items()):
 
         if k == 0:
             ax.add_patch(mpl.patches.Rectangle(
-                (own[0] - 0.5, own[1] - 0.5), own[2], own[3],
+                (tight_box[0] - 0.5, tight_box[1] - 0.5), tight_box[2], tight_box[3],
                 fill=False, lw=2, edgecolor=DARK_GRAY
             ))
 
@@ -1241,8 +1241,8 @@ for r, (row_name, (mask, box)) in enumerate(rows.items()):
             under = rule + (f"\n\n{UNDER[k]}" if k in UNDER else "")
             ax.set_xlabel(under, fontsize=9, color=INK)
 
-        ax.set_xlim(-0.5, W - 0.5)
-        ax.set_ylim(H + 3.5, -14.5)
+        ax.set_xlim(-0.5, TOY_W - 0.5)
+        ax.set_ylim(TOY_H + 3.5, -14.5)
         ax.set_xticks([])
         ax.set_yticks([])
         ax.grid(False)
@@ -1335,11 +1335,11 @@ mask_error_key["found"] = mask_error_key["checks"] != ""
 
 n_errors_found = int(mask_error_key["found"].sum())
 
-RESULTS["hunt9"] = {
+results["hunt9"] = {
     "planted": len(mask_error_key),
     "found": n_errors_found,
 }
-RESULTS["mask_suspects_real"] = int(
+results["mask_suspects_real"] = int(
     (~mask_suspects["id"].isin(mask_error_key["ann_id"])).sum()
 )
 
@@ -1352,7 +1352,7 @@ _lines = [
 
 _lines.append(
     f"Detected {n_errors_found} of {len(mask_error_key)} planted errors; "
-    f"{RESULTS['mask_suspects_real']} original COCO annotations "
+    f"{results['mask_suspects_real']} original COCO annotations "
     "were also flagged."
 )
 

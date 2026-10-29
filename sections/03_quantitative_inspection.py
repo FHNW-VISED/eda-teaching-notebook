@@ -220,7 +220,7 @@ for _, _row in images.iterrows():
     _hists.append(_hist)
 image_stats = pd.DataFrame(_records)
 channel_hists = np.stack(_hists)  # (n_images, 3, HIST_BINS)
-RESULTS["image_stats_n"] = int(len(image_stats))
+results["image_stats_n"] = int(len(image_stats))
 
 _same_size = image_stats[["width", "height"]].to_numpy() == images[["width", "height"]].to_numpy()
 _agree = int(_same_size.all(axis=1).sum())
@@ -310,8 +310,8 @@ plt.close(fig)
 # photo. Right: the aspect ratio width/height, stacked by class.
 fig, (ax_sc, ax_hist) = plt.subplots(1, 2, figsize=(13, 4.8))
 for c in CLASSES:
-    s = image_stats[image_stats["class"] == c]
-    ax_sc.scatter(s["width"], s["height"], s=22, alpha=0.65, color=CLASS_COLORS[c], label=c, edgecolor="none")
+    class_stats = image_stats[image_stats["class"] == c]
+    ax_sc.scatter(class_stats["width"], class_stats["height"], s=22, alpha=0.65, color=CLASS_COLORS[c], label=c, edgecolor="none")
 _lim = float(max(image_stats["width"].max(), image_stats["height"].max())) * 1.08
 ax_sc.plot([0, _lim], [0, _lim], "--", color=INK, lw=1)
 ax_sc.set_xlim(0, _lim)
@@ -608,7 +608,7 @@ callout("recipe", "🧾 Recipe · Step 1, continued: Imbalances and Biases", r""
 # %%
 # @title 🔎 Explore Class Distribution { display-mode: "form" }
 images_per_class = {c: int((images["class"] == c).sum()) for c in CLASSES}
-RESULTS["images_per_class"] = images_per_class
+results["images_per_class"] = images_per_class
 
 _total = sum(images_per_class.values())
 _largest = max(images_per_class, key=images_per_class.get)
@@ -666,7 +666,7 @@ callout("answer", "💡 Sample Answer", r"""
 # %% [markdown] edition="own"
 # #### 🟢 Objects per Image: How Common Are Multiple Objects?
 #
-# Each image in your dataset has one class label, but it may contain several annotated objects. This task needs boxes, so it runs only if `TASKS` includes `"detection"`.
+# Each image in your dataset has one class label, but it may contain several annotated objects. This task needs boxes, so it runs only if `TASKS` includes `"detection"` or `"segmentation"`.
 #
 # The next visualization shows the number of annotated objects per image and examples with particularly many objects.
 #
@@ -762,13 +762,12 @@ callout("theory", "📘 Labeling Strategies: One Label or Multiple Animals?", r"
 # - Why is accuracy alone insufficient for evaluating the park's dog alert?
 
 # %% [markdown] edition="own"
-# #### 🟢 Class Imbalance: Which Mistake Is Expensive in Your Task?
+# #### 🟢 Class Imbalance: Is the Expensive Class a Small One?
 #
 # A rule that always predicts the most common class can reach high accuracy without ever finding a rare class. If the rare class is the expensive one, accuracy hides exactly the mistake that matters.
 #
 # **Observe and interpret:**
-# - Which class is the expensive mistake in your task?
-# - Is it one of the small classes in Class Distribution?
+# - Take the expensive mistake you named in Your Task: Which Mistake Is Expensive? Is its class one of the small classes in Class Distribution?
 # - Which metric would show that mistake, if accuracy does not?
 #
 # ✍️ **Your answer** (double-click to edit):

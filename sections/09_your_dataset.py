@@ -1,9 +1,16 @@
-# %% [markdown]
+# %% [markdown] edition="teaching"
 # ## Your Project Dataset
+#
+# Your project needs a dataset too, and the checks in this notebook tell you whether it is good enough to train on.
+
+# %% [markdown] edition="own"
+# ## Your Project Dataset
+#
+# You have run every check on your own dataset, so now compare it with what a good dataset needs and turn your results into a split and a report card.
 
 # %%
-# @title Checklist Dataset Mini-Project { display-mode: "form" }
-callout("theory", "📘 Theory · What makes a good dataset", r"""
+# @title 📘 What Makes a Good Dataset { display-mode: "form" }
+callout("theory", "📘 What Makes a Good Dataset", r"""
 <ul style="margin:6px 0 0 0;padding-left:22px;">
 <li style="margin:2px 0;"><strong>Does it fit the question?</strong> The images, the classes and the setting must match the job you want the
   model to do.<br><em>Park example:</em> the alert needs a dog seen from a fixed camera in the sheep paddock, not a
@@ -89,16 +96,21 @@ Where to find existing image datasets and tools for annotating your own images.
 # 7. What must be fixed before training?
 
 # %% [markdown] edition="own"
-# The next cell suggests a split: it groups the copies, then makes a stratified (every class in both halves, in the
-# same shares), group-aware split.
+# The next two cells suggest a split. The first holds its one setting, `SPLIT_COPY_THRESHOLD`: two images whose pHash
+# differs in at most this many bits count as copies and stay on the same side of the split. The second groups the
+# copies, then makes a stratified (every class in both halves, in the same shares), group-aware split.
 
 # %% edition="own"
-# @title A Split Suggestion: Copies Grouped, Stratified by Class { display-mode: "form" }
-# Copies (find_copies from Common Dataset Errors & Cleaning, at your HASH_THRESHOLD) form groups that stay on
+# ✏️ YOUR TURN
+SPLIT_COPY_THRESHOLD = 8  # bit distance up to which two images count as copies, kept on one side of the split
+
+# %% edition="own"
+# @title 🔎 Suggest a Split: Copies Grouped, Stratified by Class { display-mode: "form" }
+# Copies (find_copies from Common Dataset Errors & Cleaning, at SPLIT_COPY_THRESHOLD) form groups that stay on
 # one side; the split is stratified by class.
 from sklearn.model_selection import StratifiedGroupKFold
 
-copy_pairs = find_copies(dict(enumerate(images["path"])), HASH_THRESHOLD, use_variants=True)  # a, b = row numbers
+copy_pairs = find_copies(dict(enumerate(images["path"])), SPLIT_COPY_THRESHOLD, use_variants=True)  # a, b = row numbers
 _image_class = images["class"].to_numpy()
 copy_pairs["same class"] = [bool(_image_class[a] == _image_class[b])
                             for a, b in zip(copy_pairs["a"], copy_pairs["b"], strict=True)]
@@ -131,17 +143,17 @@ display(pd.crosstab(split_suggestion["class"], split_suggestion["split"]).reinde
 _test_small = int((split_suggestion["split"] == "test").groupby(split_suggestion["class"]).sum().min())
 print(f"test share {len(_test_idx) / len(images):.0%} · copy pairs across train/test: {_split_copies}")
 if _test_small < 10:
-    print(f"💡 the smallest class has only {_test_small} test images: prefer stratified {_n_splits}-fold "
+    print(f"The smallest class has only {_test_small} test images: prefer stratified {_n_splits}-fold "
           "cross-validation with the same groups, and report the mean and the spread over the folds.")
 else:
-    print("💡 a stratified 80/20 hold-out with these groups is enough; keep the test half for the end.")
+    print("A stratified 80/20 hold-out with these groups is enough; keep the test half for the end.")
 print("If images share a camera, a session, a burst or a patient, add that to the groups (Dataset Splitting & Data Leakage).")
 _split_csv = DATA_DIR / "cache" / "my_split.csv"
 split_suggestion.to_csv(_split_csv, index=False)
 print(f"split saved to {_split_csv}")
 
 # %% [markdown] edition="own"
-# 💡 Look at "copy pairs across train/test": it must be 0. The split is written to `data/cache/my_split.csv`,
+# **Look at "copy pairs across train/test":** it must be 0. The split is written to `data/cache/my_split.csv`,
 # and **Colab deletes that folder when the session ends**: download it now (Files pane → right-click the
 # file → Download) or copy it to your Drive, or it is gone next week.
 
@@ -149,7 +161,7 @@ print(f"split saved to {_split_csv}")
 # The checklist in one place, to paste into your project notes:
 
 # %% edition="own"
-# @title The report card for this dataset { display-mode: "form" }
+# @title 🔎 Show the Report Card for Your Dataset { display-mode: "form" }
 _imbalance = float(class_counts.max() / class_counts.min())
 _n_unreadable = len(coco_raw.get("unreadable", []))  # files the loader could not open (left out)
 _n_not_rgb = int((image_stats["mode"] != "RGB").sum())
@@ -164,25 +176,25 @@ report_card = [
 ]
 for mark, line in report_card:
     print(mark, line)
-RESULTS["swap_in_ok"] = bool(len(images) > 0 and len(image_stats) == len(split_suggestion) == len(images))
-RESULTS["swap_in"] = {"source": dataset_source, "n_images": int(len(images)), "n_classes": len(CLASSES),
+results["swap_in_ok"] = bool(len(images) > 0 and len(image_stats) == len(split_suggestion) == len(images))
+results["swap_in"] = {"source": dataset_source, "n_images": int(len(images)), "n_classes": len(CLASSES),
                       "copies": int(len(copy_pairs)), "not_rgb": _n_not_rgb}
 
 # %% [markdown] edition="own"
-# ### After the lab · Read your results and answer the guiding questions
+# ### After the Lab · Read Your Results and Answer the Guiding Questions
 #
 # Everything above ran on your dataset. This block explains how to read the results and ends with the seven
 # guiding questions.
 
 # %% [markdown] edition="own"
-# 💡 How to read the ratio:
+# **How to read the ratio:**
 #
 # - **2 or 3 to 1:** common and harmless if you watch the small class's recall.
-# - **10 to 1 and beyond:** accuracy hides the small class completely (Class Imbalance: Which Mistake Is Expensive in Your Task?).
+# - **10 to 1 and beyond:** accuracy hides the small class completely (Class Imbalance: Is the Expensive Class a Small One?).
 # - **Always ask:** is the *expensive* class the small one?
 
 # %% [markdown] edition="own"
-# 💡 How to read the sizes and modes:
+# **How to read the sizes and modes:**
 #
 # - **One tight cluster of sizes:** one source.
 # - **A second cluster, or one class sitting apart:** a second source, and the model may learn the source
@@ -190,12 +202,12 @@ RESULTS["swap_in"] = {"source": dataset_source, "n_images": int(len(images)), "n
 # - **Every file that is not RGB** is counted in the report card: decide whether to convert it or drop it.
 
 # %% [markdown] edition="own"
-# 💡 Every copy pair is a decision for a human:
+# **Every copy pair is a decision for a human:**
 #
 # - **Keep one file of each pair.**
 # - **Look twice at pairs from different class folders:** one of the two labels is wrong.
 # - **Many pairs on near-identical shots** (a fixed camera, a microscope) are genuinely different photos:
-#   lower `HASH_THRESHOLD` in Bit Distance Distribution and rerun.
+#   lower `SPLIT_COPY_THRESHOLD` in the cell above the split suggestion and rerun.
 
 # %% edition="own"
 # @title 🔍 Go Deeper: The Split Is Only a Suggestion { display-mode: "form" }
@@ -206,11 +218,11 @@ than the model will earn.</p>
 """)
 
 # %% [markdown] edition="own"
-# #### The guiding questions
+# #### 🟢 The Guiding Questions
 #
 # These questions are the notebook in short. Each one has the park's answer, and an empty line for yours.
 #
-# 🟢 Double-click the next cell and answer each guiding question for your project dataset, using
+# Double-click the next cell and answer each guiding question for your project dataset, using
 # the output of the checklist above and what you know about where the data comes from.
 
 # %% [markdown] edition="own"

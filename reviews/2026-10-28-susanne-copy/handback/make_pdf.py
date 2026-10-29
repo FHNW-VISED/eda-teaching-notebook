@@ -22,16 +22,19 @@ PAGES = [
     ("Image embeddings: fast on a classroom CPU", "Your DINOv2 comparison is unchanged, and the model is the same. "
      "Your copy ran on an A100. On Colab's free CPU, installing the packages and embedding every image takes minutes, "
      "so the park's DINOv2 vectors are now computed once and loaded (they give your within-class similarities to "
-     "three decimals). The model still runs on a GPU, or when COMPUTE_EMBEDDINGS is ticked.",
+     "three decimals). A short note above the cell explains the COMPUTE_EMBEDDINGS checkbox: the model still runs on a GPU, or on a CPU when it is ticked.",
      "b-emb.png", ["a-emb.png"], None),
     ("The end of the class notebook", "Your marker and the old chapter 10 are gone from the class notebook: chapter 10 "
      "stopped Run all with an error (it used a cleaning step that your copy no longer has). Your checklist and "
-     "resources stay; a short closing points to the new Own-Data notebook and lists the guiding questions.",
+     "resources stay, with one opening sentence; a short closing points to the new Own-Data notebook and lists the guiding questions.",
      ["b-ch10.png", "b-ch10err.png"], ["a-ch10.png"], None),
     ("New: the Own-Data notebook", "Built from the same cells as your notebook, so it never drifts from it. Students load "
      "their own dataset first; every analysis after that runs on their images. No Sample Answers: each task ends with a "
      "line for their answer and a one-line hint from the park.",
      None, ["o-title.png"], "Own-Data notebook: the opening"),
+    ("One image in every format", "Students see the same park image labeled in each format the notebook "
+     "reads, before they load anything, so they can recognize which one their labeling tool exported.",
+     None, ["o-every.png"], "Own-Data notebook: Load Your Dataset"),
     ("How students learn the label formats", "One page explains what each task needs and how each format stores a "
      "box or a mask, using the same sheep box in every format so students can compare the numbers.",
      None, ["o-formats.png"], "Own-Data notebook: Load Your Dataset"),
@@ -56,8 +59,10 @@ SUMMARY = """
 <p>Thank you for the edited notebook. Your copy is now the notebook: nothing was merged back from the old version,
 and everything you removed stays removed. This document shows the biggest changes made on top of it, each with your
 version on the left and the new one on the right; the red numbers mark the exact place.</p>
+<p><b>The Own-Data notebook</b> follows your request: the same analyses and hints, the checklists, no exercises
+and no Sample Answers. Students can load a folder, a zip, a Google Drive link or a git repository.</p>
 <p><b>Changed under the hood, not shown:</b> the hidden helper code was cleaned up (unused and repeated helpers
-removed, imports in one place); result variables are lowercase, settings in CAPITALS (PEP 8); the twelve image
+removed, imports in one place); every computed variable is lowercase (including <code>results</code>), only settings are in CAPITALS (PEP 8); browser buttons and checkbox labels are the same everywhere; "bit distance" is used throughout; the twelve image
 browsers no longer interfere with each other (clicking an earlier browser after running later chapters crashed or
 drew into the wrong cell); all Sample Answers use your gray box through one small helper; spelling is US throughout,
 "IOU" is "IoU"; references to section numbers point to your chapter names. Every cell runs on a free Colab CPU
@@ -90,7 +95,7 @@ img { width: 100%; max-height: 150mm; object-fit: contain; object-position: top 
       border: 1px solid #d1d5db; border-radius: 4px; }
 </style></head><body>
 <section><h1>Know Your Images: what changed in your copy</h1>
-<p style="color:#6b7280">Simone Bonato · 28 October 2026</p>{summary}</section>
+<p style="color:#6b7280">Simone Bonato · 29 October 2026</p>{summary}</section>
 {pages}</body></html>"""
 
 

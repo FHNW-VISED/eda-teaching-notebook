@@ -26,7 +26,7 @@ callout("recipe", "🧾 Recipe · Step 1, continued: Dataset Errors", r"""
 
 # %%
 # @title 🔍 Go Deeper: Two Kaggle Stories { display-mode: "form" }
-callout("deeper", "🔍 Go Deeper · This is ordinary: two Kaggle stories", r"""
+callout("deeper", "🔍 Go Deeper · This Is Ordinary: Two Kaggle Stories", r"""
 <details style="margin:6px 0 0 0;">
 <summary style="cursor:pointer;font-weight:bold;">Datasets built with care that still shipped duplicates</summary>
 <p style="margin:6px 0 0 0;"><strong>PetFinder.my Pawpularity</strong> (2021) shipped near-identical photos with <em>different</em> scores, and <strong>Cassava
@@ -117,16 +117,6 @@ def hash_distances(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     return (a[:, None, :] != b[None, :, :]).sum(axis=-1)
 
 
-def is_readable(path) -> bool:
-    """Check whether an image can be fully decoded."""
-    try:
-        with Image.open(path) as im:
-            im.load()
-        return True
-    except (OSError, ValueError):
-        return False
-
-
 def jpeg_bytes(im: Image.Image, scale: float = 1.0, quality: int = 55) -> bytes:
     """The JPEG file of `im` resized by `scale` (each side at least 8 px) and saved at `quality`."""
     if scale != 1.0:
@@ -165,15 +155,15 @@ dup_threshold = widgets.IntSlider(
     layout=widgets.Layout(width="450px")
 )
 
-dup_previous = widgets.Button(description="← Previous")
-dup_next_button = widgets.Button(description="Next →")
+dup_prev_btn = widgets.Button(description="← Previous")
+dup_next_btn = widgets.Button(description="Next →")
 dup_summary = widgets.HTML()
 dup_counter = widgets.HTML()
 dup_output = widgets.Output()
 
 dup_state = {"index": 0}
 
-def dup_update_browser(*_):
+def dup_show_page(*_):
     # Only show pairs within the selected threshold
     flagged_pairs = [pair for pair in candidate_pairs if pair[2] <= dup_threshold.value]
 
@@ -185,8 +175,8 @@ def dup_update_browser(*_):
     )
 
 
-    dup_previous.disabled = dup_state["index"] == 0
-    dup_next_button.disabled = dup_state["index"] >= len(flagged_pairs) - 1
+    dup_prev_btn.disabled = dup_state["index"] == 0
+    dup_next_btn.disabled = dup_state["index"] >= len(flagged_pairs) - 1
 
     with dup_output:
         clear_output(wait=True)
@@ -218,22 +208,22 @@ def dup_update_browser(*_):
 
 def dup_navigate(step):
     dup_state["index"] += step
-    dup_update_browser()
+    dup_show_page()
 
 def dup_change_threshold(change):
     dup_state["index"] = 0
-    dup_update_browser()
+    dup_show_page()
 
-dup_previous.on_click(lambda _: dup_navigate(-1))
-dup_next_button.on_click(lambda _: dup_navigate(1))
+dup_prev_btn.on_click(lambda _: dup_navigate(-1))
+dup_next_btn.on_click(lambda _: dup_navigate(1))
 dup_threshold.observe(dup_change_threshold, names="value")
 
 display(dup_summary)
 display(dup_threshold)
-display(widgets.HBox([dup_previous, dup_counter, dup_next_button]))
+display(widgets.HBox([dup_prev_btn, dup_counter, dup_next_btn]))
 display(dup_output)
 
-dup_update_browser()
+dup_show_page()
 
 # %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
@@ -285,7 +275,7 @@ ax.hist([nearest_distance[(images["class"] == c).to_numpy()] for c in CLASSES], 
         color=[CLASS_COLORS[c] for c in CLASSES], label=CLASSES)
 ax.axvline(HASH_THRESHOLD + 0.5, color=INK, ls=":", lw=1)
 ax.text(HASH_THRESHOLD + 1, ax.get_ylim()[1] * 0.9, f"HASH_THRESHOLD = {HASH_THRESHOLD}", fontsize=9)
-ax.set_xlabel("Hamming distance to the closest other image (bits)")
+ax.set_xlabel("Bit distance to the closest other image")
 ax.set_ylabel("images")
 ax.set_title("How close is each image's nearest neighbor?")
 ax.legend(frameon=False, fontsize=9)
@@ -406,7 +396,7 @@ draw_bits(
 axes[1, 3].axis("off")
 note = (
     "Yellow = differing bits\n\n"
-    "Hamming distance =\n"
+    "Bit distance =\n"
     "number of differing bits\n\n"
     f"Near copy: {d_near}\n"
     f"Unrelated: {d_other}"
@@ -576,14 +566,15 @@ def find_copies(files: dict[str, Path], threshold: int, use_variants: bool) -> p
     return pd.DataFrame(rows, columns=["a", "b", "kind", "distance"])
 
 
+
+# %% edition="teaching"
+# @title 🔎 Compare Duplicate Detection Methods { display-mode: "form" }
 def score_hunt(found: pd.DataFrame, key: list[dict]) -> int:
     """How many planted copies in `key` appear as a pair (either order) in `found`."""
     pairs = {frozenset((r["a"], r["b"])) for _, r in found.iterrows()}
     return sum(frozenset((k["copy"], k["source"])) in pairs for k in key)
 
 
-# %% edition="teaching"
-# @title 🔎 Compare Duplicate Detection Methods { display-mode: "form" }
 plain = find_copies(hunt_files, threshold=PAIR_THRESHOLD, use_variants=False)
 variant = find_copies(hunt_files, threshold=PAIR_THRESHOLD, use_variants=True)
 
@@ -605,7 +596,7 @@ callout("answer", "💡 Sample Answer", r"""
 
 
 # %% [markdown] edition="teaching"
-# Why, on one photo and five kinds of copy: the pHash distance to the original, plain vs variant.
+# The next figure makes five kinds of copy of one image and shows how many bits each copy's pHash differs from the original's, with standard pHash and with transformation-aware pHash.
 
 # %% [markdown] edition="own"
 # ### 🔴 Flipped and Rotated Copies: Does pHash Still Find Them? (Optional)
@@ -745,31 +736,31 @@ least_typical = (image_stats.sort_values("atypicality", ascending=False)
                  .groupby("class", sort=False).head(N_ATYPICAL))
 
 # Browse the most unusual images, two per class
-_class_index = 0
-_prev = widgets.Button(description="← Previous")
-_next = widgets.Button(description="Next →")
-_out = widgets.Output()
+atypical_class_index = 0
+atypical_prev_btn = widgets.Button(description="← Previous")
+atypical_next_btn = widgets.Button(description="Next →")
+atypical_output = widgets.Output()
 
-def _show_class():
-    c = CLASSES[_class_index]
+def atypical_show_page():
+    c = CLASSES[atypical_class_index]
     subset = least_typical[least_typical["class"] == c]
-    with _out:
+    with atypical_output:
         clear_output(wait=True)
         show_rows(subset, f"{c.capitalize()} — images flagged for manual review",
                   lambda r: f"Distance: {r['atypicality']:.2f}", cols=2)
-    _prev.disabled = _class_index == 0
-    _next.disabled = _class_index == len(CLASSES) - 1
+    atypical_prev_btn.disabled = atypical_class_index == 0
+    atypical_next_btn.disabled = atypical_class_index == len(CLASSES) - 1
 
-def _navigate(step):
-    global _class_index
-    _class_index = max(0, min(len(CLASSES) - 1, _class_index + step))
-    _show_class()
+def atypical_navigate(step):
+    global atypical_class_index
+    atypical_class_index = max(0, min(len(CLASSES) - 1, atypical_class_index + step))
+    atypical_show_page()
 
-_prev.on_click(lambda _: _navigate(-1))
-_next.on_click(lambda _: _navigate(1))
+atypical_prev_btn.on_click(lambda _: atypical_navigate(-1))
+atypical_next_btn.on_click(lambda _: atypical_navigate(1))
 
-display(widgets.HBox([_prev, _next]), _out)
-_show_class()
+display(widgets.HBox([atypical_prev_btn, atypical_next_btn]), atypical_output)
+atypical_show_page()
 
 # %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
@@ -1072,9 +1063,9 @@ sim = cosine_similarity_matrix(features)
 np.fill_diagonal(sim, -np.inf)
 
 # Rank all image pairs by cosine similarity
-i, j = np.triu_indices(len(sim), k=1)
-order = np.argsort(sim[i, j])[::-1]
-top_pairs = [(int(i[k]), int(j[k])) for k in order]
+first, second = np.triu_indices(len(sim), k=1)
+order = np.argsort(sim[first, second])[::-1]
+top_pairs = [(int(first[k]), int(second[k])) for k in order]
 
 # Rank images by average similarity to others in their class
 class_similarity = np.array([
@@ -1112,10 +1103,10 @@ sim_n_unusual = widgets.IntSlider(
 sim_prev_btn = widgets.Button(description="← Previous")
 sim_next_btn = widgets.Button(description="Next →")
 sim_counter = widgets.HTML()
-sim_preview = widgets.Output()
+sim_output = widgets.Output()
 sim_position = 0
 
-def sim_update_view(change=None):
+def sim_show_page(change=None):
     global sim_position
 
     if sim_mode.value == "Most similar pairs":
@@ -1150,7 +1141,7 @@ def sim_update_view(change=None):
 
         cols = min(4, len(selected))
 
-    with sim_preview:
+    with sim_output:
         clear_output(wait=True)
         show_rows(rows, title, labels, cols=cols)
 
@@ -1165,12 +1156,12 @@ def sim_update_view(change=None):
 def sim_navigate(step):
     global sim_position
     sim_position = max(0, min(sim_n_pairs.value - 1, sim_position + step))
-    sim_update_view()
+    sim_show_page()
 
 def sim_reset_view(change=None):
     global sim_position
     sim_position = 0
-    sim_update_view()
+    sim_show_page()
 
 sim_prev_btn.on_click(lambda _: sim_navigate(-1))
 sim_next_btn.on_click(lambda _: sim_navigate(1))
@@ -1182,9 +1173,9 @@ sim_n_unusual.observe(sim_reset_view, names="value")
 
 display(widgets.HBox([sim_mode, sim_class_picker, sim_n_pairs, sim_n_unusual]))
 display(widgets.HBox([sim_prev_btn, sim_next_btn, sim_counter]))
-display(sim_preview)
+display(sim_output)
 
-sim_update_view()
+sim_show_page()
 
 # %%
 # @title 🔎 Compare Within-Class Image Similarity { display-mode: "form" }

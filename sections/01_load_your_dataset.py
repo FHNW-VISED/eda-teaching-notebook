@@ -25,7 +25,7 @@ first two, and a dataset with class labels only the classification chapters.</p>
 
 
 # %% [markdown] edition="own"
-# #### How Each Format Stores Its Labels
+# ### How Each Format Stores Its Labels
 #
 # You do not convert anything yourself. Tell the notebook which tasks your labels support, and it reads any of the
 # formats below and converts them internally. If your labeling tool offers several exports, **COCO JSON** is the safest
@@ -33,7 +33,8 @@ first two, and a dataset with class labels only the classification chapters.</p>
 #
 # To compare the formats, every example below describes **the same box**: a sheep in a 640 × 480 image, whose box
 # starts 120 pixels from the left edge and 80 from the top, and is 200 pixels wide and 150 pixels high.
-#
+
+# %% [markdown] edition="own"
 # **Classification**
 #
 # - **One folder per class** (`"folders"`): the folder name is the class.
@@ -106,60 +107,71 @@ combined: load the one that covers the most tasks.</p>
 """)
 
 
-# %% edition="own"
-# @title ✏️ Your Turn: Point the Notebook at Your Dataset { display-mode: "form" }
-HTML(r"""<div class="callout callout-your-turn" style="background:#FFF4D6;color:#7A4A00;border-left:6px solid #7A4A00;border-radius:6px;padding:12px 14px;line-height:1.5;font-family:'Google Sans',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;margin:2px 0;">
-<div style="font-weight:bold;">✏️ Your turn · Point the notebook at your dataset</div>
-<p style="margin:6px 0 0 0;">Colab cannot see your laptop's folders, so the dataset first goes where Colab can read it. Pick <strong>one</strong> of
-the three options, then do the last step.</p>
-<p style="margin:6px 0 0 0;"><strong>Option A · Upload it to this Colab session</strong> (fastest; gone when the session ends)</p>
-<ol style="margin:6px 0 0 0;padding-left:22px;">
-<li style="margin:2px 0;"><strong>Zip the dataset folder</strong> (your images and your label files) on your laptop: Mac, right-click the folder → <em>Compress</em>; Windows,
-   right-click → <em>Send to</em> → <em>Compressed (zipped) folder</em>. Colab uploads files, not folders.</li>
-<li style="margin:2px 0;">Click the 📁 <strong>Files</strong> icon in Colab's left bar and <strong>drag the zip into it</strong> (or use the upload icon at
-   the top of the pane). Wait until the progress circle at the bottom left disappears.</li>
-<li style="margin:2px 0;"><strong>Right-click the zip → Copy path.</strong> It looks like <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">/content/my_dataset.zip</code>; the notebook unzips it.</li>
-</ol>
-<p style="margin:6px 0 0 0;">⚠️ Colab deletes uploaded files when the session ends (closing the tab for a while, or <em>Disconnect and
-delete runtime</em>): next time, upload the zip again.</p>
-<p style="margin:6px 0 0 0;"><strong>Option B · Use Google Drive</strong> (stays between sessions; slower the first time)</p>
-<ol style="margin:6px 0 0 0;padding-left:22px;">
-<li style="margin:2px 0;"><strong>Put the dataset on your Drive</strong> at <a href="https://drive.google.com" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">drive.google.com</a>: <em>New → Folder upload</em>
-   for the folder, or <em>File upload</em> for a zip.</li>
-<li style="margin:2px 0;"><strong>Connect Drive to Colab:</strong> in the 📁 Files pane, click the <strong>Mount Drive</strong> icon (a folder with the
-   Drive logo) and allow access in the window that opens. A <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">drive/</code> folder appears in the pane.</li>
-<li style="margin:2px 0;">Open <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">drive/MyDrive/</code>, find the folder that holds your dataset (or the zip), <strong>right-click →
-   Copy path.</strong> It looks like <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">/content/drive/MyDrive/project/my_dataset</code>.</li>
-</ol>
-<p style="margin:6px 0 0 0;"><strong>Option C · Paste a Google Drive link to a zip</strong> (no mounting, no browsing)</p>
-<ol style="margin:6px 0 0 0;padding-left:22px;">
-<li style="margin:2px 0;">In Drive, right-click the <strong>zip</strong> → <em>Share</em> → <em>Copy link</em>. It looks like
-   <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">https://drive.google.com/file/d/1I9D…/view?usp=drive_link</code>.</li>
-<li style="margin:2px 0;">Paste the whole link as the path. If the zip is shared as <em>Anyone with the link</em>, it downloads straight
-   away; if it is private, Colab asks you to sign in with the Google account that can open it.</li>
-</ol>
-<p style="margin:6px 0 0 0;">Links to a Drive <em>folder</em> do not work: zip the folder first, or use option B.</p>
-<p style="margin:6px 0 0 0;"><strong>Last step, all options:</strong> paste the path between the quotes of <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">DATASET_PATH</code> in the next cell, set <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">TASKS</code> and <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">LABEL_FORMAT</code>, click into that cell, and
-run everything from there: <strong>Runtime → Run cell and below</strong>. If the path is not right, the cell after it
-stops with a plain message that says what to change.</p>
-<ul style="margin:6px 0 0 0;padding-left:22px;">
-<li style="margin:2px 0;">✅ <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">/content/my_dataset.zip</code> (A), <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">/content/drive/MyDrive/project/my_dataset</code> (B) or
-  <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">https://drive.google.com/file/d/…/view</code> (C): the folder that holds your images and labels, or a zip of it. A zip may hold any of the formats
-  above, with or without one wrapper folder around it.</li>
-<li style="margin:2px 0;">❌ <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">…/my_dataset/daisy</code>: one class folder, one level too deep (one folder per class).</li>
-<li style="margin:2px 0;">❌ a folder that holds <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">train/</code> and <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">val/</code>: point at <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">…/train</code> instead (then at <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">…/val</code>, if you like). This holds for one folder per class; the other formats read every split together.</li>
-</ul>
-<p style="margin:6px 0 0 0;">Leave it at <code style="font-family:'Roboto Mono',SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;">None</code> to see the notebook on a small park sample first, written in the format you chose.</p>
-</div>""")
+# %% [markdown] edition="own"
+# **✏️ Your Turn: Point the Notebook at Your Dataset**
+#
+# Colab cannot see your laptop's folders, so the dataset first goes where Colab can read it. Pick **one** of the
+# four options below, then do the last step.
+
+# %% [markdown] edition="own"
+# **Option A · Upload it to this Colab session** (fastest; gone when the session ends)
+#
+# 1. **Zip the dataset folder** (your images and your label files) on your laptop: Mac, right-click the folder →
+#    *Compress*; Windows, right-click → *Send to* → *Compressed (zipped) folder*. Colab uploads files, not folders.
+# 2. Click the 📁 **Files** icon in Colab's left bar and **drag the zip into it** (or use the upload icon at the top of
+#    the pane). Wait until the progress circle at the bottom left disappears.
+# 3. **Right-click the zip → Copy path.** It looks like `/content/my_dataset.zip`; the notebook unzips it.
+#
+# ⚠️ Colab deletes uploaded files when the session ends (closing the tab for a while, or *Disconnect and delete
+# runtime*): next time, upload the zip again.
+
+# %% [markdown] edition="own"
+# **Option B · Use Google Drive** (stays between sessions; slower the first time)
+#
+# 1. **Put the dataset on your Drive** at [drive.google.com](https://drive.google.com): *New → Folder upload* for the
+#    folder, or *File upload* for a zip.
+# 2. **Connect Drive to Colab:** in the 📁 Files pane, click the **Mount Drive** icon (a folder with the Drive logo)
+#    and allow access in the window that opens. A `drive/` folder appears in the pane.
+# 3. Open `drive/MyDrive/`, find the folder that holds your dataset (or the zip), **right-click → Copy path.** It looks
+#    like `/content/drive/MyDrive/project/my_dataset`.
+
+# %% [markdown] edition="own"
+# **Option C · Paste a Google Drive link to a zip** (no mounting, no browsing)
+#
+# 1. In Drive, right-click the **zip** → *Share* → *Copy link*. It looks like
+#    `https://drive.google.com/file/d/1I9D…/view?usp=drive_link`.
+# 2. Paste the whole link as the path. If the zip is shared as *Anyone with the link*, it downloads straight away; if
+#    it is private, Colab asks you to sign in with the Google account that can open it.
+#
+# Links to a Drive *folder* do not work: zip the folder first, or use option B.
+#
+# **Option D · Paste the address of a git repository** (`https://github.com/…`, `https://gitlab…`, or anything ending
+# in `.git`): the notebook clones it once (`git clone --depth 1`) and reads it like a folder.
+
+# %% [markdown] edition="own"
+# **Last step, all options:** paste the path between the quotes of `DATASET_PATH` in the next cell, set `TASKS` and
+# `LABEL_FORMAT`, click into that cell, and run everything from there: **Runtime → Run cell and below**. If the path
+# is not right, the cell after it stops with a plain message that says what to change.
+#
+# - ✅ `/content/my_dataset.zip` (A), `/content/drive/MyDrive/project/my_dataset` (B),
+#   `https://drive.google.com/file/d/…/view` (C) or `https://github.com/…/my_dataset.git` (D): the folder that holds
+#   your images and labels, or a zip of it. A zip may hold any of the formats above, with or without one wrapper
+#   folder around it.
+# - ❌ `…/my_dataset/daisy`: one class folder, one level too deep (one folder per class).
+# - ❌ a folder that holds `train/` and `val/`: point at `…/train` instead (then at `…/val`, if you like). This holds
+#   for one folder per class; the other formats read every split together.
+#
+# Leave it at `None` to see the notebook on a small park sample first, written in the format you chose.
 
 # %% edition="own"
 # ✏️ YOUR TURN
-DATASET_PATH = None  # your folder, .zip, or a Google Drive link to a .zip; None = the park sample
+DATASET_PATH = None  # your folder, .zip, a Google Drive link to a .zip, or a git repository; None = the park sample
 TASKS = ["classification"]  # add "detection" if you have boxes, and "segmentation" if you have masks
 LABEL_FORMAT = "auto"  # @param ["auto", "folders", "csv", "coco", "yolo", "voc", "png-masks"]
 
 # %% edition="own"
 # @title Helpers: Find and Open Your Dataset { display-mode: "form" }
+import subprocess
 import zipfile
 
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tif", ".tiff", ".webp"}
@@ -270,6 +282,35 @@ def fetch_drive_link(url: str) -> Path:
                      "open the file in Drive → Share → General access → 'Anyone with the link'.")
 
 
+def is_git_url(text: str) -> bool:
+    """True for the address of a git repository: GitHub, GitLab, or anything ending in .git."""
+    return text.startswith(("https://github.com/", "https://gitlab", "git@")) or text.rstrip("/").endswith(".git")
+
+
+def clone_git_repository(url: str) -> Path:
+    """Clone a git repository once (only its latest version, `git clone --depth 1`) into
+    data/cache/my_upload/<repository name> and return that folder.
+
+    e.g. clone_git_repository("https://github.com/me/flowers.git") → Path(".../data/cache/my_upload/flowers")
+    """
+    name = url.rstrip("/").removesuffix(".git").rsplit("/", 1)[-1].rsplit(":", 1)[-1] or "repository"
+    dest = (DATA_DIR / "cache" / "my_upload" / name).resolve()
+    if (dest / ".git").exists():
+        print(f"ℹ️ {url} was cloned before: using {dest}")
+        return dest
+    shutil.rmtree(dest, ignore_errors=True)  # a clone that stopped halfway
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    print(f"ℹ️ cloning {url} into {dest} …")
+    done = subprocess.run(["git", "clone", "--depth", "1", "--quiet", url, str(dest)], capture_output=True, text=True)
+    if done.returncode != 0:
+        shutil.rmtree(dest, ignore_errors=True)
+        raise SystemExit(f"❌ DATASET_PATH: git could not clone {url}:\n   {done.stderr.strip()}\n"
+                         "   Check the address (copy it from the repository's Code button) and that the repository "
+                         "is public.")
+    print(f"ℹ️ cloned {url}")
+    return dest
+
+
 def find_dataset(path) -> Path:
     """The folder that holds the class folders. Stops with a plain message saying what to change if the
     path cannot be used; unzips a .zip and steps into a lone wrapper folder on its own.
@@ -367,7 +408,7 @@ def folder_notes(root: Path, files: pd.DataFrame) -> list[str]:
 
 
 # %% edition="own"
-# @title Helpers: Read Your Labels (six formats, one table) { display-mode: "form" }
+# @title Helpers: Read Your Labels (Six Formats, One Table) { display-mode: "form" }
 # Every format is converted to the same COCO-style dict the park uses, then build_tables() makes the
 # `images` and `annotations` tables, so every later cell runs unchanged on your data.
 import csv
@@ -572,7 +613,7 @@ def _yolo_names(root: Path) -> dict[int, str]:
 
 def read_yolo(root: Path) -> tuple[dict, dict]:
     """YOLO: one .txt per image with the same name. Each line is a class index, then either a box
-    (centre x, centre y, width, height) or a polygon (x1 y1 x2 y2 …), all as fractions 0–1 of the image."""
+    (center x, center y, width, height) or a polygon (x1 y1 x2 y2 …), all as fractions 0–1 of the image."""
     names = _yolo_names(root)
     if not names:
         print("⚠️ no data.yaml or classes.txt found: classes are named by their index (class_0, class_1, …).")
@@ -687,9 +728,15 @@ READERS = {"folders": read_folders, "csv": read_csv, "coco": read_coco, "yolo": 
 
 
 def open_dataset(path) -> Path:
-    """A local folder for `path`: a folder, a .zip (unzipped once) or a Google Drive link to a zip."""
+    """A local folder for `path`: a folder, a .zip (unzipped once), a Google Drive link to a zip, or a git
+    repository (cloned once)."""
     text = str(path).strip().strip("'\"")
-    p = fetch_drive_link(text) if text.startswith(("http://", "https://")) else Path(text).expanduser()
+    if is_git_url(text):
+        p = clone_git_repository(text)
+    elif text.startswith(("http://", "https://")):
+        p = fetch_drive_link(text)
+    else:
+        p = Path(text).expanduser()
     if str(p).startswith("/content/drive") and IN_COLAB and not Path("/content/drive/MyDrive").exists():
         from google.colab import drive
 
@@ -810,6 +857,7 @@ def stored_label(fmt: str, root: Path, path: Path) -> str:
 # @title Helpers: Park Sample, Class Colors and Skipped Cells { display-mode: "form" }
 # With DATASET_PATH = None the notebook writes a small park sample in the format you chose and reads it back
 # with the same reader your data would use, so you can see what your files should look like.
+PARK_SAMPLE_PER_CLASS = 4 if SMOKE else 20  # park images per class in that sample (fewer in smoke mode, N-014)
 
 
 def write_sample(fmt: str, dest: Path, imgs: pd.DataFrame, anns: pd.DataFrame, polygons: bool = False) -> Path:
@@ -843,29 +891,29 @@ def write_sample(fmt: str, dest: Path, imgs: pd.DataFrame, anns: pd.DataFrame, p
         labels.mkdir(parents=True, exist_ok=True)
         for _, im in imgs.iterrows():
             w, h, stem = im["width"], im["height"], Path(im["path"]).stem
-            own = by_image.get(im["id"], anns.iloc[:0])
+            image_anns = by_image.get(im["id"], anns.iloc[:0])
             if fmt == "yolo" and polygons:  # one line per outline: class x1 y1 x2 y2 …, fractions of the photo
                 lines = [f"{index[a['class']]} " + " ".join(
                     f"{v / (w if i % 2 == 0 else h):.6f}" for i, v in enumerate(outline))
-                    for _, a in own.iterrows() if isinstance(a["segmentation"], list)
+                    for _, a in image_anns.iterrows() if isinstance(a["segmentation"], list)
                     for outline in a["segmentation"]]  # an object in two parts becomes two lines
                 (labels / f"{stem}.txt").write_text("\n".join(lines) + "\n")
             elif fmt == "yolo":  # one line per object: class cx cy w h, as fractions of the photo
                 lines = [f"{index[a['class']]} {(a['bbox'][0] + a['bbox'][2] / 2) / w:.6f} "
                          f"{(a['bbox'][1] + a['bbox'][3] / 2) / h:.6f} {a['bbox'][2] / w:.6f} {a['bbox'][3] / h:.6f}"
-                         for _, a in own.iterrows()]
+                         for _, a in image_anns.iterrows()]
                 (labels / f"{stem}.txt").write_text("\n".join(lines) + "\n")
             elif fmt == "voc":
                 objects = "".join(
                     f"<object><name>{a['class']}</name><bndbox><xmin>{a['bbox'][0]:.1f}</xmin><ymin>"
                     f"{a['bbox'][1]:.1f}</ymin><xmax>{a['bbox'][0] + a['bbox'][2]:.1f}</xmax><ymax>"
-                    f"{a['bbox'][1] + a['bbox'][3]:.1f}</ymax></bndbox></object>" for _, a in own.iterrows())
+                    f"{a['bbox'][1] + a['bbox'][3]:.1f}</ymax></bndbox></object>" for _, a in image_anns.iterrows())
                 (labels / f"{stem}.xml").write_text(
                     f"<annotation><filename>{Path(im['path']).name}</filename><size><width>{w}</width>"
                     f"<height>{h}</height></size>{objects}</annotation>")
             else:  # one class index per pixel, 0 = background; class names in classes.txt
                 canvas = np.zeros((h, w), dtype=np.uint8)
-                for _, a in own.iterrows():
+                for _, a in image_anns.iterrows():
                     canvas[decode(to_rle(a["segmentation"], h, w)) > 0] = index[a["class"]] + 1
                 Image.fromarray(canvas).save(labels / f"{stem}.png")
         if fmt == "yolo":
@@ -914,10 +962,10 @@ def announce_skip(need: str) -> None:
 
 
 def _skip_without_labels(lines: list[str]) -> list[str]:
-    """IPython input hook: a cell that needs boxes or masks TASKS does not include runs announce_skip instead.
+    """IPython input hook: a cell that needs boxes or masks tasks_to_run does not include runs announce_skip instead.
     IPython may call a hook more than once per cell, so it keeps no state of its own."""
     found = re.search(r"^# needs: (boxes|masks)\s*$", "".join(lines[:3]), re.M)
-    if found is None or NEEDS[found[1]] in TASKS:
+    if found is None or NEEDS[found[1]] in globals().get("tasks_to_run", ()):  # () until the dataset is loaded
         return lines
     return [f"announce_skip({found[1]!r})\n"]
 
@@ -929,17 +977,19 @@ _ip.input_transformers_cleanup.append(_skip_without_labels)
 
 # %% edition="own"
 # @title Load Your Dataset (or the Park Sample) { display-mode: "form" }
-if "segmentation" in TASKS and "detection" not in TASKS:
-    TASKS.append("detection")  # every mask also gives its box
+# The tasks that run, derived once from TASKS (which stays as you typed it): classification always, detection when
+# TASKS asks for detection or segmentation (every mask also gives its box), segmentation when TASKS asks for it.
+tasks_to_run = ["classification"] + [t for t in ("detection", "segmentation")
+                                     if t in TASKS or (t == "detection" and "segmentation" in TASKS)]
 if DATASET_PATH is None:  # the park sample, written in your format and read back the way your files would be
-    _fmt = LABEL_FORMAT if LABEL_FORMAT != "auto" else ("coco" if "detection" in TASKS else "folders")
-    _play_images, _play_annotations = load_play_dataset(per_class=4 if SMOKE else 20)  # fewer in smoke (N-014)
-    _sample = write_sample(_fmt, DATA_DIR / "cache" / "my_sample" / _fmt, _play_images, _play_annotations,
-                           polygons=_fmt == "yolo" and "segmentation" in TASKS)
-    coco_raw, _paths, label_format_used, dataset_root = read_dataset(_sample, LABEL_FORMAT, TASKS)
-    dataset_source = f"the park sample, written as {_fmt} (DATASET_PATH is None)"
+    _sample_format = LABEL_FORMAT if LABEL_FORMAT != "auto" else ("coco" if "detection" in tasks_to_run else "folders")
+    _play_images, _play_annotations = load_play_dataset(per_class=PARK_SAMPLE_PER_CLASS)
+    _sample = write_sample(_sample_format, DATA_DIR / "cache" / "my_sample" / _sample_format, _play_images, _play_annotations,
+                           polygons=_sample_format == "yolo" and "segmentation" in tasks_to_run)
+    coco_raw, _paths, label_format_used, dataset_root = read_dataset(_sample, LABEL_FORMAT, tasks_to_run)
+    dataset_source = f"the park sample, written as {_sample_format} (DATASET_PATH is None)"
 else:
-    coco_raw, _paths, label_format_used, dataset_root = read_dataset(DATASET_PATH, LABEL_FORMAT, TASKS)
+    coco_raw, _paths, label_format_used, dataset_root = read_dataset(DATASET_PATH, LABEL_FORMAT, tasks_to_run)
     dataset_source = str(dataset_root)
 
 # Large datasets are sampled down to MY_MAX_IMAGES, keeping the class shares, before anything is measured.
@@ -960,7 +1010,7 @@ images, annotations = build_tables(coco_raw, _paths)
 no_object_images = images[images["class"] == "(no objects)"].reset_index(drop=True)
 images = images[images["class"] != "(no objects)"].reset_index(drop=True)
 images_by_id = images.set_index("id")  # the same table, looked up by image id
-RESULTS["n_images"] = int(len(images))
+results["n_images"] = int(len(images))
 
 # Classes are decided once, here: the classes that label at least one image, sorted by number of images. Every
 # class gets a color, also one that only appears next to a more frequent class: it is drawn on its boxes, but has
@@ -971,10 +1021,9 @@ CLASSES = sorted(set(_counts) - {"(no objects)"}, key=lambda c: (-_counts[c], -_
 _object_only = sorted(set(_object_counts) - set(CLASSES) - {"(no objects)"}, key=lambda c: (-_object_counts[c], c))
 CLASS_COLORS = class_colors(CLASSES + _object_only)
 mpl.rcParams["axes.prop_cycle"] = mpl.cycler(color=[CLASS_COLORS[c] for c in CLASSES])
-RESULTS["class_colors"] = dict(CLASS_COLORS)
+results["class_colors"] = dict(CLASS_COLORS)
 
-_tasks_run = ["classification"] + [t for t in ("detection", "segmentation") if t in TASKS]
-_objects = f" · {int(annotations['bbox'].notna().sum())} objects (boxes)" if "detection" in TASKS else ""
+_objects = f" · {int(annotations['bbox'].notna().sum())} objects (boxes)" if "detection" in tasks_to_run else ""
 print(f"✅ source: {dataset_source} · format: {label_format_used} · {len(images)} images{_objects}")
 print(f"{len(CLASSES)} classes: " + " · ".join(f"{c} {_counts[c]}" for c in CLASSES))
 if len(no_object_images):
@@ -984,19 +1033,19 @@ if _object_only:
     print(f"ℹ️ {len(_object_only)} classes appear only next to a more frequent class in their images "
           f"({', '.join(_object_only[:6])}{' …' if len(_object_only) > 6 else ''}): their boxes are drawn, but they "
           "have no images of their own and no panel in the per-class figures.")
-print(f"tasks that will run: {', '.join(_tasks_run)}")
+print(f"tasks that will run: {', '.join(tasks_to_run)}")
 
 # %% edition="own"
 # @title 🔎 See How One Image Is Labeled { display-mode: "form" }
 # One image, drawn with its labels, and its labels exactly as your files store them (in the format's own units).
-_small = images[images["n_objects"].between(1, 3)] if "detection" in TASKS else images
+_small = images[images["n_objects"].between(1, 3)] if "detection" in tasks_to_run else images
 _one = (_small if len(_small) else images).iloc[0]
 _path = Path(_one["path"])
 _anns = annotations[annotations["image_id"] == _one["id"]]
 print(f"{_path.name} · class: {_one['class']} · {int(_one['width'])} × {int(_one['height'])} px\n")
 print(f"How your files ({label_format_used}) store its labels:")
 print(textwrap.indent(stored_label(label_format_used, dataset_root, _path), "    "))
-if "detection" in TASKS:
+if "detection" in tasks_to_run:
     print("\nThe same boxes in the notebook's `annotations` table (x, y of the top-left corner, width, height, "
           "in pixels):")
     for _, _a in _anns.iterrows():
@@ -1007,10 +1056,10 @@ with Image.open(_path) as _im:
     ax.imshow(_im.convert("RGB"))
 for _, _a in _anns.iterrows():
     _color = CLASS_COLORS[_a["class"]]
-    if "segmentation" in TASKS and _a["segmentation"] is not None:
+    if "segmentation" in tasks_to_run and _a["segmentation"] is not None:
         _m = decode(to_rle(_a["segmentation"], int(_one["height"]), int(_one["width"])))
         ax.imshow(np.ma.masked_where(_m == 0, _m), cmap=mpl.colors.ListedColormap([_color]), alpha=0.45)
-    if "detection" in TASKS and _a["bbox"] is not None:
+    if "detection" in tasks_to_run and _a["bbox"] is not None:
         _x, _y, _w, _h = _a["bbox"]
         ax.add_patch(plt.Rectangle((_x, _y), _w, _h, fill=False, edgecolor=_color, linewidth=2))
         ax.text(_x, _y - 4, _a["class"], color=_color, fontsize=9, fontweight="bold")
@@ -1018,3 +1067,47 @@ ax.set_title(f"{_path.name} · {_one['class']}", fontsize=10)
 frame(ax, CLASS_COLORS[_one["class"]])
 plt.tight_layout()
 plt.show()
+
+# %% [markdown] edition="own"
+# The next cell takes one park image and writes it in every format above, so you can hold your own label files next
+# to each of them. It does not need your data.
+
+# %% edition="own"
+# @title 🔎 See One Image in Every Format { display-mode: "form" }
+# One park image with one or two objects, written by write_sample() in each format and printed as each format
+# stores it, in the format's own units.
+_demo_images, _demo_annotations = load_play_dataset(per_class=1)
+_demo_counts = _demo_annotations.groupby("image_id").size()
+_demo_polygons = _demo_annotations.groupby("image_id")["segmentation"].agg(lambda s: all(isinstance(v, list) for v in s))
+_demo_fits = [i for i in _demo_images["id"] if 1 <= _demo_counts.get(i, 0) <= 2 and _demo_polygons.get(i, False)]
+_demo_image = _demo_images[_demo_images["id"] == (_demo_fits or list(_demo_images["id"]))[0]]
+_demo_anns = _demo_annotations[_demo_annotations["image_id"].isin(_demo_image["id"])]
+_demo_row = _demo_image.iloc[0]
+_demo_name = Path(_demo_row["path"]).name
+
+_demo_colors = class_colors(sorted(_demo_anns["class"].unique()))  # the park's colors for the park's classes
+fig, ax = plt.subplots(figsize=(5, 3.8))
+with Image.open(_demo_row["path"]) as _im:
+    ax.imshow(_im.convert("RGB"))
+for _, _a in _demo_anns.iterrows():
+    _x, _y, _w, _h = _a["bbox"]
+    ax.add_patch(plt.Rectangle((_x, _y), _w, _h, fill=False, edgecolor=_demo_colors[_a["class"]], linewidth=2))
+    ax.text(_x, _y - 4, _a["class"], color=_demo_colors[_a["class"]], fontsize=9, fontweight="bold")
+ax.set_title(f"{_demo_name} · {int(_demo_row['width'])} × {int(_demo_row['height'])} px · "
+             f"{len(_demo_anns)} object{'s' * (len(_demo_anns) != 1)}", fontsize=10)
+frame(ax, _demo_colors[_demo_row["class"]])
+plt.tight_layout()
+plt.show()
+
+for _demo_format, _demo_title, _demo_polys in [
+    ("folders", "One folder per class (folders)", False), ("csv", "A CSV file (csv)", False),
+    ("coco", "COCO JSON (coco): the box, and the start of the outline (polygon)", False),
+    ("yolo", "YOLO boxes (yolo)", False), ("voc", "Pascal VOC (voc)", False),
+    ("yolo", "YOLO segmentation (yolo): the start of the outline", True),
+    ("png-masks", "PNG masks (png-masks): the class index of every pixel", False),
+]:
+    _demo_dir = DATA_DIR / "cache" / "format_demo" / f"{_demo_format}{'-seg' * _demo_polys}"
+    _demo_root = write_sample(_demo_format, _demo_dir, _demo_image, _demo_anns, polygons=_demo_polys)
+    _demo_file = _demo_root / (_demo_row["class"] if _demo_format == "folders" else "images") / _demo_name
+    print(f"── {_demo_title} ──")
+    print(textwrap.indent(stored_label(_demo_format, _demo_root, _demo_file), "    "), end="\n\n")

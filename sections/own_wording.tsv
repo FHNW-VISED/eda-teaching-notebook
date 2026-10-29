@@ -8,9 +8,6 @@ section	old	new
 03_quantitative_inspection.py	Class Distribution: Are All Animal Classes Equally Represented?	Class Distribution: Are All Classes Equally Represented?
 03_quantitative_inspection.py	how many images belong to each animal class	how many images belong to each class
 04_errors_cleaning.py	similarities across animal classes	similarities across classes
-07_object_detection.py	(one row per animal, with a	(one row per object, with a
-07_object_detection.py	one row per animal and a	one row per object and a
-07_object_detection.py	e.g. {"cat": 12, "dog": 9, "bird": 30, "horse": 7, "sheep": 25, "zebra": 14}	e.g. {"class_a": 12, "class_b": 9, "class_c": 30}
 07_object_detection.py	"Bounding boxes: one annotation per animal"	"Bounding boxes: one annotation per object"
 07_object_detection.py	Object Sizes: How Small Are the Animals?	Object Sizes: How Small Are the Objects?
 07_object_detection.py	- Which animal class do you expect to have the smallest bounding boxes?	- Which class do you expect to have the smallest bounding boxes?
@@ -48,3 +45,6 @@ section	old	new
 08_segmentation.py	animal masks measured	object masks measured
 08_segmentation.py	"Where the animal pixels are (same scale	"Where the object pixels are (same scale
 08_segmentation.py	faint = other animals	faint = other objects
+03_quantitative_inspection.py	🔎 Explore the Number of Animals per Image	🔎 Explore the Number of Objects per Image
+08_segmentation.py	🔎 Explore Spatial Distributions of Animal Pixels	🔎 Explore Spatial Distributions of Object Pixels
+08_segmentation.py	"Wrong animal\n(another mask pasted)"	"Wrong object\n(another mask pasted)"

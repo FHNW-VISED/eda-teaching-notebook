@@ -23,9 +23,9 @@ CELL_TIMEOUT_S = int(os.environ.get("NB_CELL_TIMEOUT", "300"))
 TOTAL_BUDGET_S = int(os.environ.get("NB_SMOKE_BUDGET", "900"))
 DUMP_RESULTS = (
     "import json, pathlib\n"
-    "if 'RESULTS' in globals():\n"
+    "if 'results' in globals():\n"
     "    pathlib.Path('build').mkdir(exist_ok=True)\n"
-    "    pathlib.Path('build/smoke-results.json').write_text(json.dumps(RESULTS, default=str))\n"
+    "    pathlib.Path('build/smoke-results.json').write_text(json.dumps(results, default=str))\n"
 )
 
 
@@ -70,7 +70,7 @@ def run_smoke(nb: nbformat.NotebookNode, executed: Path) -> tuple[str | None, in
 def test_notebook_runs_in_smoke_mode():
     assert NOTEBOOK.exists(), "run `just build` first"
     nb = nbformat.read(NOTEBOOK, as_version=4)
-    # Test-only cell (never in the student notebook): dump RESULTS for tests/test_content.py.
+    # Test-only cell (never in the student notebook): dump results for tests/test_content.py.
     nb.cells.append(nbformat.v4.new_code_cell(DUMP_RESULTS))
     failure, _, elapsed = run_smoke(nb, EXECUTED)
     if failure:  # outside the except block, so pytest prints only this clean message

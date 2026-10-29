@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -147,11 +148,30 @@ def _instance_masks_like_penn_fudan(dest: Path) -> Path:
     return dest
 
 
+def _git_repository(dest: Path) -> Path:
+    """A local bare git repository (ending in .git) holding the COCO park sample: the `git clone` option of
+    DATASET_PATH, tested without a network (Susanne, 26 Oct)."""
+    work = dest / "work"
+    shutil.copytree(_need("coco"), work)
+    git = ["git", "-c", "user.name=smoke", "-c", "user.email=smoke@example.invalid",
+           "-c", "init.defaultBranch=main"]
+    subprocess.run([*git, "init", "-q", str(work)], check=True)
+    subprocess.run([*git, "-C", str(work), "add", "-A"], check=True)
+    subprocess.run([*git, "-C", str(work), "commit", "-q", "-m", "park sample"], check=True)
+    bare = dest / "park_sample_repo.git"
+    subprocess.run(["git", "clone", "-q", "--bare", str(work), str(bare)], check=True)
+    shutil.rmtree(work)
+    # the notebook clones into data/cache/my_upload/<repo> once; start from no clone, so this run clones
+    shutil.rmtree(ROOT / "data" / "cache" / "my_upload" / "park_sample_repo", ignore_errors=True)
+    return bare
+
+
 LAYOUTS = {  # id: (builder, TASKS, expected format)
     "split-folders": (_split_folders, ["classification"], "folders"),
     "yolo-like-coco128": (_yolo_like_coco128, ["classification", "detection"], "yolo"),
     "instance-masks": (_instance_masks_like_penn_fudan, ["classification", "detection", "segmentation"],
                        "png-masks"),
+    "git-clone": (_git_repository, ["classification", "detection", "segmentation"], "coco"),
 }
 
 
@@ -165,5 +185,7 @@ def test_own_edition_runs_on_real_layouts(layout, tmp_path):
     summary = next(c for c in nb.cells if c.source.startswith(LOAD_CELL))
     text = "".join(o.get("text", "") for o in summary.outputs if o.output_type == "stream")
     assert f"format: {expected}" in text, f"[{layout}] read as something else:\n{text}"
+    if layout == "git-clone":
+        assert "cloned" in text, f"[{layout}] the load cell did not say it cloned the repository:\n{text}"
     if layout == "instance-masks":
         assert "1 classes: animal" in text or "1 class: animal" in text, text

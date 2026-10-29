@@ -76,10 +76,10 @@ shares = pd.DataFrame(
 )
 fig, axes = plt.subplots(1, 2, figsize=(11, 3.6), sharey=True)
 for ax, col in zip(axes, ["random · test", "stratified · test"], strict=True):
-    x = np.arange(len(CLASSES))
-    ax.bar(x - 0.2, shares["whole table"], width=0.4, color="#DDE5E7", label="whole table")
-    ax.bar(x + 0.2, shares[col], width=0.4, color=[CLASS_COLORS[c] for c in CLASSES], label=col)
-    ax.set_xticks(x, CLASSES)
+    bar_x = np.arange(len(CLASSES))
+    ax.bar(bar_x - 0.2, shares["whole table"], width=0.4, color="#DDE5E7", label="whole table")
+    ax.bar(bar_x + 0.2, shares[col], width=0.4, color=[CLASS_COLORS[c] for c in CLASSES], label=col)
+    ax.set_xticks(bar_x, CLASSES)
     ax.set_title(f"{col} ({len(_te_rand)} images)")
     ax.set_ylabel("share of images")
     ax.legend(frameon=False)
@@ -94,8 +94,8 @@ _rel = shares.sub(shares["whole table"], axis=0).abs().div(_whole, axis=0) * 100
 print("largest drift relative to the class's own share, in %:")
 print(f"  random split: {_rel['random · test'].max():.0f} ({_rel['random · test'].idxmax()})   "
       f"stratified split: {_rel['stratified · test'].max():.0f} ({_rel['stratified · test'].idxmax()})")
-RESULTS["split_drift_random_pp"] = float(_drift["random · test"].max())
-RESULTS["split_drift_stratified_pp"] = float(_drift["stratified · test"].max())
+results["split_drift_random_pp"] = float(_drift["random · test"].max())
+results["split_drift_stratified_pp"] = float(_drift["stratified · test"].max())
 
 # %% edition="teaching"
 # @title 💡 Sample Answer { display-mode: "form" }
@@ -278,15 +278,15 @@ callout("answer", "💡 Sample Answer", r"""
 K_FOLDS = 5
 LOO_N = 12 if SMOKE else 40
 
-def summarize_folds(name: str, splitter, X, y, groups=None) -> dict:
+def summarize_folds(name: str, splitter, features, y, groups=None) -> dict:
     """Summarize the number and size of validation folds."""
     sizes = [
         len(test_idx)
-        for _, test_idx in splitter.split(X, y, groups)
+        for _, test_idx in splitter.split(features, y, groups)
     ]
     return {
         "Strategy": name,
-        "Images": len(X),
+        "Images": len(features),
         "Folds / training runs": len(sizes),
         "Validation images per fold": f"{min(sizes)}–{max(sizes)}",
     }
@@ -504,13 +504,13 @@ BURSTS_PER_PAGE = 2
 burst_page = 0
 
 burst_box_toggle = widgets.Checkbox(value=True, description="Show bounding boxes")
-burst_prev_btn = widgets.Button(description="Previous", icon="chevron-left")
-burst_next_btn = widgets.Button(description="Next", icon="chevron-right")
+burst_prev_btn = widgets.Button(description="← Previous")
+burst_next_btn = widgets.Button(description="Next →")
 burst_counter = widgets.HTML()
 burst_output = widgets.Output()
 
 
-def burst_update_browser(change=None):
+def burst_show_page(change=None):
     start = burst_page * BURSTS_PER_PAGE
     selected = burst_list[start:start + BURSTS_PER_PAGE]
 
@@ -524,25 +524,19 @@ def burst_update_browser(change=None):
             show_bursts(selected, show_boxes=burst_box_toggle.value)
 
 
-def burst_previous_page(button):
+def burst_navigate(step):
     global burst_page
-    burst_page = max(0, burst_page - 1)
-    burst_update_browser()
+    burst_page = max(0, min((len(burst_list) - 1) // BURSTS_PER_PAGE, burst_page + step))
+    burst_show_page()
 
 
-def burst_next_page(button):
-    global burst_page
-    burst_page = min((len(burst_list) - 1) // BURSTS_PER_PAGE, burst_page + 1)
-    burst_update_browser()
-
-
-burst_prev_btn.on_click(burst_previous_page)
-burst_next_btn.on_click(burst_next_page)
-burst_box_toggle.observe(burst_update_browser, names="value")
+burst_prev_btn.on_click(lambda _: burst_navigate(-1))
+burst_next_btn.on_click(lambda _: burst_navigate(1))
+burst_box_toggle.observe(burst_show_page, names="value")
 
 burst_controls = widgets.HBox([burst_prev_btn, burst_next_btn, burst_counter])
 display(widgets.VBox([burst_box_toggle, burst_controls, burst_output]))
-burst_update_browser()
+burst_show_page()
 
 # %% [markdown] edition="teaching"
 # #### 🟢 Splitting Strategies: What Does Grouping Change?
@@ -573,7 +567,7 @@ split_strategy = widgets.Dropdown(
     description="Strategy:"
 )
 split_seed = widgets.IntSlider(value=SEED, min=0, max=100, description="Seed:")
-split_box_toggle = widgets.Checkbox(value=True, description="Bounding boxes")
+split_box_toggle = widgets.Checkbox(value=True, description="Show bounding boxes")
 split_output = widgets.Output()
 
 
@@ -711,12 +705,12 @@ mcq_answers = [
     for option in mcq_options
 ]
 
-mcq_check = widgets.Button(description="Check Answer")
-mcq_solution = widgets.Button(description="Show Solution")
+mcq_check_btn = widgets.Button(description="Check Answer")
+mcq_solution_btn = widgets.Button(description="Show Solution")
 mcq_feedback = widgets.HTML()
 
 
-def check_answer(button):
+def mcq_check_answer(button):
     selected = {i for i, answer in enumerate(mcq_answers) if answer.value}
 
     if selected == {1, 3}:
@@ -731,7 +725,7 @@ def check_answer(button):
         )
 
 
-def show_solution(button):
+def mcq_show_solution(button):
     mcq_feedback.value = (
         "<b>Correct answers: B and D</b><br><br>"
         "<b>A — False:</b> Bounding boxes from the same image must stay together.<br>"
@@ -741,12 +735,12 @@ def show_solution(button):
     )
 
 
-mcq_check.on_click(check_answer)
-mcq_solution.on_click(show_solution)
+mcq_check_btn.on_click(mcq_check_answer)
+mcq_solution_btn.on_click(mcq_show_solution)
 
 display(
     mcq_question,
     *mcq_answers,
-    widgets.HBox([mcq_check, mcq_solution]),
+    widgets.HBox([mcq_check_btn, mcq_solution_btn]),
     mcq_feedback
 )
