@@ -25,14 +25,19 @@ work on a Play Dataset and then reuse the notebook as a checklist for their own 
 The single question it answers: **"Is this dataset fit for my task, and what must I fix before training?"**
 
 ## 2. Audience and level
-BSc Data Science / Computer Science students. They know Python and basic ML vocabulary, and have
-seen Susanne's lecture on image datasets. No training happens here; that comes the following week.
-Default path 🟢/🟡, with optional 🔴 parts.
-**Freedom (N-028): low to medium** (G-14, G-21):
-- **Most cells:** run, then read one sentence on what to look at.
-- **✏️ change a value:** at most one per section, plain variables, no Colab sliders (G-12).
-- **✍️ write a small function:** ~4 in the notebook, each with a given signature and run through `use(...)` (N-029), so they never block "Run all".
-- **The Challenge** is the most open part, and it never blocks either.
+A computer science class that already knows machine learning and Python, has had seven weeks of classical
+image processing (convolution and the like), and meets computer vision with deep learning for the first time
+in this course (Susanne, 23 Oct walkthrough, S19). They have seen her lecture on image datasets. No training
+happens here; that comes the following week. Activities are marked 🟢 core or 🔴 optional (her legend).
+**Freedom (N-028): low to medium:**
+- **Most cells:** run, then answer the task's questions about what the output shows.
+- **✏️ change a value:** Colab form fields are allowed (`# @param` sliders, dropdowns and a checkbox in her
+  tasks); each setting is read only in its own section (N-058). The Own-Data Edition adds its dataset settings
+  (`DATASET_PATH`, `TASKS`, `LABEL_FORMAT`) and the split's `SPLIT_COPY_THRESHOLD`.
+- **✍️ write a small function:** two, in the Teaching Edition only (the `double` warm-up under Optional Coding
+  Exercises and `count_boxes_per_class`), each run through `use(...)` (N-029), so they never block "Run all".
+  The Own-Data Edition has no coding exercises (her request, 28 Oct).
+- There is no Challenge (she removed it, SN-010).
 
 ## 2b. Prerequisites
 A Google account (Colab) and a browser. Python basics. Susanne's lecture on image datasets.
@@ -101,7 +106,7 @@ Status: todo · in-progress · done · blocked.
 | # | File | Title (hers) | Edition | Status |
 |---|---|---|---|---|
 | 0 | sections/00_front_matter.py | Know Your Images · Setup · Optional Coding Exercises | T O | done |
-| 1 | sections/01_load_your_dataset.py | Load Your Dataset | O | in-progress |
+| 1 | sections/01_load_your_dataset.py | Load Your Dataset | O | done |
 | 2 | sections/02_meet_the_park.py | Meet the Park: Explore Your Dataset · Qualitative Inspection | T O | done |
 | 3 | sections/03_quantitative_inspection.py | Quantitative Inspection | T O | done |
 | 4 | sections/04_errors_cleaning.py | Common Dataset Errors & Cleaning | T O | done |
@@ -109,7 +114,7 @@ Status: todo · in-progress · done · blocked.
 | 6 | sections/06_splits_leakage.py | Dataset Splitting & Data Leakage | T O | done |
 | 7 | sections/07_object_detection.py | Object Detection | T O | done |
 | 8 | sections/08_segmentation.py | Semantic Segmentation: Which Pixels Belong to the Animals? | T O | done |
-| 9 | sections/09_your_dataset.py | Your Project Dataset | T O | in-progress |
+| 9 | sections/09_your_dataset.py | Your Project Dataset | T O | done |
 
 ### Section contents (v05, kept for history; her copy superseded them on 2026-10-28)
 - **00 Setup & the park**
@@ -207,48 +212,49 @@ Status: todo · in-progress · done · blocked.
 ## 7. Out of scope / limitations
 - **No model training** (that's next week). Only the 🔴 nearest-neighbour "ruler" on colour features.
 - **No data augmentation as a technique** (G-6). Augmentation appears only as pre-augmented copies to detect, plus links at the end.
-- **No Colab sliders or forms for values** (G-12).
+- ~~No Colab sliders or forms for values (G-12).~~ Superseded by her copy: her tasks use Colab form fields (§2).
 - COCO has no camera groups. Any group structure on COCO would be planted, so real groups come only from CCT20.
 
 ## 8. Notebook-specific rules
 
-**L-001 — Callouts** (N-025, N-034, N-044, N-048, G-11, G-32):
-- A callout is a markdown cell in `sections/*.py` whose **first line is a marker**, followed by **normal markdown** (paragraphs, lists, bold, `code`, links, tables, `<details>`):
-  ```
-  # %% [markdown]
-  # <!-- callout: theory | Theory · Data leakage -->
-  # Text with **markdown** …
-  ```
-- Grammar: `<!-- callout: KIND | TITLE -->`, the title is optional (`<!-- callout: questions -->` uses the kind's name). The build puts the kind's emoji in front of the title, so do not type it.
-- Build (`scripts/build.py`): each marked cell becomes a collapsed code cell (`# @title`, no text) that redraws the box with `IPython.display.HTML`, and the same HTML is saved as its output, so the box shows in Colab before anything runs. Box: inline CSS, background, 6 px left bar in the text colour, rounded corners, text wraps.
-- **Never a markdown table with `bgcolor`** for a coloured box (Colab cuts the text in table cells; lint fails), and no `style=` in markdown.
-- Kinds (id · emoji and name · background / text and left bar):
+**L-001 — Boxes and Tasks** (her box set SN-015, SN-001, SN-002; N-024, N-034; replaced 2026-10-29):
+- **Four kinds of box, hers**, each drawn by the notebook's own `callout(kind, title, body_html)` (defined in Setup):
 
-  | id | callout | background | text / bar |
+  | kind | box | background | text / bar |
   |---|---|---|---|
-  | `theory` | 📘 Theory (the title names the topic) | `#E3F2FD` | `#0D47A1` |
-  | `your-turn` | ✏️ Your turn | `#FFF4D6` | `#7A4A00` |
-  | `questions` | ❓ Questions | `#E0F7F4` | `#00564D` |
-  | `across-tasks` | 🔀 Across tasks | `#EDE7F6` | `#311B92` |
-  | `pitfall` | ⚠️ Pitfall | `#FDECEA` | `#8B1A10` |
-  | `recipe` | 🧾 Recipe | `#E8F5E9` | `#1B5E20` |
-  | `objective` | 🎯 Objective (N-044) | `#B9E3EA` | `#08505C` |
-  | `takeaway` | ✅ Takeaway, "When you see X → do Y" lines (N-044) | `#E2F0C4` | `#3A5A0B` |
-  | `go-deeper` | 🔍 Go deeper, secondary depth, long parts inside `<details>` (N-048) | `#F3F4F6` | `#4B5563` |
-  | `answer` | 💡 Worked answer: the whole box is a closed `<details>` toggle, title = summary (N-024, L-005). Runtime answers (figures, keys) use `answer_box()` from section 0 in the same colours | `#F6EFE4` | `#5C4027` |
-  | `banner` | title banner, no emoji (L-003) | `#0B6E79` | `#FFFFFF` (bar `#06464D`) |
-- Source: Simone, G-11 / G-32; Colab rendering research 2026-10-19 and 2026-10-21 (review pass 1, R-01/R-03/R-04).
+  | `theory` | 📘 theory or information; the title names the topic | `#E3F2FD` | `#0D47A1` |
+  | `recipe` | 🧾 a Karpathy quote (L-004) | `#FFF8D6` | `#333333` / `#F5C400` |
+  | `answer` | 💡 Sample Answer: gray, a closed `<details>` toggle until opened (N-024, L-005) | `#F5F5F5` | `#374151` / `#9CA3AF` |
+  | `deeper` | 🔍 Go Deeper: secondary depth (N-048) | `#F3F4F6` | `#4B5563` |
+
+- **A Task is plain markdown, not a box:** a heading one level below its parent with a level dot and a Title-Case
+  title (`### 🟢 Object Sizes: How Small Are the Animals?`, 🔴 tasks end in "(Optional)"), then her bold labels
+  **Before running the code:**, **Explore:**, **Observe and interpret:** (SN-011–SN-013). A "✏️ Your turn" lead
+  is a bold markdown line, not a box. 💡 means a Sample Answer and nothing else.
+- **Shown before anything runs (N-034):** a cell that is a `# @title` line plus one `callout(...)` with literal
+  arguments, or a cell that only imports and shows one `HTML(...)` of a string literal (Learning Objectives, How to
+  Use), gets its HTML saved as output by `scripts/build.py`. Boxes drawn from kernel values (a figure, a runtime
+  answer) render when they run.
+- Never a markdown table with `bgcolor` for a coloured box (Colab cuts the text in table cells; lint fails), and
+  no `style=` in markdown.
+- Source: her edited copy, 28 Oct (SN-015); Simone, P1 (one `callout()` helper for her boxes).
 
 **L-002 — Code students change or write** (N-026, G-12):
-- Every ✏️ cell sits directly under a ✏️ Your turn Callout and starts with `# ✏️ YOUR TURN`.
+- Every ✏️ cell sits directly under its ✏️ Your turn text (plain markdown, L-001) and starts with `# ✏️ YOUR TURN`.
 - Every ✍️ function starts with `# ✍️ YOUR CODE`, has its signature and a docstring stating inputs and outputs, and an `...` body, followed by `use(fn, reference=_ref_fn)` (N-029).
 - Source: Simone, G-12, G-21, G-24.
 
-**L-003 — Theme green-blue** (N-027, G-9, G-18):
-- Title banner: a `banner` callout (L-001), full width, white text on `#0B6E79`, with the title (larger font), the three outcomes as a numbered list and the level legend. It sits right after section 0's heading and 🎯 Objective cells (the lint requires heading, then objective).
+**L-003 — Front matter and theme** (her front matter SN-018; N-027, G-9, G-18; replaced 2026-10-29):
+- **Front matter, as in her copy:** the title and subtitle, "Simone Bonato & Susanne Suter, FHNW", her
+  introduction with Karpathy's "become one with the data", the AI-assistance note, then the **Learning
+  Objectives** box (gray `#E5E7EB`, three Bloom-verb objectives, SN-005, and the legend "Activities are marked 🟢
+  core · 🔴 optional"), "What Do You Need to Know for the Exam and Your Project?", and **How to Use This
+  Notebook** (gray `#F5F5F5`; the Own-Data Edition has its own wording). Both boxes are HTML saved as output (L-001).
 - Matplotlib style: background white; text and axes `#21434A`; grid light.
-- `CLASS_COLORS` used in *every* plot, box and mask overlay: cat `#E07A5F`, dog `#3D405B`, bird `#F2CC8F`, horse `#81B29A`, sheep `#9C89B8`, zebra `#2A9D8F`.
-- Source: Simone, G-9, G-18.
+- `CLASS_COLORS` used in *every* plot, box and mask overlay: cat `#E07A5F`, dog `#3D405B`, bird `#F2CC8F`, horse
+  `#81B29A`, sheep `#9C89B8`, zebra `#2A9D8F`. The Own-Data Edition gives a park class its park color and any other
+  class the next of 16 more colors.
+- Source: her edited copy, 28 Oct; Simone, G-9, G-18.
 
 **L-004 — Karpathy quotes**: verbatim, **2–3 sentences**, in a 🧾 Recipe Callout with a link to https://karpathy.github.io/2019/04/25/recipe/, only in sections 2, 3, 4 and 5. Source: Simone, G-6, G-18.
 
