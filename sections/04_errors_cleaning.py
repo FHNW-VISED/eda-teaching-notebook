@@ -860,6 +860,17 @@ def cosine_similarity_matrix(vectors: np.ndarray) -> np.ndarray:
     return unit @ unit.T
 
 
+# %% [markdown]
+# **Computing pretrained embeddings takes time.** The next cell has one setting, `COMPUTE_EMBEDDINGS`, a checkbox.
+# The pretrained embeddings (from the DINOv2 model) of the park images were computed in advance, so they load in a few
+# seconds. For any other images, the model has to compute them here: well under a minute on a GPU runtime, but several
+# minutes on the free CPU runtime.
+#
+# - **Unticked (default):** the model runs only on a GPU runtime. On a CPU, this part compares the color histograms only.
+# - **Ticked:** the model runs even on a CPU. Tick it if you want the pretrained embeddings and can wait.
+#
+# Drawing the UMAP plots below also takes a little while the first time.
+
 # %%
 # @title Helpers: Pretrained Visual Embeddings { display-mode: "form" }
 # The park's DINOv2 vectors come precomputed (data/coco_animals_dinov2.npz). The model itself runs only when
