@@ -30,8 +30,13 @@ sync:
     uv run python scripts/split.py
 
 # Committed notebook must equal a fresh build (catches hand edits that skipped `just sync`)
-drift: build
-    git diff --exit-code -- eda-teaching-notebook.ipynb eda-own-dataset-notebook.ipynb
+# and requirements.txt must equal a fresh export of uv.lock (catches a dependency change that skipped `just requirements`)
+drift: build requirements
+    git diff --exit-code -- eda-teaching-notebook.ipynb eda-own-dataset-notebook.ipynb requirements.txt
+
+# requirements.txt for people who run the notebook locally with pip: uv.lock's runtime pins + ipywidgets 8 + JupyterLab
+requirements:
+    uv run python scripts/export_requirements.py
 
 # Compare runtime deps with what Google Colab preinstalls (gpu runtime by default)
 colab-pins runtime="gpu":
