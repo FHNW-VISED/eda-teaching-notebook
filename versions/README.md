@@ -15,3 +15,4 @@ Never edit a version folder.
 | v06 | 2026-10-28 | Susanne's copy as base, clean-up, Own-Data Edition | 33b96d5 |
 | v07 | 2026-10-29 | Review fixes: real datasets, embeddings note, independent text check | 83fdb7e |
 | v08 | 2026-10-29 | Fix list from the three checks: Own without exercises, results lowercase | e8d4b27 |
+| v09 | 2026-11-12 | SPEC history moved to SPEC-history.md | c6a4f4e |
