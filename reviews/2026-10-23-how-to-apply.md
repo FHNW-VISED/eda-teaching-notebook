@@ -1,3 +1,4 @@
+> Superseded by `just port-her` and the phase files; the retired `port.py` this page describes was removed on 2026-10-28.
 # How to apply Susanne's edited copy (walkthrough 2026-10-23)
 
 For Simone, and for the agent he asks to do it. The work list is `reviews/2026-10-23-walkthrough.md`.
